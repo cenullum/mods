@@ -1,0 +1,22 @@
+{
+    "map_name": "44x32 FootballMap",
+    "collision": [
+        "(3, 0)"
+    ],
+    "one_way": [],
+    "shadow": {
+
+    },
+    "tileset": "/general/images/football_tilemap.png",
+    "tile_size": "(32, 32)",
+    "chunk_size": 32,
+    "lobby_type": 38,
+    "shadow_effect": {
+        "visible": true,
+        "shadow_color": "(0.0039, 0.0039, 0.0157, 0.7608)",
+        "shadow_angle": 145,
+        "shadow_length": 64,
+        "shadow_blur": 2.795
+    },
+    "background_color": "(0.3, 0.3, 0.3, 1)"
+}

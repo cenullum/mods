@@ -1,0 +1,3 @@
+This is an moderation panel addon that only host can open.
+
+Type /moderation to the chat to use.

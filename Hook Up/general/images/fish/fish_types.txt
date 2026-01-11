@@ -1,0 +1,23 @@
+1 salmon
+2 vermillon snapper
+3 mackerel
+4 angelfish
+5 mullet
+6 Mediterranean Trout
+7 tuna
+8 sheepshead
+9 shark
+10 crab
+11 octopus 
+12 squid
+13 seahorse
+14 seaturtle
+15 scallop
+16 eel
+17 jellyfish
+18 yellow pufferfish
+19 sea urchin
+20 discus fish
+21 shrimp
+22 lobster
+

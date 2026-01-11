@@ -1,0 +1,63 @@
+{
+    "chunk_x": 0,
+    "chunk_y": 0,
+    "entities": [
+        {
+            "n": "b14ukMIwwru7oHRL1741944886",
+            "p": "(221.1267, 92.58924)",
+            "m": "(1, 1, 1, 1)",
+            "t": "world",
+            "vis": true
+        },
+        {
+            "n": "eTKtUV4RXTscMM7F1741944486",
+            "p": "(219.7749, 230.266)",
+            "m": "(1, 1, 1, 1)",
+            "t": "square_map_generation",
+            "vis": true
+        },
+        {
+            "n": "monster_generation",
+            "p": "(219.4958, 191.0863)",
+            "m": "(1, 1, 1, 1)",
+            "t": "monster_generation",
+            "vis": true
+        },
+        {
+            "n": "zBrTXaHaUcIE0iaL1742484948",
+            "p": "(220.2336, 271.7532)",
+            "m": "(1, 1, 1, 1)",
+            "t": "wave_manager",
+            "vis": true
+        },
+        {
+            "n": "1CTb8zIYg7j9yRh01742543910",
+            "p": "(218.3367, 137.4733)",
+            "m": "(1, 1, 1, 1)",
+            "t": "campfire",
+            "vis": true
+        },
+        {
+            "n": "UEF7vUUQw0g1cUn41743253644",
+            "p": "(223.1827, 323.2675)",
+            "m": "(1, 1, 1, 1)",
+            "t": "stat_manager",
+            "vis": true
+        },
+        {
+            "n": "SI5TytUjlYw5x4m31747320917",
+            "p": "(202.5563, 70.73486)",
+            "m": "(1, 1, 1, 1)",
+            "t": "stats_tracker",
+            "vis": true
+        },
+        {
+            "n": "BrrSUjclTkT3wXNN1747414581",
+            "p": "(388.0792, 106.9087)",
+            "m": "(1, 1, 1, 1)",
+            "t": "command_system",
+            "vis": true
+        }
+    ],
+    "map": "(-1, -1)_1024"
+}

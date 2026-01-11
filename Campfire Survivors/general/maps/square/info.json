@@ -1,0 +1,36 @@
+{
+    "map_name": "square",
+    "collision": [
+        "(0, 1)",
+        "(2, 1)",
+        "(2, 2)",
+        "(1, 2)",
+        "(0, 2)",
+        "(2, 0)",
+        "(1, 0)",
+        "(0, 0)"
+    ],
+    "one_way": [],
+    "shadow": {
+        "(0, 1)": 2,
+        "(2, 1)": 2,
+        "(2, 2)": 2,
+        "(1, 2)": 2,
+        "(0, 2)": 2,
+        "(2, 0)": 2,
+        "(1, 0)": 2,
+        "(0, 0)": 2
+    },
+    "tileset": "/general/images/desert.png",
+    "tile_size": "(32, 32)",
+    "chunk_size": 32,
+    "lobby_type": 7,
+    "shadow_effect": {
+        "visible": true,
+        "shadow_color": "(0.0039, 0.0039, 0.0157, 0.7608)",
+        "shadow_angle": 145,
+        "shadow_length": 64,
+        "shadow_blur": 2.795
+    },
+    "background_color": "(0.3, 0.3, 0.3, 1)"
+}

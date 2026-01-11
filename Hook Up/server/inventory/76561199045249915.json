@@ -1,0 +1,64 @@
+{
+    "fish_list": [
+        {
+            "name": "Salmon",
+            "image": "fish/fish1",
+            "water_source": "sea",
+            "catch_time": 1758565863,
+            "rarity": "common",
+            "catch_location": {
+                "x": 598.698425292969,
+                "y": 16.9289245605469
+            },
+            "weight": 0.8
+        },
+        {
+            "name": "Sheepshead",
+            "image": "fish/fish8",
+            "water_source": "sea",
+            "catch_time": 1758565996,
+            "rarity": "rare",
+            "catch_location": {
+                "x": 597.41162109375,
+                "y": 20.0331935882568
+            },
+            "weight": 2.1
+        },
+        {
+            "name": "Squid",
+            "image": "fish/fish12",
+            "water_source": "cave_water",
+            "catch_time": 1758566282,
+            "rarity": "rare",
+            "catch_location": {
+                "x": -3397.908203125,
+                "y": -220.118347167969
+            },
+            "weight": 1.1
+        },
+        {
+            "catch_location": {
+                "x": 514.095336914062,
+                "y": 3.72126817703247
+            },
+            "catch_time": 1760475556,
+            "water_source": "sea",
+            "rarity": "common",
+            "name": "Scallop",
+            "image": "fish/fish15",
+            "weight": 0.2
+        },
+        {
+            "catch_location": {
+                "x": 3880.103515625,
+                "y": -0.07134199887514
+            },
+            "catch_time": 1760475704,
+            "water_source": "lake",
+            "rarity": "rare",
+            "name": "Mediterranean Trout",
+            "image": "fish/fish6",
+            "weight": 1
+        }
+    ]
+}

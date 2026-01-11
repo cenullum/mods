@@ -1,0 +1,232 @@
+{
+    "fish_list": [
+        {
+            "catch_location": {
+                "x": -719.191162109375,
+                "y": 28.1662540435791
+            },
+            "rarity": "common",
+            "water_source": "sea",
+            "image": "fish/fish15",
+            "name": "Scallop",
+            "catch_time": 1755610783,
+            "weight": 0.4
+        },
+        {
+            "catch_location": {
+                "x": -488.839782714844,
+                "y": -1069.353515625
+            },
+            "rarity": "epic",
+            "water_source": "lake",
+            "image": "fish/fish20",
+            "name": "Discus Fish",
+            "catch_time": 1755613736,
+            "weight": 0.8
+        },
+        {
+            "catch_location": {
+                "x": -488.839782714844,
+                "y": -1067.44323730469
+            },
+            "rarity": "common",
+            "water_source": "lake",
+            "image": "fish/fish5",
+            "name": "Mullet",
+            "catch_time": 1755613756,
+            "weight": 0.5
+        },
+        {
+            "catch_location": {
+                "x": -488.839782714844,
+                "y": -1068.00463867188
+            },
+            "rarity": "rare",
+            "water_source": "lake",
+            "image": "fish/fish4",
+            "name": "Angelfish",
+            "catch_time": 1755613763,
+            "weight": 0.3
+        },
+        {
+            "catch_location": {
+                "x": -681.959350585938,
+                "y": 23.4124927520752
+            },
+            "rarity": "rare",
+            "water_source": "sea",
+            "image": "fish/fish8",
+            "name": "Sheepshead",
+            "catch_time": 1755639453,
+            "weight": 1.4
+        },
+        {
+            "catch_location": {
+                "x": -681.959350585938,
+                "y": 21.7898044586182
+            },
+            "rarity": "common",
+            "water_source": "sea",
+            "image": "fish/fish15",
+            "name": "Scallop",
+            "catch_time": 1755639467,
+            "weight": 0.2
+        },
+        {
+            "catch_location": {
+                "x": -681.959350585938,
+                "y": 24.0551166534424
+            },
+            "rarity": "common",
+            "water_source": "sea",
+            "image": "fish/fish3",
+            "name": "Mackerel",
+            "catch_time": 1755639473,
+            "weight": 0.4
+        },
+        {
+            "catch_location": {
+                "x": 335.7880859375,
+                "y": 3.69935250282288
+            },
+            "rarity": "common",
+            "water_source": "sea",
+            "image": "fish/fish1",
+            "name": "Salmon",
+            "catch_time": 1758565880,
+            "weight": 1
+        },
+        {
+            "catch_location": {
+                "x": 1102.68786621094,
+                "y": 21.5556678771973
+            },
+            "rarity": "common",
+            "water_source": "sea",
+            "image": "fish/fish15",
+            "name": "Scallop",
+            "catch_time": 1758565963,
+            "weight": 0.2
+        },
+        {
+            "catch_location": {
+                "x": -3977.33251953125,
+                "y": -218.704986572266
+            },
+            "rarity": "common",
+            "water_source": "cave_water",
+            "image": "fish/fish19",
+            "name": "Sea Urchin",
+            "catch_time": 1758566233,
+            "weight": 0.1
+        },
+        {
+            "catch_location": {
+                "x": -3977.33251953125,
+                "y": -218.643524169922
+            },
+            "rarity": "rare",
+            "water_source": "cave_water",
+            "image": "fish/fish12",
+            "name": "Squid",
+            "catch_time": 1758566246,
+            "weight": 1.4
+        },
+        {
+            "catch_location": {
+                "x": -3977.33251953125,
+                "y": -219.045379638672
+            },
+            "rarity": "common",
+            "water_source": "cave_water",
+            "image": "fish/fish19",
+            "name": "Sea Urchin",
+            "catch_time": 1758566256,
+            "weight": 0.1
+        },
+        {
+            "catch_location": {
+                "x": -3977.33251953125,
+                "y": -221.541351318359
+            },
+            "rarity": "common",
+            "water_source": "cave_water",
+            "image": "fish/fish19",
+            "name": "Sea Urchin",
+            "catch_time": 1758566264,
+            "weight": 0.1
+        },
+        {
+            "catch_location": {
+                "x": -3977.33251953125,
+                "y": -220.258361816406
+            },
+            "rarity": "epic",
+            "water_source": "cave_water",
+            "image": "fish/fish11",
+            "name": "Octopus",
+            "catch_time": 1758566281,
+            "weight": 2.7
+        },
+        {
+            "catch_location": {
+                "x": -3761.91796875,
+                "y": -225.775314331055
+            },
+            "rarity": "common",
+            "water_source": "cave_water",
+            "image": "fish/fish19",
+            "name": "Sea Urchin",
+            "catch_time": 1758566293,
+            "weight": 0.2
+        },
+        {
+            "catch_location": {
+                "x": 597.222351074219,
+                "y": 18.7763423919678
+            },
+            "catch_time": 1760475545,
+            "water_source": "sea",
+            "rarity": "legendary",
+            "name": "Shark",
+            "image": "fish/fish9",
+            "weight": 13.2
+        },
+        {
+            "catch_location": {
+                "x": 3880.35620117188,
+                "y": -0.07133965194225
+            },
+            "catch_time": 1760475710,
+            "water_source": "lake",
+            "rarity": "common",
+            "name": "Mullet",
+            "image": "fish/fish5",
+            "weight": 0.6
+        },
+        {
+            "catch_location": {
+                "x": 3880.4228515625,
+                "y": -0.07133898139
+            },
+            "catch_time": 1760475719,
+            "water_source": "lake",
+            "rarity": "rare",
+            "name": "Mediterranean Trout",
+            "image": "fish/fish6",
+            "weight": 1.2
+        },
+        {
+            "catch_location": {
+                "x": 3857.12866210938,
+                "y": -0.16896307468414
+            },
+            "catch_time": 1760475766,
+            "water_source": "lake",
+            "rarity": "common",
+            "name": "Mullet",
+            "image": "fish/fish5",
+            "weight": 0.9
+        }
+    ]
+}

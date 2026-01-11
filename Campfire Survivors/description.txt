@@ -1,0 +1,11 @@
+Campfire Survivors is a wave-based survival game where you defend against increasingly difficult enemies.
+
+Game Mechanics:
+- Waves last 60-120 seconds with 30 second cooldown periods
+- Enemies spawn in groups
+- 6 enemy types: Ghost, Wolf, Bandit, Zombie, Cactus, and Snake
+- Each enemy has unique stats for health, damage, and speed
+- Enemies evolve every 7 waves, increasing their health and damage
+- Bandit enemies shoot bullets that deal damage based on wave level
+- Players can shoot projectiles at enemies
+- Game ends when all players are defeated

@@ -1,0 +1,11 @@
+Use your grappling hook to swing through challenging levels. Your character has no direct movement - the hook is your only way to navigate the world.
+
+Objective: Reach the golden flag at the top!
+
+Features:
+- Grappling hook-based movement system
+- Adjustable hook power with progress bar
+- Side-scrolling gravity-based gameplay
+- Challenging hook and swing mechanics
+- Fishing system with different fish types from various locations (sea, lake, cave, oasis, etc.)
+- "Finding Liar" mini-game: A social deduction game for 3+ players where everyone knows a word except the liar.

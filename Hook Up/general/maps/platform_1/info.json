@@ -1,0 +1,20 @@
+{
+    "map_name": "platform_1",
+    "collision": [],
+    "one_way": [],
+    "shadow": {
+
+    },
+    "tileset": "",
+    "tile_size": "(32, 32)",
+    "chunk_size": 32,
+    "lobby_type": 35,
+    "shadow_effect": {
+        "visible": true,
+        "shadow_color": "(0.0039, 0.0039, 0.0157, 0.2863)",
+        "shadow_angle": 123,
+        "shadow_length": 143,
+        "shadow_blur": 2.795
+    },
+    "background_color": "(0.3212, 0.8477, 0.823, 1)"
+}
