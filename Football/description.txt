@@ -1,11 +1,11 @@
+If you'd like to help, you can check out the mod GitHub page:
+https://github.com/cenullum/mods 
+
 Football is a multiplayer team-based game where two teams compete to score goals.
 
-Game Mechanics:
 - Two teams: Red and Blue
 - Hold charge to shot power, release to hit the ball
 - Ball physics with bounce and friction
 - Scoreboard tracks individual goals and assists
 - Match can be played with time limits (1-90 minutes or infinite)
 - Players can be moved between teams or made spectators
-
-

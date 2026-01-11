@@ -1,3 +1,6 @@
+If you'd like to help, you can check out the mod GitHub page:
+https://github.com/cenullum/mods 
+
 This is an moderation panel addon that only host can open.
 
 Type /moderation to the chat to use.

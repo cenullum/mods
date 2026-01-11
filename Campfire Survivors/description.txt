@@ -1,6 +1,8 @@
+If you'd like to help, you can check out the mod GitHub page:
+https://github.com/cenullum/mods 
+
 Campfire Survivors is a wave-based survival game where you defend against increasingly difficult enemies.
 
-Game Mechanics:
 - Waves last 60-120 seconds with 30 second cooldown periods
 - Enemies spawn in groups
 - 6 enemy types: Ghost, Wolf, Bandit, Zombie, Cactus, and Snake

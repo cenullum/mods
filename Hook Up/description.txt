@@ -1,8 +1,9 @@
-Use your grappling hook to swing through challenging levels. Your character has no direct movement - the hook is your only way to navigate the world.
+If you'd like to help, you can check out the mod GitHub page:
+https://github.com/cenullum/mods 
 
+Use your grappling hook to swing through challenging levels. Your character has no direct movement - the hook is your only way to navigate the world.
 Objective: Reach the golden flag at the top!
 
-Features:
 - Grappling hook-based movement system
 - Adjustable hook power with progress bar
 - Side-scrolling gravity-based gameplay
