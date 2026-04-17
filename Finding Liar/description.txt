@@ -1,0 +1,7 @@
+If you'd like to help, you can check out the mod GitHub page:
+https://github.com/cenullum/mods 
+
+Finding Liar: A social deduction game for 3+ players where everyone knows a word except the liar.
+- Vote system to eliminate suspects
+- Different word categories
+- Side-scrolling 2D view

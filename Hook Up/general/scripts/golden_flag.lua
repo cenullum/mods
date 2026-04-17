@@ -79,13 +79,11 @@ function start_reset_timer()
     })
     -- Block minigames (fishing, liar, etc.)
     run_function("-fishing_game", "block_minigames", {true})
-    run_function("-finding_liar_manager", "block_minigames", {true})
 end
 
 function on_reset_timer_finished(args)
     -- Unblock minigames
     run_function("-fishing_game", "block_minigames", {false})
-    run_function("-finding_liar_manager", "block_minigames", {false})
 
     local users = get_entity_names_by_tag("user")
 	local spawn_position=get_value("","-spawn_point","position")
@@ -109,8 +107,6 @@ end
 function handle_minigame_interrupts()
     -- Interrupt fishing for all players
     run_function("-fishing_game", "force_escape_all", {})
-    -- Interrupt finding liar if needed (implement in manager)
-    run_function("-finding_liar_manager", "interrupt_game", {})
 end
 
 -- Client-side: Show win message

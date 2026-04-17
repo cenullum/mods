@@ -11,30 +11,6 @@
             "zi": 0
         },
         {
-            "n": "R9TUbKDqm1ry9WVr1751462716",
-            "p": "(658, -162)",
-            "m": "(1, 1, 1, 1)",
-            "t": "finding_liar_data",
-            "vis": true,
-            "zi": 0
-        },
-        {
-            "n": "e1fKIbUZCCqINq5g1751462719",
-            "p": "(643.5453, -117)",
-            "m": "(1, 1, 1, 1)",
-            "t": "finding_liar_manager",
-            "vis": true,
-            "zi": 0
-        },
-        {
-            "n": "CWeUu9OO4MBRkrJA1751462721",
-            "p": "(654, -74)",
-            "m": "(1, 1, 1, 1)",
-            "t": "finding_liar_ui",
-            "vis": true,
-            "zi": 0
-        },
-        {
             "n": "7JfC0CzJX8SXxdD71751463645",
             "p": "(628.6682, -26.55804)",
             "m": "(1, 1, 1, 1)",

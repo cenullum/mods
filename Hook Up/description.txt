@@ -9,4 +9,3 @@ Objective: Reach the golden flag at the top!
 - Side-scrolling gravity-based gameplay
 - Challenging hook and swing mechanics
 - Fishing system with different fish types from various locations (sea, lake, cave, oasis, etc.)
-- "Finding Liar" mini-game: A social deduction game for 3+ players where everyone knows a word except the liar.

@@ -34,9 +34,13 @@ function move_to_blue_team(args)
 end
 
 function move_to_spectator(args)
+    _steam_id = args.extra_args.steam_id
     run_function("-ui_manager", "move_team", { _steam_id, 0 })
     run_network_function(_steam_id, "change_team_ALL", { 0 }) -- Character itself
-    remove_voice_channel(_steam_id)
+    set_voice_channel({
+        steam_id = _steam_id,
+        channel_name = "spectators"
+    })
 end
 
 function show_user_actions(steam_id, user_name)
@@ -129,9 +133,9 @@ function get_duration_seconds(duration_str)
     elseif duration_str == "1 Month" then
         return 3600 * 24 * 30
     elseif duration_str == "Permanent" then
-        return 3600 * 24 * 365 * 100                                     -- 100 years
+        return 3600 * 24 * 365 * 100 -- 100 years
     else
-        return 3600                                                      -- default 1 hour
+        return 3600                  -- default 1 hour
     end
 end
 

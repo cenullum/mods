@@ -1,16 +1,7 @@
 {
     "chunk_x": 0,
     "chunk_y": -2,
-    "entities": [
-        {
-            "n": "OD6aUNzY9PwSngaI1755370730",
-            "p": "(17.64981, -1802.392)",
-            "m": "(1, 1, 1, 1)",
-            "t": "liar_position_detector",
-            "vis": true,
-            "zi": 0
-        }
-    ],
+    "entities": [],
     "polygons": [
         {
             "n": "mke9iVkAUlBK7vT21755131253",

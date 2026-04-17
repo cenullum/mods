@@ -1,0 +1,20 @@
+{
+    "map_name": "cube_map",
+    "collision": [],
+    "one_way": [],
+    "shadow": {
+
+    },
+    "tileset": "",
+    "tile_size": "(32, 32)",
+    "chunk_size": 32,
+    "lobby_type": 0,
+    "shadow_effect": {
+        "visible": true,
+        "shadow_color": "(0.0039, 0.0039, 0.0157, 0.7608)",
+        "shadow_angle": 145,
+        "shadow_length": 64,
+        "shadow_blur": 2.7
+    },
+    "background_color": "(0.3728, 0.9122, 0.8811, 1)"
+}
