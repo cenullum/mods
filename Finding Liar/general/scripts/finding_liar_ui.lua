@@ -2,10 +2,10 @@ network_mode = 1
 singleton_name = "finding_liar_ui"
 
 -- Panel names
-local MAIN_PANEL_NAME = "finding_liar_main"
 local USERS_PANEL_NAME = "finding_liar_users"
 local WORDS_PANEL_NAME = "finding_liar_words"
 local VOTE_PANEL_NAME = "finding_liar_vote"
+local VOTE_CONFIRM_PANEL_NAME = ""
 local GAME_OVER_PANEL_NAME = "finding_liar_game_over"
 
 -- UI state (minimal - get data from manager via network calls)
@@ -57,7 +57,7 @@ function show_words_panel()
         minimum_size = Vector2(250, 460), -- Increased height for better visibility
         close = false,
         no_multiple_tag = "finding_liar_words",
-        offset_ratio = Vector2(0.1, 0.1) -- Center-right, slightly above center (shifted left)
+        offset_ratio = Vector2(0, 0) -- Center-right, slightly above center (shifted left)
     }
 
     WORDS_PANEL_NAME = create_panel(words_panel_config)
@@ -138,7 +138,7 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
         minimum_size = Vector2(300, 400),
         close = false,
         no_multiple_tag = "finding_liar_users",
-        offset_ratio = Vector2(1.5, 1) -- Center-right
+        offset_ratio = Vector2(2, 1) -- Center-right
     }
 
     USERS_PANEL_NAME = create_panel(users_panel_config)
@@ -366,10 +366,10 @@ function process_vote_click_CLIENT(sender_id, args)
         no_multiple_tag = "vote_confirm"
     }
 
-    local vote_panel = create_panel(vote_config)
+    VOTE_CONFIRM_PANEL_NAME = create_panel(vote_config)
 
     -- Add Confirm button
-    add_button_to_panel(vote_panel, {
+    add_button_to_panel(VOTE_CONFIRM_PANEL_NAME, {
         text = "Confirm - Start Vote",
         entity_name = "-finding_liar_ui",
         function_name = "confirm_vote_initiation",
@@ -379,7 +379,7 @@ function process_vote_click_CLIENT(sender_id, args)
     })
 
     -- Add Cancel button
-    add_button_to_panel(vote_panel, {
+    add_button_to_panel(VOTE_CONFIRM_PANEL_NAME, {
         text = "Cancel",
         entity_name = "-finding_liar_ui",
         function_name = "cancel_vote_initiation",
@@ -395,6 +395,7 @@ function confirm_vote_initiation(args)
     local panel_name = args.panel_name
 
     close_panel(panel_name)
+    VOTE_CONFIRM_PANEL_NAME = ""
 
     -- Send vote initiation to host
     run_network_function("-finding_liar_manager", "initiate_vote_HOST", { target_steam_id })
@@ -404,6 +405,7 @@ end
 function cancel_vote_initiation(args)
     local panel_name = args.panel_name
     close_panel(panel_name)
+    VOTE_CONFIRM_PANEL_NAME = ""
 end
 
 -- Show voting panel when a vote is active
@@ -427,6 +429,12 @@ function show_vote_panel(initiator_name, target_name, target_id, votes_needed, v
         close_panel(VOTE_PANEL_NAME)
     end
 
+    -- Close confirmation panel if it exists
+    if is_panel_exists(VOTE_CONFIRM_PANEL_NAME) then
+        close_panel(VOTE_CONFIRM_PANEL_NAME)
+        VOTE_CONFIRM_PANEL_NAME = ""
+    end
+
     -- Create vote panel with countdown at center screen
     local vote_status_text = ""
     if is_initiator then
@@ -437,19 +445,15 @@ function show_vote_panel(initiator_name, target_name, target_id, votes_needed, v
 
     local vote_config = {
         title = "VOTE IN PROGRESS",
-        text = "[b]VOTING:[/b] " .. initiator_name .. " → " .. target_name .. "\n\n" ..
-            "[b]Votes needed:[/b] " .. math.floor(votes_needed or 0) .. "\n" ..
-            "[b]Current votes:[/b]\n" ..
-            "[color=#66ff66]✅ YES: 1 (initiator)[/color]\n" ..
-            "[color=#ff4444]❌ NO: 0[/color]\n\n" ..
-            vote_status_text .. "\n\n" ..
-            "[b]Question:[/b] Is " .. target_name .. " the liar?\n\n" ..
-            "Vote YES to eliminate, NO to keep.",
+        text = "[center][b][font_size=20]" .. initiator_name .. " → " .. target_name .. "[/font_size][/b]\n\n" ..
+            "YES: [color=#66ff66]1[/color] / NO: [color=#ff4444]0[/color] (Needed: " .. math.floor(votes_needed or 0) .. ")\n\n" ..
+            "[color=#ffff00][b]Is " .. target_name .. " the liar?[/b][/color]\n\n" ..
+            vote_status_text .. "[/center]",
         resizable = false,
         close = false,                   -- Disable close button during vote
         no_multiple_tag = "active_vote",
         countdown = vote_duration or 30, -- Default 30 seconds if not specified
-        minimum_size = Vector2(300, 340),
+        minimum_size = Vector2(300, 350),
         offset_ratio = Vector2(1, 1)     -- Center screen
     }
 
@@ -537,21 +541,17 @@ function update_vote_progress_CLIENT(sender_id, votes_yes, votes_no, votes_neede
 
     -- Use stored vote info for complete update
     local updated_text = string.format(
-        "[b]VOTING:[/b] %s → %s\n\n" ..
-        "[b]Votes needed:[/b] %d\n" ..
-        "[b]Current votes:[/b]\n" ..
-        "[color=#66ff66]✅ YES: %d[/color]\n" ..
-        "[color=#ff4444]❌ NO: %d[/color]\n\n" ..
-        "%s\n\n" ..
-        "[b]Question:[/b] Is %s the liar?\n\n" ..
-        "Vote YES to eliminate, NO to keep.",
+        "[center][b][font_size=20]%s → %s[/font_size][/b]\n\n" ..
+        "YES: [color=#66ff66]%d[/color] / NO: [color=#ff4444]%d[/color] (Needed: %d)\n\n" ..
+        "[color=#ffff00][b]Is %s the liar?[/b][/color]\n\n" ..
+        "%s[/center]",
         current_vote_info.initiator_name,
         current_vote_info.target_name,
-        votes_needed,
         votes_yes,
         votes_no,
-        vote_status_text,
-        current_vote_info.target_name
+        votes_needed,
+        current_vote_info.target_name,
+        vote_status_text
     )
 
     -- Update panel text to show current vote progress
@@ -576,18 +576,14 @@ function update_vote_panel_with_user_status()
 
     -- Basic update without vote counts (will be updated by server)
     local updated_text = string.format(
-        "[b]VOTING:[/b] %s → %s\n\n" ..
-        "[b]Votes needed:[/b] ?\n" ..
-        "[b]Current votes:[/b]\n" ..
-        "[color=#66ff66]✅ YES: ?[/color]\n" ..
-        "[color=#ff4444]❌ NO: ?[/color]\n\n" ..
-        "%s\n\n" ..
-        "[b]Question:[/b] Is %s the liar?\n\n" ..
-        "Waiting for vote update...",
+        "[center][b][font_size=20]%s → %s[/font_size][/b]\n\n" ..
+        "YES: [color=#66ff66]?[/color] / NO: [color=#ff4444]?[/color] (Needed: ?)\n\n" ..
+        "[color=#ffff00][b]Is %s the liar?[/b][/color]\n\n" ..
+        "%s[/center]",
         current_vote_info.initiator_name,
         current_vote_info.target_name,
-        vote_status_text,
-        current_vote_info.target_name
+        current_vote_info.target_name,
+        vote_status_text
     )
 
     -- Update panel text
@@ -626,18 +622,20 @@ function show_vote_target_panel(initiator_name, target_name, target_id, votes_ne
         close_panel(VOTE_PANEL_NAME)
     end
 
+    -- Close confirmation panel if it exists
+    if is_panel_exists(VOTE_CONFIRM_PANEL_NAME) then
+        close_panel(VOTE_CONFIRM_PANEL_NAME)
+        VOTE_CONFIRM_PANEL_NAME = ""
+    end
+
     -- Create vote panel for target with warning message
     local vote_config = {
         title = "⚠️ YOU ARE BEING VOTED",
-        text = "[b]WARNING:[/b] Players suspect you are the liar!\n\n" ..
-            "[b]VOTING:[/b] " .. initiator_name .. " → " .. target_name .. "\n\n" ..
-            "[b]Votes needed:[/b] " .. math.floor(votes_needed or 0) .. "\n" ..
-            "[b]Current votes:[/b]\n" ..
-            "[color=#66ff66]✅ YES: 1 (initiator)[/color]\n" ..
-            "[color=#ff4444]❌ NO: 0[/color]\n\n" ..
-            "[b]Your status:[/b] You cannot vote (you are the target)\n\n" ..
-            "[b]Question:[/b] Is " .. target_name .. " the liar?\n\n" ..
-            "Defend yourself in chat!",
+        text = "[center][b][font_size=20][color=#ff4444]⚠️ YOU ARE BEING VOTED[/color][/font_size][/b]\n\n" ..
+            "[font_size=18]" .. initiator_name .. " → YOU[/font_size]\n\n" ..
+            "YES: [color=#66ff66]1[/color] / NO: [color=#ff4444]0[/color] (Needed: " .. math.floor(votes_needed or 0) .. ")\n\n" ..
+            "[color=#ffff00][b]Is " .. target_name .. " the liar?[/b][/color]\n\n" ..
+            "Defend yourself in chat![/center]",
         resizable = false,
         close = false,                    -- Disable close button during vote
         no_multiple_tag = "active_vote_target",
@@ -659,20 +657,15 @@ function update_vote_target_progress_CLIENT(sender_id, votes_yes, votes_no, vote
 
     -- Update with target-specific text
     local updated_text = string.format(
-        "[b]WARNING:[/b] Players suspect you are the liar!\n\n" ..
-        "[b]VOTING:[/b] %s → %s\n\n" ..
-        "[b]Votes needed:[/b] %d\n" ..
-        "[b]Current votes:[/b]\n" ..
-        "[color=#66ff66]✅ YES: %d[/color]\n" ..
-        "[color=#ff4444]❌ NO: %d[/color]\n\n" ..
-        "[b]Your status:[/b] You cannot vote (you are the target)\n\n" ..
-        "[b]Question:[/b] Is %s the liar?\n\n" ..
-        "Defend yourself in chat!",
+        "[center][b][font_size=20][color=#ff4444]⚠️ YOU ARE BEING VOTED[/color][/font_size][/b]\n\n" ..
+        "[font_size=18]%s → YOU[/font_size]\n\n" ..
+        "YES: [color=#66ff66]%d[/color] / NO: [color=#ff4444]%d[/color] (Needed: %d)\n\n" ..
+        "[color=#ffff00][b]Is %s the liar?[/b][/color]\n\n" ..
+        "Defend yourself in chat![/center]",
         current_vote_info.initiator_name,
-        current_vote_info.target_name,
-        votes_needed,
         votes_yes,
         votes_no,
+        votes_needed,
         current_vote_info.target_name
     )
 
@@ -773,6 +766,9 @@ function close_game_interface()
     end
     if is_panel_exists(VOTE_PANEL_NAME) then
         close_panel(VOTE_PANEL_NAME)
+    end
+    if is_panel_exists(VOTE_CONFIRM_PANEL_NAME) then
+        close_panel(VOTE_CONFIRM_PANEL_NAME)
     end
     if is_panel_exists(GAME_OVER_PANEL_NAME) then
         close_panel(GAME_OVER_PANEL_NAME)
