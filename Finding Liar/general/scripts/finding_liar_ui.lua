@@ -54,10 +54,10 @@ function show_words_panel()
         text = "Waiting for role assignment...",
         resizable = true,
         is_scrollable = true,
-        minimum_size = Vector2(250, 450), -- Increased height for better visibility
+        minimum_size = Vector2(250, 460), -- Increased height for better visibility
         close = false,
         no_multiple_tag = "finding_liar_words",
-        offset_ratio = Vector2(1.5, 0.6) -- Center-right, slightly above center
+        offset_ratio = Vector2(0.1, 0.1) -- Center-right, slightly above center (shifted left)
     }
 
     WORDS_PANEL_NAME = create_panel(words_panel_config)
@@ -131,7 +131,7 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
 
     -- Create new users panel
     local users_panel_config = {
-        title = "Finding Liar - Game Info & Users",
+        title = "Game Info & Users",
         text = header_text,
         resizable = true,
         is_scrollable = true,
@@ -449,6 +449,7 @@ function show_vote_panel(initiator_name, target_name, target_id, votes_needed, v
         close = false,                   -- Disable close button during vote
         no_multiple_tag = "active_vote",
         countdown = vote_duration or 30, -- Default 30 seconds if not specified
+        minimum_size = Vector2(300, 340),
         offset_ratio = Vector2(1, 1)     -- Center screen
     }
 
@@ -638,10 +639,11 @@ function show_vote_target_panel(initiator_name, target_name, target_id, votes_ne
             "[b]Question:[/b] Is " .. target_name .. " the liar?\n\n" ..
             "Defend yourself in chat!",
         resizable = false,
-        close = false,                   -- Disable close button during vote
+        close = false,                    -- Disable close button during vote
         no_multiple_tag = "active_vote_target",
-        countdown = vote_duration or 30, -- Default 30 seconds if not specified
-        offset_ratio = Vector2(1, 1)     -- Center screen
+        countdown = vote_duration or 30,  -- Default 30 seconds if not specified
+        minimum_size = Vector2(300, 325), -- Increased height by 25
+        offset_ratio = Vector2(1, 1)      -- Center screen
     }
 
     VOTE_PANEL_NAME = create_panel(vote_config)
@@ -715,31 +717,40 @@ function update_timer_display(time_remaining)
 end
 
 -- Show game over screen
-function show_game_over(winner, reason)
+function show_game_over(winner, reason, liars_names, correct_word)
     if is_panel_exists(GAME_OVER_PANEL_NAME) then
         close_panel(GAME_OVER_PANEL_NAME)
     end
 
     local winner_color = Color(0.5, 0.5, 0.5, 1) -- Gray default
+    local winner_title = "GAME OVER"
     if winner == "innocent" then
-        winner_color = Color(0, 1, 0, 1)         -- Green for innocent win
+        winner_color = Color(0, 1, 0, 1) -- Green for innocent win
+        winner_title = "INNOCENT WINS!"
     elseif winner == "liar" then
-        winner_color = Color(1, 0, 0, 1)         -- Red for liar win
+        winner_color = Color(1, 0, 0, 1) -- Red for liar win
+        winner_title = "LIAR WINS!"
     end
-
 
     local hex_color = string.format("#%02x%02x%02x",
         math.floor(winner_color.r * 255),
         math.floor(winner_color.g * 255),
         math.floor(winner_color.b * 255))
 
+    local display_text = "[center][b][font_size=24][color=" ..
+        hex_color .. "]" .. winner_title .. "[/color][/font_size][/b]\n\n" ..
+        "[font_size=18]" .. reason .. "[/font_size]\n\n" ..
+        "----------------------------------\n" ..
+        "[b]Correct Word:[/b] [color=#66ff66]" .. (correct_word or "???") .. "[/color]\n" ..
+        "[b]The Liars:[/b] [color=#ff6666]" .. (liars_names or "???") .. "[/color][/center]"
 
     local game_over_config = {
-        title = "GAME OVER",
-        text = "[b][color=" .. hex_color .. "]" .. winner:upper() .. " WINS![/color][/b]\n\n" .. reason,
+        title = "FINAL RESULTS",
+        text = display_text,
         resizable = false,
-        countdown = 10, -- Auto-close after 10 seconds
-        no_multiple_tag = "game_over"
+        countdown = 15, -- Increased to 15 seconds
+        no_multiple_tag = "game_over",
+        minimum_size = Vector2(400, 300)
     }
 
     GAME_OVER_PANEL_NAME = create_panel(game_over_config)
@@ -778,17 +789,8 @@ end
 function show_next_game_countdown(countdown_time)
     set_label({
         name = "_finding_liar_timer",
-        text = string.format("%d - Next mini game", countdown_time),
-        font_color = Color(0, 0.8, 1, 1) -- Blue color for countdown
-    })
-end
-
--- Update next game countdown
-function update_next_game_countdown(countdown_time)
-    set_label({
-        name = "_finding_liar_timer",
-        text = string.format("%d - Next mini game", countdown_time),
-        font_color = Color(0, 0.8, 1, 1) -- Blue color for countdown
+        text = string.format("%d - Next game", countdown_time),
+        font_color = Color(1, 0.8, 0, 1) -- Yellow color for countdown
     })
 end
 
@@ -802,72 +804,8 @@ function show_initial_countdown(countdown_time)
     set_label({
         name = "_finding_liar_timer",
         text = string.format("%d - Game starting", countdown_time),
-        font_color = Color(0, 1, 0, 1) -- Green color for initial countdown
+        font_color = Color(1, 0.8, 0, 1) -- Yellow color for initial countdown
     })
-end
-
--- Update initial countdown
-function update_initial_countdown(countdown_time)
-    set_label({
-        name = "_finding_liar_timer",
-        text = string.format("%d - Game starting", countdown_time),
-        font_color = Color(0, 1, 0, 1) -- Green color for initial countdown
-    })
-end
-
--- Hide initial countdown
-function hide_initial_countdown()
-    -- Status will be updated by manager
-end
-
--- Show participation vote to specific players (network function)
-function show_participation_vote_to_players_CLIENT(sender_id, vote_duration)
-    local vote_config = {
-        title = "🎯 Join Finding Liar Game?",
-        text = "[b]Do you want to join the Finding Liar game?[/b]\n\n" ..
-            "[color=#ffaa44]Since you are below the red line, joining is optional.[/color]\n" ..
-            "Each player decides for themselves!\n\n" ..
-            "[color=#aaaaaa]Minimum 3 total players needed to start.[/color]",
-        resizable = false,
-        close = false,
-        no_multiple_tag = "liar_participation_vote",
-        countdown = vote_duration,
-        offset_ratio = Vector2(1, 1) -- Center screen
-    }
-
-    local vote_panel = create_panel(vote_config)
-
-    -- Add YES button
-    add_button_to_panel(vote_panel, {
-        text = "YES - Join Game",
-        entity_name = "-finding_liar_ui",
-        function_name = "submit_participation_vote",
-        extra_args = { vote_yes = true },
-        color = Color(0, 1, 0, 1), -- Green
-        is_vertical = false
-    })
-
-    -- Add NO button
-    add_button_to_panel(vote_panel, {
-        text = "NO - Skip Game",
-        entity_name = "-finding_liar_ui",
-        function_name = "submit_participation_vote",
-        extra_args = { vote_yes = false },
-        color = Color(1, 0, 0, 1), -- Red
-        is_vertical = false
-    })
-end
-
--- Handle participation vote submission
-function submit_participation_vote(args)
-    local vote_yes = args.extra_args.vote_yes
-    local panel_name = args.panel_name
-
-    -- Close the voting panel
-    close_panel(panel_name)
-
-    -- Send vote to position detector via network function
-    run_network_function("-liar_position_detector", "handle_participation_vote_HOST", { vote_yes })
 end
 
 -- Update status display (called by manager)
@@ -875,6 +813,7 @@ function update_status_display(status_text)
     set_label({
         name = "_finding_liar_timer",
         text = status_text,
+        font_color = Color(1, 0.8, 0, 1)
     })
 end
 
@@ -886,7 +825,7 @@ end
 -- Show voting info for above players (network function)
 function show_voting_info_for_above_CLIENT(sender_id, vote_duration)
     local info_config = {
-        title = "📊 Finding Liar - Voting in Progress",
+        title = "📊 Voting in Progress",
         text = "[b]Players below the red line are voting to join the game.[/b]\n\n" ..
             "[color=#66ff66]You are above the line and will automatically join.[/color]\n\n" ..
             "[color=#ffaa44]Waiting for below players to decide...[/color]\n\n",

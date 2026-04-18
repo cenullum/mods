@@ -14,7 +14,6 @@ end
 
 -- Game state variables
 game_active = false
-game_timer_duration = 300 -- 5 minutes in seconds
 game_timer_remaining = 0
 next_game_countdown = 0
 countdown_active = false
@@ -189,7 +188,8 @@ function shuffle_table(t)
 end
 
 -- Network function to start game for specific client (secure - role-specific data)
-function start_game_CLIENT(sender_id, time_limit, user_role, correct_word, word_options, liar_count, innocent_count, category_name)
+function start_game_CLIENT(sender_id, time_limit, user_role, correct_word, word_options, liar_count, innocent_count,
+                           category_name)
     game_active = true
     game_timer_remaining = time_limit
 
@@ -202,8 +202,6 @@ function start_game_CLIENT(sender_id, time_limit, user_role, correct_word, word_
     elseif user_role == "liar" then
         run_function("-finding_liar_ui", "show_liar_info", { word_options, category_name })
     end
-
-    add_to_chat("[color=#ff8066][b]Finding Liar game started![/b][/color]", false)
 end
 
 -- Handle liar word selection
@@ -215,16 +213,27 @@ function liar_select_word_HOST(sender_id, selected_word_guess)
         return
     end
 
+    -- Get all liars names
+    local liars = {}
+    for _, u in pairs(users) do
+        if u.role == "liar" then
+            table.insert(liars, u.name)
+        end
+    end
+    local liars_names = table.concat(liars, ", ")
+
     -- Check if guess is correct
     local is_correct = (selected_word_guess == selected_word)
 
     if is_correct then
         -- Liar wins - send to all clients
-        run_network_function(name, "end_game_ALL", { "liar", "The liar correctly guessed the word: " .. selected_word })
+        run_network_function(name, "end_game_ALL",
+            { "liar", "The liar correctly guessed the word!", liars_names, selected_word })
     else
         -- Liar loses - send to all clients
-        run_network_function(name, "end_game_ALL",
-            { "innocent", "The liar guessed wrong! The word was: " .. selected_word })
+        local reason = "The liar guessed [b]" ..
+            selected_word_guess .. "[/b], but the correct word was [b]" .. selected_word .. "[/b]!"
+        run_network_function(name, "end_game_ALL", { "innocent", reason, liars_names, selected_word })
     end
 end
 
@@ -363,7 +372,7 @@ end
 function end_vote_timeout(args)
     if not active_vote then return end
 
-    add_to_chat("[color=#ffaa44][b]Vote timed out! No elimination.[/b][/color]", true)
+
 
     -- Close vote panels on all clients
     run_network_function(name, "close_vote_panel_ALL", {})
@@ -386,22 +395,32 @@ function resolve_vote()
         -- Vote passed - eliminate user
         users[target_id].is_alive = false
 
+        -- Get all liars names for game over info
+        local liars = {}
+        for _, u in pairs(users) do
+            if u.role == "liar" then
+                table.insert(liars, u.name)
+            end
+        end
+        local liars_names = table.concat(liars, ", ")
+
         local target_role = users[target_id].role
         if target_role == "liar" then
             -- Check if all liars are eliminated
             if count_alive_liars() == 0 then
                 -- Send to all clients
-                run_network_function(name, "end_game_ALL", { "innocent", "All liars have been eliminated!" })
+                run_network_function(name, "end_game_ALL",
+                    { "innocent", "All liars have been eliminated!", liars_names, selected_word })
             else
                 run_network_function(name, "player_eliminated_ALL", { target_name, "liar", false })
             end
         else
             -- Innocent was eliminated - liars win
-            run_network_function(name, "end_game_ALL", { "liar", "An innocent player was eliminated!" })
+            run_network_function(name, "end_game_ALL",
+                { "liar", "An innocent player was eliminated!", liars_names, selected_word })
         end
     else
         -- Vote failed
-        add_to_chat("[color=#ffaa44][b]Vote against " .. target_name .. " failed![/b][/color]", true)
     end
 
     active_vote = nil
@@ -435,7 +454,14 @@ function update_game_timer(args)
 
     if args.is_last_iteration then
         -- Time's up - liars win
-        run_network_function(name, "end_game_ALL", { "liar", "Time is up! The liars win!" })
+        local liars = {}
+        for _, u in pairs(users) do
+            if u.role == "liar" then
+                table.insert(liars, u.name)
+            end
+        end
+        local liars_names = table.concat(liars, ", ")
+        run_network_function(name, "end_game_ALL", { "liar", "Time is up!", liars_names, selected_word })
         return
     end
 
@@ -451,24 +477,20 @@ end
 
 -- Network function to handle user elimination
 function player_eliminated_ALL(sender_id, user_name, role, game_over)
-    add_to_chat("[color=#ff4444][b]" .. user_name .. " has been eliminated![/b][/color]", false)
     if not game_over then
         run_function("-finding_liar_ui", "refresh_user_list", {})
     end
 end
 
 -- End game
-function end_game_ALL(sender_id, winner, reason)
+function end_game_ALL(sender_id, winner, reason, liars_names, correct_word)
     game_active = false
 
     if IS_HOST then
         stop_timer("finding_liar_game_timer")
     end
 
-    add_to_chat("[color=#66ff66][b]Game Over! " .. winner .. " wins![/b][/color]", false)
-    add_to_chat("[color=#aaaaaa]" .. reason .. "[/color]", false)
-
-    run_function("-finding_liar_ui", "show_game_over", { winner, reason })
+    run_function("-finding_liar_ui", "show_game_over", { winner, reason, liars_names, correct_word })
 
     -- Close game after a delay
     if IS_HOST then
@@ -476,13 +498,13 @@ function end_game_ALL(sender_id, winner, reason)
             timer_id = "close_game_delay",
             entity_name = name,
             function_name = "close_game_delayed",
-            wait_time = 11.0,
-            duration = 11.0
+            wait_time = 16.0,
+            duration = 16.0
         })
     end
 
     -- Update status display
-    run_network_function(name, "update_finding_liar_status_ALL", {})
+    run_function(name, "update_status_display", {})
 end
 
 -- Close game with delay
@@ -501,7 +523,7 @@ function close_game_ALL(sender_id)
     end
 
     -- Update status display
-    run_network_function(name, "update_finding_liar_status_ALL", {})
+    run_function(name, "update_status_display", {})
 end
 
 -- Network function to close vote panel on client
@@ -581,7 +603,7 @@ end
 function update_next_game_countdown_ALL(sender_id, countdown_time)
     next_game_countdown = countdown_time
 
-    run_function("-finding_liar_ui", "update_next_game_countdown", { countdown_time })
+    run_function("-finding_liar_ui", "show_next_game_countdown", { countdown_time })
 end
 
 -- Network function to hide next game countdown
@@ -590,7 +612,7 @@ function hide_next_game_countdown_ALL(sender_id)
     next_game_countdown = 0
 
     -- Update status display after hiding countdown
-    run_network_function(name, "update_finding_liar_status_ALL", {})
+    run_function(name, "update_status_display", {})
 end
 
 -- Start initial countdown when enough users join
@@ -672,7 +694,7 @@ end
 function update_initial_countdown_ALL(sender_id, countdown_time)
     initial_countdown = countdown_time
 
-    run_function("-finding_liar_ui", "update_initial_countdown", { countdown_time })
+    run_function("-finding_liar_ui", "show_initial_countdown", { countdown_time })
 end
 
 -- Network function to hide initial countdown
@@ -681,7 +703,7 @@ function hide_initial_countdown_ALL(sender_id)
     initial_countdown = 0
 
     -- Update status display after hiding countdown
-    run_network_function(name, "update_finding_liar_status_ALL", {})
+    run_function(name, "update_status_display", {})
 end
 
 -- HOST function to provide user data for UI updates
@@ -757,7 +779,6 @@ function check_user_role_for_action_HOST(sender_id, action_type, args)
 end
 
 function _on_user_disconnected(steam_id, nickname)
-    add_to_chat(nickname .. " disconnected.", false)
     -- Remove from connected users
     for i, id in ipairs(connected_users) do
         if id == steam_id then
@@ -769,7 +790,15 @@ function _on_user_disconnected(steam_id, nickname)
     -- If game is active and too few users remain
     if game_active and #connected_users < min_users then
         if IS_HOST then
-            run_network_function(name, "end_game_ALL", { "none", "Not enough users remaining!" })
+            local liars = {}
+            for _, u in pairs(users) do
+                if u.role == "liar" then
+                    table.insert(liars, u.name)
+                end
+            end
+            local liars_names = table.concat(liars, ", ")
+            run_network_function(name, "end_game_ALL",
+                { "none", "Not enough users remaining!", liars_names, selected_word })
         end
     end
 
@@ -844,7 +873,11 @@ end
 
 -- Update Finding Liar status display for all clients
 function update_finding_liar_status_ALL(sender_id)
-    local status_text = "Finding Liar\n"
+    update_status_display()
+end
+
+function update_status_display()
+    local status_text = ""
 
     if game_active then
         status_text = status_text .. "Game in progress..."
