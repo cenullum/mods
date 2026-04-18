@@ -15,7 +15,6 @@ function move_to_red_team(args)
         steam_id = _steam_id,
         channel_name = "team_red",
         parent_name = _steam_id,
-        proximity_length = 256.0,
         icon_offset = Vector2(0, -30)
     })
 end
@@ -28,7 +27,6 @@ function move_to_blue_team(args)
         steam_id = _steam_id,
         channel_name = "team_blue",
         parent_name = _steam_id,
-        proximity_length = 256.0,
         icon_offset = Vector2(0, -30)
     })
 end

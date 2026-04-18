@@ -241,7 +241,7 @@ function create_user(sender_id, player_color,pos)
         set_voice_channel({
             steam_id = name,
             channel_name= "global",
-            proximity_length=0,
+            proximity_length=512,
         })
 
     end
