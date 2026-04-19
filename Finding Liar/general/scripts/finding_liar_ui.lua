@@ -54,10 +54,10 @@ function show_words_panel()
         text = "Waiting for role assignment...",
         resizable = true,
         is_scrollable = true,
-        minimum_size = Vector2(250, 460), -- Increased height for better visibility
+        minimum_size = Vector2(250, 460),
         close = false,
         no_multiple_tag = "finding_liar_words",
-        offset_ratio = Vector2(0, 0) -- Center-right, slightly above center (shifted left)
+        offset_ratio = Vector2(0, 0)
     }
 
     WORDS_PANEL_NAME = create_panel(words_panel_config)
@@ -220,7 +220,7 @@ end
 -- Show word options for innocent players (with correct word highlighted)
 function show_word_options_for_innocent(words, correct_word, category_name)
     if not is_panel_exists(WORDS_PANEL_NAME) then
-        return -- Panel doesn't exist yet
+        show_words_panel()
     end
 
     -- Limit to 8 words for display
@@ -256,7 +256,7 @@ end
 -- Show word options for liar (clickable)
 function show_word_options_for_liar(words, category_name)
     if not is_panel_exists(WORDS_PANEL_NAME) then
-        return -- Panel doesn't exist yet
+        show_words_panel()
     end
 
     -- Limit to 15 words for display
@@ -446,7 +446,8 @@ function show_vote_panel(initiator_name, target_name, target_id, votes_needed, v
     local vote_config = {
         title = "VOTE IN PROGRESS",
         text = "[center][b][font_size=20]" .. initiator_name .. " → " .. target_name .. "[/font_size][/b]\n\n" ..
-            "YES: [color=#66ff66]1[/color] / NO: [color=#ff4444]0[/color] (Needed: " .. math.floor(votes_needed or 0) .. ")\n\n" ..
+            "YES: [color=#66ff66]1[/color] / NO: [color=#ff4444]0[/color] (Needed: " ..
+            math.floor(votes_needed or 0) .. ")\n\n" ..
             "[color=#ffff00][b]Is " .. target_name .. " the liar?[/b][/color]\n\n" ..
             vote_status_text .. "[/center]",
         resizable = false,
@@ -558,11 +559,6 @@ function update_vote_progress_CLIENT(sender_id, votes_yes, votes_no, votes_neede
     update_panel_settings(VOTE_PANEL_NAME, {
         text = updated_text
     })
-
-    -- Remove buttons if user has voted
-    if current_vote_info.user_voted then
-        update_vote_panel_without_buttons()
-    end
 end
 
 -- Update panel to show user vote status immediately
@@ -590,23 +586,6 @@ function update_vote_panel_with_user_status()
     update_panel_settings(VOTE_PANEL_NAME, {
         text = updated_text
     })
-
-    -- Remove voting buttons since user has voted
-    update_vote_panel_without_buttons()
-end
-
--- Recreate vote panel without voting buttons
-function update_vote_panel_without_buttons()
-    if not is_panel_exists(VOTE_PANEL_NAME) then
-        return
-    end
-
-    -- Panel text is already updated, just remove the buttons by recreating panel
-    -- This is simpler than trying to remove specific buttons
-    local current_text = "" -- Will be updated by next update_vote_progress_CLIENT call
-
-    -- Just keep the panel as is - the buttons will become non-functional
-    -- since user can't vote twice anyway due to server-side checking
 end
 
 -- Show voting panel for voted person (no voting buttons, just info)
@@ -633,7 +612,8 @@ function show_vote_target_panel(initiator_name, target_name, target_id, votes_ne
         title = "⚠️ YOU ARE BEING VOTED",
         text = "[center][b][font_size=20][color=#ff4444]⚠️ YOU ARE BEING VOTED[/color][/font_size][/b]\n\n" ..
             "[font_size=18]" .. initiator_name .. " → YOU[/font_size]\n\n" ..
-            "YES: [color=#66ff66]1[/color] / NO: [color=#ff4444]0[/color] (Needed: " .. math.floor(votes_needed or 0) .. ")\n\n" ..
+            "YES: [color=#66ff66]1[/color] / NO: [color=#ff4444]0[/color] (Needed: " ..
+            math.floor(votes_needed or 0) .. ")\n\n" ..
             "[color=#ffff00][b]Is " .. target_name .. " the liar?[/b][/color]\n\n" ..
             "Defend yourself in chat![/center]",
         resizable = false,
@@ -734,7 +714,7 @@ function show_game_over(winner, reason, liars_names, correct_word)
         hex_color .. "]" .. winner_title .. "[/color][/font_size][/b]\n\n" ..
         "[font_size=18]" .. reason .. "[/font_size]\n\n" ..
         "----------------------------------\n" ..
-        "[b]Correct Word:[/b] [color=#66ff66]" .. (correct_word or "???") .. "[/color]\n" ..
+        "[b]Correct Word:[/b] [b][color=#ffff00]" .. (correct_word or "???") .. "[/color][/b]\n" ..
         "[b]The Liars:[/b] [color=#ff6666]" .. (liars_names or "???") .. "[/color][/center]"
 
     local game_over_config = {
@@ -750,7 +730,14 @@ function show_game_over(winner, reason, liars_names, correct_word)
 end
 
 -- Close game interface
-function close_game_interface()
+function close_game_interface(game_id)
+    local current_game_id = get_value("-finding_liar_manager", "current_game_id") or 0
+    if game_id and game_id > 0 and current_game_id > 0 then
+        if game_id < current_game_id then
+            return -- Ignore old close commands from previous games
+        end
+    end
+
     -- Hide view elements (only timer remains)
 
 

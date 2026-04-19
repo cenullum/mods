@@ -20,6 +20,7 @@ countdown_active = false
 initial_countdown = 0
 initial_countdown_active = false
 liar_blocked = false
+current_game_id = 0
 
 -- User data (server-side only)
 users = {}           -- {steam_id = {name="", role="innocent/liar", is_alive=true}}
@@ -35,7 +36,7 @@ vote_threshold = 0
 
 -- Game settings
 min_users = 3
-game_time_limit = 300 -- 5 minutes
+game_time_limit = 10 -- 5 minutes
 
 -- Auto-vote settings
 auto_vote_timer_active = false
@@ -83,6 +84,7 @@ function initialize_game()
     game_timer_remaining = game_time_limit
     users = {}
     active_vote = nil
+    current_game_id = current_game_id + 1
 
     -- Stop auto-vote timer if active
     if auto_vote_timer_active then
@@ -146,7 +148,8 @@ function initialize_game()
                 word_options,
                 liar_count,
                 innocent_count,
-                category_name
+                category_name,
+                current_game_id
             }, steam_id)
         elseif user_data.role == "liar" then
             -- Send liar info only to liar users
@@ -157,7 +160,8 @@ function initialize_game()
                 word_options,
                 liar_count,
                 innocent_count,
-                category_name
+                category_name,
+                current_game_id
             }, steam_id)
         end
     end
@@ -189,7 +193,14 @@ end
 
 -- Network function to start game for specific client (secure - role-specific data)
 function start_game_CLIENT(sender_id, time_limit, user_role, correct_word, word_options, liar_count, innocent_count,
-                           category_name)
+                           category_name, game_id)
+    local manager_game_id = get_value("", name, "current_game_id") or 0
+    if game_id and game_id > 0 and manager_game_id > 0 then
+        if game_id < manager_game_id then
+            return -- Ignore old start commands
+        end
+    end
+
     game_active = true
     game_timer_remaining = time_limit
 
@@ -232,7 +243,7 @@ function liar_select_word_HOST(sender_id, selected_word_guess)
     else
         -- Liar loses - send to all clients
         local reason = "The liar guessed [b]" ..
-            selected_word_guess .. "[/b], but the correct word was [b]" .. selected_word .. "[/b]!"
+            selected_word_guess .. "[/b], but the correct word was [color=#ffff00][b]" .. selected_word .. "[/b][/color]!"
         run_network_function(name, "end_game_ALL", { "innocent", reason, liars_names, selected_word })
     end
 end
@@ -509,13 +520,13 @@ end
 
 -- Close game with delay
 function close_game_delayed()
-    run_network_function(name, "close_game_ALL", {})
+    run_network_function(name, "close_game_ALL", { current_game_id })
 end
 
 -- Network function to close game
-function close_game_ALL(sender_id)
+function close_game_ALL(sender_id, game_id)
     game_active = false
-    run_function("-finding_liar_ui", "close_game_interface", {})
+    run_function("-finding_liar_ui", "close_game_interface", { game_id })
 
     -- Start next game countdown
     if IS_HOST then
@@ -574,7 +585,7 @@ function update_next_game_countdown()
 
     if next_game_countdown > 0 then
         -- Update countdown display for all clients
-        run_network_function(name, "update_next_game_countdown_ALL", { next_game_countdown })
+        run_network_function(name, "show_next_game_countdown_ALL", { next_game_countdown })
     else
         -- Countdown finished, start new game
         countdown_active = false
@@ -593,7 +604,6 @@ end
 
 -- Network function to show next game countdown
 function show_next_game_countdown_ALL(sender_id, countdown_time)
-    countdown_active = true
     next_game_countdown = countdown_time
 
     run_function("-finding_liar_ui", "show_next_game_countdown", { countdown_time })
@@ -658,7 +668,7 @@ function update_initial_countdown()
 
     if initial_countdown > 0 then
         -- Update countdown display for all clients
-        run_network_function(name, "update_initial_countdown_ALL", { initial_countdown })
+        run_network_function(name, "show_initial_countdown_ALL", { initial_countdown })
     else
         -- Countdown finished, start game
         initial_countdown_active = false
@@ -685,13 +695,6 @@ end
 -- Network function to show initial countdown
 function show_initial_countdown_ALL(sender_id, countdown_time)
     initial_countdown_active = true
-    initial_countdown = countdown_time
-
-    run_function("-finding_liar_ui", "show_initial_countdown", { countdown_time })
-end
-
--- Network function to update initial countdown
-function update_initial_countdown_ALL(sender_id, countdown_time)
     initial_countdown = countdown_time
 
     run_function("-finding_liar_ui", "show_initial_countdown", { countdown_time })
