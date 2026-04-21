@@ -36,7 +36,7 @@ vote_threshold = 0
 
 -- Game settings
 min_users = 3
-game_time_limit = 10 -- 5 minutes
+game_time_limit = 300 -- 5 minutes
 
 -- Auto-vote settings
 auto_vote_timer_active = false
