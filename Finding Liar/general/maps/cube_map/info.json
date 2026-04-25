@@ -16,5 +16,12 @@
         "shadow_length": 64,
         "shadow_blur": 2.7
     },
-    "background_color": "(0.3728, 0.9122, 0.8811, 1)"
+    "background_color": "(0.3728, 0.9122, 0.8811, 1)",
+    "vignette_effect": {
+        "visible": false,
+        "smoothness": 0.3,
+        "strength": 1,
+        "color": "(0, 0, 0, 1)",
+        "radius": 0.5
+    }
 }

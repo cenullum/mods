@@ -41,7 +41,6 @@ function refresh_status_label(state, charging, cooldown)
             status = "Hook Firing...\n@key_7@/@key_12@ Cancel"
         end
     end
-    print("refresh_status_label", header .. status)
     set_value("", "_hook_status_label", "text", header .. status)
 end
 

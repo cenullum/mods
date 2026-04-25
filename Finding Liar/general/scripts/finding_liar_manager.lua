@@ -243,7 +243,8 @@ function liar_select_word_HOST(sender_id, selected_word_guess)
     else
         -- Liar loses - send to all clients
         local reason = "The liar guessed [b]" ..
-            selected_word_guess .. "[/b], but the correct word was [color=#ffff00][b]" .. selected_word .. "[/b][/color]!"
+            selected_word_guess ..
+            "[/b], but the correct word was [color=#ffff00][b]" .. selected_word .. "[/b][/color]!"
         run_network_function(name, "end_game_ALL", { "innocent", reason, liars_names, selected_word })
     end
 end
@@ -837,13 +838,9 @@ function table_contains(table, value)
     return false
 end
 
+--don't send run_network_function this steam_id yet in _on_user_connected
 function _on_user_connected(steam_id, nickname)
     add_to_chat(nickname .. " connected.", false)
-
-    -- Update status display for all clients
-    if IS_HOST then
-        run_network_function(name, "update_finding_liar_status_ALL", {})
-    end
 end
 
 -- Initialize connected users on script load
