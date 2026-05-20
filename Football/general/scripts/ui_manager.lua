@@ -267,7 +267,7 @@ function refresh_scoreboard(is_create_if_not_exist)
             is_scrollable = true,
             name = SCORE_PANEL_NAME,
             no_multiple_tag = "football_scoreboard",
-            minimum_size = Vector2(300, 200) --default is Vector2(300,150)
+            minimum_size = Vector2(300, 400) --default is Vector2(300,150)
         }
         SCORE_PANEL_NAME = create_panel(settings)
     end

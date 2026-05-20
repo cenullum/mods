@@ -258,19 +258,22 @@ function create_banned_users_table(panel_name)
         table_data[vector2_to_string(Vector2(0, row))] = {
             text = nickname,
             color = "#FF8888",
-            steam_id = steam_id
+            steam_id = steam_id,
+            nickname = nickname
         }
 
         table_data[vector2_to_string(Vector2(1, row))] = {
             text = remaining,
             color = "#FF8888",
-            steam_id = steam_id
+            steam_id = steam_id,
+            nickname = nickname
         }
 
         table_data[vector2_to_string(Vector2(2, row))] = {
             text = reason,
             color = "#FF8888",
-            steam_id = steam_id
+            steam_id = steam_id,
+            nickname = nickname
         }
     end
 
@@ -290,7 +293,7 @@ function on_connected_user_clicked(args)
     end
 
     local steam_id = cell_data.steam_id
-    local nickname = connected_users[steam_id].nickname
+    local nickname = connected_users[steam_id] and connected_users[steam_id].nickname or "Unknown"
 
     show_user_action_panel(steam_id, nickname)
 end
@@ -302,9 +305,10 @@ function on_banned_user_clicked(args)
     end
 
     local steam_id = cell_data.steam_id
+    local nickname = cell_data.nickname or "Unknown User"
     local ban_info = get_ban_info(steam_id)
 
-    show_unban_panel(steam_id, ban_info)
+    show_unban_panel(steam_id, ban_info, nickname)
 end
 
 function show_user_action_panel(steam_id, nickname)
@@ -380,7 +384,6 @@ function show_kick_panel(args)
         text = "Reason",
         default_value = "",
         entity_name = name,
-        function_name = "on_kick_reason_changed",
         extra_args = { steam_id = steam_id }
     })
 
@@ -395,16 +398,11 @@ function show_kick_panel(args)
     })
 end
 
-function on_kick_reason_changed(args)
-    local steam_id = args.extra_args.steam_id
-    temp_data[steam_id].kick_reason = args.Reason or ""
-end
-
 function execute_kick(args)
-    local steam_id = args.extra_args.steam_id
-    local nickname = args.extra_args.nickname
-    local reason = temp_data[steam_id].kick_reason or ""
-
+    local steam_id = args.extra_args and args.extra_args.steam_id
+    local nickname = args.extra_args and args.extra_args.nickname or "Unknown"
+    
+    local reason = args.Reason or ""
     if reason == "" then
         reason = "No reason provided"
     end
@@ -414,6 +412,10 @@ function execute_kick(args)
         "confirm_kick",
         "cancel_action"
     )
+
+    if not temp_data[steam_id] then
+        temp_data[steam_id] = {}
+    end
 
     temp_data[steam_id].pending_action = {
         type = "kick",
@@ -459,7 +461,6 @@ function show_ban_panel(args)
         text = "Duration",
         options = { "1 Hour", "6 Hours", "12 Hours", "1 Day", "1 Week", "1 Month", "Permanent" },
         entity_name = name,
-        function_name = "on_ban_duration_changed",
         extra_args = { steam_id = steam_id }
     })
 
@@ -468,7 +469,6 @@ function show_ban_panel(args)
         text = "Reason",
         default_value = "",
         entity_name = name,
-        function_name = "on_ban_reason_changed",
         extra_args = { steam_id = steam_id }
     })
 
@@ -483,27 +483,27 @@ function show_ban_panel(args)
     })
 end
 
-function on_ban_duration_changed(args)
-    local steam_id = args.extra_args.steam_id
-    temp_data[steam_id].ban_duration = args.Duration
-end
-
-function on_ban_reason_changed(args)
-    local steam_id = args.extra_args.steam_id
-    temp_data[steam_id].ban_reason = args.Reason or ""
-end
-
 function execute_ban(args)
-    local steam_id = args.extra_args.steam_id
-    local nickname = args.extra_args.nickname
+    if not args then 
+        return 
+    end
+    
+    local steam_id = args.extra_args and args.extra_args.steam_id
+    local nickname = args.extra_args and args.extra_args.nickname or "Unknown"
 
-    if not temp_data[steam_id] then return end
+    if not steam_id then 
+        return 
+    end
 
-    local duration_text = temp_data[steam_id].ban_duration or "1 Hour"
-    local reason = temp_data[steam_id].ban_reason or ""
+    local duration_text = args.Duration or "1 Hour"
+    local reason = args.Reason or ""
 
     if reason == "" then
         reason = "No reason provided"
+    end
+    
+    if not temp_data[steam_id] then
+        temp_data[steam_id] = {}
     end
 
     local duration_seconds = get_duration_seconds(duration_text)
@@ -519,7 +519,7 @@ function execute_ban(args)
         duration = duration_seconds,
         reason = reason
     }
-
+    
     close_panel(args.panel_name)
 end
 
@@ -537,8 +537,8 @@ function confirm_ban(args)
     close_panel(args.panel_name)
 end
 
-function show_unban_panel(steam_id, ban_info)
-    local nickname = ban_info.nickname or "Unknown User"
+function show_unban_panel(steam_id, ban_info, nickname)
+    local nickname = nickname or (ban_info and ban_info.nickname) or "Unknown User"
 
     local settings = {
         text = "Unban " .. nickname .. "?",
