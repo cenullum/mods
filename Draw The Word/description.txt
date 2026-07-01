@@ -1,0 +1,14 @@
+Draw The Word - a co-op draw & guess party game.
+
+Players take turns drawing a secret word on a shared board while everyone else
+races to guess it in chat. The answer is never spoiled: a correct guess is
+announced by name without showing the word, and a near-miss is whispered only
+to you.
+Guess fast for more points; the drawer earns a bonus for every player who gets
+it. Reveal optional letter hints (at the cost of points), report an unfair
+drawer to skip their turn, and when everyone has had a turn the top 3 take the
+podium. Type /rules in chat for the full guide.
+
+Minimum 2 players. Built on the engine's paintable-canvas system: only the
+current drawer can paint the board (server-authoritative), everyone else just
+watches.
