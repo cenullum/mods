@@ -1,22 +1,39 @@
 {
     "map_name": "44x32 FootballMap",
-    "collision": [
-        "(3, 0)"
-    ],
-    "one_way": [],
+    "collision": {
+        "0": [
+            "(3, 0)"
+        ]
+    },
+    "one_way": {
+
+    },
     "shadow": {
 
     },
-    "tileset": "/general/images/football_tilemap.png",
+    "tilesets": [
+        {
+            "id": 0,
+            "path": "/general/images/football_tilemap.png",
+            "autotile": false
+        }
+    ],
     "tile_size": "(32, 32)",
     "chunk_size": 32,
     "lobby_type": 38,
     "shadow_effect": {
         "visible": true,
         "shadow_color": "(0.0039, 0.0039, 0.0157, 0.7608)",
-        "shadow_angle": 145,
-        "shadow_length": 64,
+        "shadow_angle": 145.0,
+        "shadow_length": 64.0,
         "shadow_blur": 2.795
     },
-    "background_color": "(0.3, 0.3, 0.3, 1)"
+    "background_color": "(0.3, 0.3, 0.3, 1.0)",
+    "vignette_effect": {
+        "visible": false,
+        "smoothness": 0.3,
+        "strength": 1.0,
+        "color": "(0.0, 0.0, 0.0, 1.0)",
+        "radius": 0.5
+    }
 }

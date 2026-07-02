@@ -1,0 +1,354 @@
+{
+	"puzzles": [
+		{
+			"file": "5x5_fox.png",
+			"name": "Fox",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_hat.png",
+			"name": "Hat",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_icecream.png",
+			"name": "Icecream",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_key.png",
+			"name": "Key",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_nine.png",
+			"name": "Nine",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_omelette.png",
+			"name": "Omelette",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_one.png",
+			"name": "One",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_pizza.png",
+			"name": "Pizza",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_sun.png",
+			"name": "Sun",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "5x5_tree.png",
+			"name": "Tree",
+			"size_label": "5x5",
+			"width": 5,
+			"height": 5
+		},
+		{
+			"file": "10x10_banana.png",
+			"name": "Banana",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_bee.png",
+			"name": "Bee",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_bomb.png",
+			"name": "Bomb",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_brush.png",
+			"name": "Brush",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_bucket.png",
+			"name": "Bucket",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_butterfly.png",
+			"name": "Butterfly",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_eagle.png",
+			"name": "Eagle",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_flower.png",
+			"name": "Flower",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_frog.png",
+			"name": "Frog",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_ghost.png",
+			"name": "Ghost",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_giftbox.png",
+			"name": "Giftbox",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_monkey.png",
+			"name": "Monkey",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_mushroom.png",
+			"name": "Mushroom",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_palm.png",
+			"name": "Palm",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_ship.png",
+			"name": "Ship",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_snowman.png",
+			"name": "Snowman",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_tree.png",
+			"name": "Tree",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_umbrella.png",
+			"name": "Umbrella",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_unicorn.png",
+			"name": "Unicorn",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "10x10_yinyang.png",
+			"name": "Yinyang",
+			"size_label": "10x10",
+			"width": 10,
+			"height": 10
+		},
+		{
+			"file": "15x15_arrow.png",
+			"name": "Arrow",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_bow.png",
+			"name": "Bow",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_cherry.png",
+			"name": "Cherry",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_diamond.png",
+			"name": "Diamond",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_eight.png",
+			"name": "Eight",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_fish.png",
+			"name": "Fish",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_hamburger.png",
+			"name": "Hamburger",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_heart.png",
+			"name": "Heart",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_octopus.png",
+			"name": "Octopus",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_ostrich.png",
+			"name": "Ostrich",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_panda.png",
+			"name": "Panda",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_pineapple.png",
+			"name": "Pineapple",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_pumpkin.png",
+			"name": "Pumpkin",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_seven.png",
+			"name": "Seven",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_six.png",
+			"name": "Six",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_sock.png",
+			"name": "Sock",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_tiger.png",
+			"name": "Tiger",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_tractor.png",
+			"name": "Tractor",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_watermelon.png",
+			"name": "Watermelon",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		},
+		{
+			"file": "15x15_yellow_jacket.png",
+			"name": "Yellow Jacket",
+			"size_label": "15x15",
+			"width": 15,
+			"height": 15
+		}
+	]
+}

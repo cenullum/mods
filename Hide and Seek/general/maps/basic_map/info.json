@@ -1,5 +1,5 @@
 {
-    "map_name": "platform_1",
+    "map_name": "basic_map",
     "collision": {
 
     },
@@ -9,18 +9,24 @@
     "shadow": {
 
     },
-    "tilesets": [],
+    "tilesets": [
+        {
+            "id": 0,
+            "path": "/general/images/tileset-export.png",
+            "autotile": true
+        }
+    ],
     "tile_size": "(32, 32)",
     "chunk_size": 32,
-    "lobby_type": 35,
+    "lobby_type": 7,
     "shadow_effect": {
         "visible": true,
-        "shadow_color": "(0.0039, 0.0039, 0.0157, 0.2863)",
-        "shadow_angle": 123.0,
-        "shadow_length": 143.0,
+        "shadow_color": "(0.0039, 0.0039, 0.0157, 0.7608)",
+        "shadow_angle": 145.0,
+        "shadow_length": 64.0,
         "shadow_blur": 2.795
     },
-    "background_color": "(0.3212, 0.8477, 0.823, 1.0)",
+    "background_color": "(0.3, 0.3, 0.3, 1.0)",
     "vignette_effect": {
         "visible": false,
         "smoothness": 0.3,

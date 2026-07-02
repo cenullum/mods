@@ -1,12 +1,16 @@
 {
     "map_name": "basic_map",
-    "collision": [],
-    "one_way": [],
+    "collision": {
+
+    },
+    "one_way": {
+
+    },
     "shadow": {
 
     },
-    "tileset": "",
-    "tile_size": "(32.0, 32.0)",
+    "tilesets": [],
+    "tile_size": "(32, 32)",
     "chunk_size": 32,
     "lobby_type": 0,
     "shadow_effect": {
