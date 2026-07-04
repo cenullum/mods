@@ -554,6 +554,15 @@ function is_point_on_canvas(image_name, world_pos, parent_name) end
 ---  alpha_blend, predict, max_undo, brush_size, size }.
 function get_paint_info(image_name, parent_name) end
 
+--- Read the on-screen colour of the rendered world at a world-space position by
+--- sampling the last drawn viewport frame. Unlike get_paint_color (which reads a
+--- specific canvas) this samples whatever is actually visible there — tiles,
+--- sprites, background — so a painter can eyedrop colours off nearby props to
+--- blend in. The painting panel uses this for its off-canvas eyedropper.
+---@param world_pos Vector2 World-space position (e.g. inputs.stick_2).
+---@return Color The composited on-screen colour, or Color(0,0,0,0) if off-screen.
+function get_world_color(world_pos) end
+
 --- Open the READY-MADE painting panel for a paintable image inside a normal
 --- popup. No draw code or buttons needed on your side: opening it is enough for
 --- synced painting plus brush/eraser/eyedropper/bucket/line/circle/square,
@@ -571,6 +580,10 @@ function get_paint_info(image_name, parent_name) end
 ---  minimum_size? = Vector2,  -- popup minimum size. Default: (360,230)
 ---  color? = Color,           -- popup background colour
 ---  panel_name? = string,     -- explicit popup node name
+---  brush_min? = integer,     -- min brush-size slider value in px. Default: 1
+---  brush_max? = integer,     -- max brush-size slider value in px. Default: 64
+---  world_pick? = boolean,    -- eyedropper also samples world colours off the
+---                            --   canvas (see get_world_color). Default: true
 --- }
 ---@return string panel_name The popup name, or "" if the image is not paintable.
 function create_painting_panel(config) end
@@ -753,6 +766,18 @@ function set_background_color(color) end
 --- Get current background color.
 ---@return Color The background color.
 function get_background_color() end
+
+--- Set a repeating "ground" texture drawn behind everything in world space (it
+--- pans and zooms with the camera and tiles crisply at any zoom). Great for
+--- making the walkable floor look like ground instead of a flat colour, without
+--- placing tiles everywhere. Pass "" to clear it. This can also be set per-map in
+--- the in-game editor's Tile Maps / map settings ("Background Texture").
+---@param relative_path string Image path relative to the mod's general/images/ (no .png needed). "" clears it.
+function set_background_texture(relative_path) end
+
+--- Get the current background texture path (relative to general/images/), or "".
+---@return string
+function get_background_texture() end
 
 --- Set vignette visual effect settings.
 --- Config parameters:
@@ -1284,6 +1309,18 @@ function save_json(relative_path, data) end
 ---@return table Loaded data as a dictionary, or empty table {} on error or if file doesn't exist.
 function load_json(relative_path) end
 
+--- List the file names inside a folder of the current mod (sandboxed: the path is
+--- resolved under the mod folder and cannot contain ".."). Returns bare file names
+--- (NOT absolute paths) sorted alphabetically, so the result is identical on every
+--- peer — safe to index deterministically from a shared seed. Pass an extension
+--- (e.g. "png") to filter. Great for picking a random image from a folder you may
+--- add more files to later without touching code.
+--- Example: local names = get_file_names("general/images/items", "png")
+---@param relative_folder string Folder relative to the mod root. Cannot contain "..".
+---@param extension? string Extension filter without the dot (e.g. "png"). Default: "" (all files).
+---@return table Array of file name strings (sorted), or empty table {} if missing.
+function get_file_names(relative_folder, extension) end
+
 ---------------------------------------------------
 -- MAP/TILEMAP
 ---------------------------------------------------
@@ -1296,15 +1333,46 @@ function change_map(map_name) end
 ---@return table Array of map names.
 function get_map_list() end
 
---- Get tile ID at a map coordinate.
----@param tile_position Vector2 Tile coordinates (not world position).
----@return number Tile ID, or -1 if empty.
-function get_tile(tile_position) end
+--- Get the atlas coordinates of the tile at a map coordinate.
+---@param x number Tile X coordinate (not world position).
+---@param y number Tile Y coordinate.
+---@return Vector2 Atlas coordinates of the tile, or (-1, -1) if empty.
+function get_tile(x, y) end
 
---- Set tile at a map coordinate.
----@param tile_position Vector2 Tile coordinates.
----@param tile_id number Tile ID to place, or -1 to clear.
-function set_tile(tile_position, tile_id) end
+--- Set a tile at a map coordinate.
+--- `tileset_id` selects which tileset source (default 0 = first tileset). If that
+--- tileset has autotile enabled (via the editor's Tile Maps panel), `atlas_coords`
+--- is ignored and the correct 47-blob tile is chosen automatically from neighbours
+--- (and neighbouring tiles are re-fitted too).
+--- Pass `atlas_coords = Vector2(-1, -1)` to ERASE the cell (autotile neighbours are
+--- re-fitted around the hole — handy for carving a doorway/opening at runtime).
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+---@param atlas_coords Vector2 Atlas coordinates of the tile, or (-1,-1) to erase.
+---@param tileset_id? number Tileset source id (default 0).
+---@return boolean True on success, false if no tileset is loaded.
+function set_tile(x, y, atlas_coords, tileset_id) end
+
+--- Cast a 2D ray through the physics world (walls, entity bodies, areas) and
+--- return the first thing it hits. Server-authoritative games should raycast on
+--- the HOST from an entity's real position (clients only send aim intents).
+--- Config parameters:
+---   - from (Vector2, required): ray start in world space.
+---   - to (Vector2, optional): ray end. If omitted, uses direction + length.
+---   - direction (Vector2, optional): aim direction (used with length).
+---   - length (number, optional): ray length in px when using direction. Default: 128.
+---   - collision_mask (integer|table, optional): bitmask or array of layer numbers
+---       (1-32) to hit. Default: all layers.
+---   - exclude (table, optional): array of entity names whose bodies are ignored
+---       (e.g. the shooter, so the ray does not hit itself).
+---   - parent_name (string, optional): parent used to resolve 'exclude' names. Default: "".
+---   - collide_with_bodies (boolean, optional): Default: true.
+---   - collide_with_areas (boolean, optional): Default: false.
+---@param config table Raycast configuration dictionary.
+---@return table { hit (boolean), position (Vector2), normal (Vector2),
+---  collider (string entity/node name, "" on miss) }. On a miss, position is the
+---  ray end so you can still draw a full-length tracer.
+function raycast(config) end
 
 --- Convert map coordinates to world position.
 ---@param tile_position Vector2 Tile coordinates.
@@ -1337,9 +1405,15 @@ function distance_squared_to(a, b) end
 ---@return Vector2 Random position within polygon.
 function get_random_position_in_polygon(polygon_entity_name) end
 
---- Get current OS timestamp.
----@return table Dictionary with: year, month, day, hour, minute, second.
+--- Get the current OS time as a Unix timestamp (seconds since the epoch).
+--- NOTE: this returns an integer (NOT a date table). It always has.
+---@return integer Unix time in seconds (e.g. for timers, cooldowns, elapsed time).
 function get_os_time() end
+
+--- Explicit alias for get_os_time(): the current Unix time in seconds. Same value,
+--- clearer name. Use whichever reads better at the call site.
+---@return integer Unix time in seconds.
+function get_os_time_unix() end
 
 --- Convert string to Vector2.
 ---@param str string String representation like "100,200".

@@ -1,1 +1,19 @@
-This is a default mod description. 
+Hide and Seek - a top-down co-op game of disguise and pursuit.
+
+A random cave (rooms, corridors and scattered props) is generated from a seed the
+host picks, so everyone plays the exact same map. Players are split into two teams
+and swap sides after the first round.
+
+HIDERS paint their own 32x32 body to blend into the props around them. Hit "Paint
+Mode" to freeze and open the paint panel (brush 1-32, and the eyedropper can grab
+colours straight from the world). Use the Previous/Next/Yourself buttons to look at
+other hiders for inspiration. The later you're caught - or if you survive - the more
+points you score.
+
+SEEKERS start sealed in a room for a minute while the hiders scatter, then the room
+opens and the hunt begins. Left-click to fire a short ray toward your cursor (2s
+cooldown, walls block it). The faster you catch a hider, the more points you earn.
+Seekers show their Steam avatar, and can repaint their body too if they like.
+
+Score carries across both rounds, then a final table is shown and everyone votes on
+the next map. Same seed = same cave every time.
