@@ -1,0 +1,1900 @@
+{
+ "kind": "vn",
+ "v": 1,
+ "start": "start",
+ "vars": {
+  "affection": 0.0,
+  "trust": 0.0,
+  "reputation": 0.0,
+  "grades": 0.0,
+  "courage": 0.0,
+  "suspicion": 0.0
+ },
+ "chars": {
+  "aylin": {
+   "name": "Aylin",
+   "color": "(0.95, 0.55, 0.70, 1)",
+   "moods": {
+    "neutral": "aylin_neutral",
+    "happy": "aylin_happy",
+    "sad": "aylin_sad",
+    "angry": "aylin_angry",
+    "blush": "aylin_blush"
+   }
+  },
+  "kerem": {
+   "name": "Kerem",
+   "color": "(0.30, 0.72, 0.70, 1)",
+   "moods": {
+    "neutral": "kerem_neutral",
+    "happy": "kerem_happy",
+    "smug": "kerem_smug",
+    "angry": "kerem_angry",
+    "hurt": "kerem_hurt"
+   }
+  },
+  "deniz": {
+   "name": "Ms. Deniz",
+   "color": "(0.92, 0.72, 0.30, 1)",
+   "moods": {
+    "neutral": "deniz_neutral",
+    "stern": "deniz_stern",
+    "kind": "deniz_kind",
+    "disappointed": "deniz_disappointed"
+   }
+  },
+  "zeynep": {
+   "name": "Zeynep",
+   "color": "(0.70, 0.45, 0.90, 1)",
+   "moods": {
+    "neutral": "zeynep_neutral",
+    "excited": "zeynep_excited",
+    "sly": "zeynep_sly"
+   }
+  },
+  "emre": {
+   "name": "Emre",
+   "color": "(0.85, 0.38, 0.35, 1)",
+   "moods": {
+    "neutral": "emre_neutral",
+    "smug": "emre_smug",
+    "angry": "emre_angry"
+   }
+  }
+ },
+ "nodes": {
+  "start": {
+   "pos": [
+    0.0,
+    0.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "A new semester at P\u0131nar High. The gate swallows a river of students, and somewhere in that noise your last year of school begins.",
+   "bg": "bg_gate",
+   "sound": "",
+   "tags": [
+    "chapter1"
+   ],
+   "set": [],
+   "next": "intro2",
+   "choices": []
+  },
+  "intro2": {
+   "pos": [
+    320.0,
+    0.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "Room 3-B smells of chalk and cheap cologne. You drop into your usual seat by the window. One year left. Better make it count.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "meet_kerem",
+   "choices": []
+  },
+  "meet_kerem": {
+   "pos": [
+    640.0,
+    0.0
+   ],
+   "char": "kerem",
+   "mood": "happy",
+   "text": "Kerem slings an arm around your shoulder, grinning like he never left.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "k_warm",
+     "text": "\"Missed you too, troublemaker.\"",
+     "next": "kerem_warm",
+     "tags": [
+      "friendly"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "k_cool",
+     "text": "\"This year I'm focusing on grades, Kerem.\"",
+     "next": "kerem_cool",
+     "tags": [
+      "studious"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "grades",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "k_shrug",
+     "text": "Shrug him off and stare out the window.",
+     "next": "kerem_cool",
+     "tags": [
+      "cold"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "trust",
+       "op": "sub",
+       "value": 1
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "kerem_warm": {
+   "pos": [
+    960.0,
+    0.0
+   ],
+   "char": "kerem",
+   "mood": "happy",
+   "text": "\"That's the spirit! Us against the world, like always.\" He punches your arm.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "aylin_enters",
+   "choices": []
+  },
+  "kerem_cool": {
+   "pos": [
+    1280.0,
+    0.0
+   ],
+   "char": "kerem",
+   "mood": "hurt",
+   "text": "\"...Right. Grades.\" He pulls his arm back, a little stung, and sits down.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "aylin_enters",
+   "choices": []
+  },
+  "aylin_enters": {
+   "pos": [
+    1600.0,
+    0.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The door slides open. A girl with paint-stained fingers slips in, sketchbook hugged to her chest. Aylin. You'd know her anywhere \u2014 and she never quite looks at anyone.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "deniz_intro",
+   "choices": []
+  },
+  "deniz_intro": {
+   "pos": [
+    0.0,
+    200.0
+   ],
+   "char": "deniz",
+   "mood": "stern",
+   "text": "\"Sit. All of you.\" Ms. Deniz drops a stack of papers on the desk. \"This term: one group project, and one exam that decides your final grade. Choose your partner wisely. I won't referee your friendships.\"",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "choose_partner",
+   "choices": []
+  },
+  "choose_partner": {
+   "pos": [
+    320.0,
+    200.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "A partner. Around you, chairs scrape as people pair off. Your move.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [
+    "decision"
+   ],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "p_aylin",
+     "text": "Ask Aylin.",
+     "next": "partner_aylin",
+     "tags": [
+      "romance"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "affection",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "p_kerem",
+     "text": "Partner with Kerem.",
+     "next": "partner_kerem",
+     "tags": [
+      "friendship"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "p_alone",
+     "text": "Ask Ms. Deniz to work alone.",
+     "next": "partner_alone",
+     "tags": [
+      "studious"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "grades",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "trust",
+       "op": "sub",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "partner_aylin": {
+   "pos": [
+    640.0,
+    200.0
+   ],
+   "char": "aylin",
+   "mood": "blush",
+   "text": "You cross the room before you can talk yourself out of it. \"Partners?\" Aylin blinks, then nods so fast her fringe bounces. \"O-okay. Sure.\"",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [
+    "chapter2"
+   ],
+   "set": [],
+   "next": "project_aylin1",
+   "choices": []
+  },
+  "partner_kerem": {
+   "pos": [
+    960.0,
+    200.0
+   ],
+   "char": "kerem",
+   "mood": "happy",
+   "text": "\"Obviously,\" Kerem says, relief all over his face. \"Dream team.\"",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [
+    "chapter2"
+   ],
+   "set": [],
+   "next": "project_kerem1",
+   "choices": []
+  },
+  "partner_alone": {
+   "pos": [
+    1280.0,
+    200.0
+   ],
+   "char": "deniz",
+   "mood": "neutral",
+   "text": "Ms. Deniz studies you for a long second. \"Alone. Fine. Don't come crying when it's heavy.\" Some classmates smirk.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [
+    "chapter2"
+   ],
+   "set": [
+    {
+     "var": "reputation",
+     "op": "sub",
+     "value": 1
+    }
+   ],
+   "next": "project_alone1",
+   "choices": []
+  },
+  "project_aylin1": {
+   "pos": [
+    1600.0,
+    200.0
+   ],
+   "char": "aylin",
+   "mood": "neutral",
+   "text": "After class, the library. Aylin spreads out her sketches \u2014 they're extraordinary, and she clearly has no idea. \"They're just doodles,\" she mumbles when she catches you staring.",
+   "bg": "bg_library",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "a_praise",
+     "text": "\"They're not doodles. They're the best thing in this school.\"",
+     "next": "aylin_praise",
+     "tags": [
+      "romance",
+      "kind"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "affection",
+       "op": "add",
+       "value": 2
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "a_work",
+     "text": "\"Let's just split the workload evenly.\"",
+     "next": "midweek",
+     "tags": [
+      "studious"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "grades",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "aylin_praise": {
+   "pos": [
+    0.0,
+    400.0
+   ],
+   "char": "aylin",
+   "mood": "happy",
+   "text": "For the first time, she looks right at you. Something in her face softens, then panics, then hides in the sketchbook. \"...Thanks,\" she whispers.",
+   "bg": "bg_library",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "midweek",
+   "choices": []
+  },
+  "project_kerem1": {
+   "pos": [
+    320.0,
+    400.0
+   ],
+   "char": "kerem",
+   "mood": "happy",
+   "text": "You and Kerem 'work' at his place, which means one hour of research and two of arguing about football. But it's easy. It's always been easy.",
+   "bg": "bg_library",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "k_push",
+     "text": "\"We can actually win this if we try, you know.\"",
+     "next": "kerem_push",
+     "tags": [
+      "studious"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "grades",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "k_coast",
+     "text": "\"Let's just coast. It's senior year.\"",
+     "next": "midweek",
+     "tags": [
+      "lazy"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "grades",
+       "op": "sub",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "kerem_push": {
+   "pos": [
+    640.0,
+    400.0
+   ],
+   "char": "kerem",
+   "mood": "smug",
+   "text": "Kerem grins. \"Look at you, Mr. Ambition. Alright \u2014 let's actually be good at something for once.\"",
+   "bg": "bg_library",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "midweek",
+   "choices": []
+  },
+  "project_alone1": {
+   "pos": [
+    960.0,
+    400.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "Working alone is quieter. Heavier. You bury yourself in the work and the hours vanish. It's good work. Nobody sees it but you.",
+   "bg": "bg_library",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "grades",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "midweek",
+   "choices": []
+  },
+  "midweek": {
+   "pos": [
+    1280.0,
+    400.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The week settles into a rhythm of bells and half-done homework. At lunch, the cafeteria roars. You've got a tray and a decision: where to sit.",
+   "bg": "bg_yard",
+   "sound": "",
+   "tags": [
+    "decision"
+   ],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "l_aylin",
+     "text": "Find Aylin, eating alone as usual.",
+     "next": "lunch_aylin",
+     "tags": [
+      "romance"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "affection",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "l_kerem",
+     "text": "Drop down next to Kerem and the loud table.",
+     "next": "lunch_kerem",
+     "tags": [
+      "friendship"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "l_study",
+     "text": "Skip lunch, hit the library.",
+     "next": "lunch_study",
+     "tags": [
+      "studious"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "grades",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "lunch_aylin": {
+   "pos": [
+    1600.0,
+    400.0
+   ],
+   "char": "aylin",
+   "mood": "blush",
+   "text": "She's sketching the courtyard. \"Oh \u2014 hi.\" She shifts her bag off the seat for you, which for Aylin is basically a parade. \"I don't... usually have company.\"",
+   "bg": "bg_yard",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "la_open",
+     "text": "Tell her about the thing you've never told anyone.",
+     "next": "lunch_aylin2",
+     "tags": [
+      "romance",
+      "vulnerable"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "affection",
+       "op": "add",
+       "value": 2
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "la_light",
+     "text": "Keep it light and funny.",
+     "next": "week_bridge",
+     "tags": [
+      "friendly"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "affection",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "lunch_aylin2": {
+   "pos": [
+    0.0,
+    600.0
+   ],
+   "char": "aylin",
+   "mood": "happy",
+   "text": "The words come out shaky and honest. Aylin listens like it matters. When you finish she says, softly, \"Thank you for trusting me with that.\" The bell feels like a crime.",
+   "bg": "bg_yard",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "affection",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "week_bridge",
+   "choices": []
+  },
+  "lunch_kerem": {
+   "pos": [
+    320.0,
+    600.0
+   ],
+   "char": "kerem",
+   "mood": "hurt",
+   "text": "The table's chaos, as always. But when it thins out, Kerem's grin drops. \"My dad wants me to quit after this year. Take over the shop.\" He stares at his tray. \"Don't tell anyone.\"",
+   "bg": "bg_yard",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "lk_support",
+     "text": "\"Whatever you choose, I've got you.\"",
+     "next": "lunch_kerem2",
+     "tags": [
+      "friendship",
+      "kind"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 2
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "lk_push",
+     "text": "\"So fight him. You're smarter than that shop.\"",
+     "next": "lunch_kerem2",
+     "tags": [
+      "blunt"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "lk_deflect",
+     "text": "Change the subject. Feelings are hard.",
+     "next": "week_bridge",
+     "tags": [
+      "cold"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "trust",
+       "op": "sub",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "lunch_kerem2": {
+   "pos": [
+    640.0,
+    600.0
+   ],
+   "char": "kerem",
+   "mood": "happy",
+   "text": "Kerem lets out a breath he'd been holding for weeks. \"...Yeah. Okay. Thanks, man.\" For a second he looks like the kid you met in first grade.",
+   "bg": "bg_yard",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "trust",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "week_bridge",
+   "choices": []
+  },
+  "lunch_study": {
+   "pos": [
+    960.0,
+    600.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The library is empty and yours. You get ahead on everything. It's the most productive lunch of your life, and the loneliest.",
+   "bg": "bg_library",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "grades",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "week_bridge",
+   "choices": []
+  },
+  "week_bridge": {
+   "pos": [
+    1280.0,
+    600.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "Midterms come and go. You're finding your footing here \u2014 but the halls have started to hum with a rumor that won't die.",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "rumor",
+   "choices": []
+  },
+  "rumor": {
+   "pos": [
+    1600.0,
+    600.0
+   ],
+   "char": "zeynep",
+   "mood": "sly",
+   "text": "Zeynep materializes at your elbow, voice dropped to a delicious hush. \"Okay, don't freak out \u2014 but someone got the exam answers early. And they're SELLING them.\"",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [
+    "decision"
+   ],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "r_decline",
+     "text": "\"That's cheating. I'm not touching it.\"",
+     "next": "rumor_decline",
+     "tags": [
+      "honest"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "reputation",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "r_curious",
+     "text": "\"...Who's selling?\"",
+     "next": "rumor_curious",
+     "tags": [
+      "curious"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "suspicion",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "r_tempt",
+     "text": "\"Honestly? I might need them.\"",
+     "next": "rumor_tempted",
+     "tags": [
+      "cheat"
+     ],
+     "cond": [
+      {
+       "var": "grades",
+       "cmp": "<=",
+       "value": 0
+      }
+     ],
+     "set": [
+      {
+       "var": "suspicion",
+       "op": "add",
+       "value": 2
+      }
+     ],
+     "hidden": true
+    }
+   ]
+  },
+  "rumor_decline": {
+   "pos": [
+    0.0,
+    800.0
+   ],
+   "char": "zeynep",
+   "mood": "neutral",
+   "text": "Zeynep shrugs. \"Suit yourself, saint.\" But she looks at you a beat longer, like she filed that away as respect.",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "scandal_day",
+   "choices": []
+  },
+  "rumor_curious": {
+   "pos": [
+    320.0,
+    800.0
+   ],
+   "char": "emre",
+   "mood": "smug",
+   "text": "She leans in. \"Emre. Of course it's Emre. Meet him behind the gym if you want in.\" You go \u2014 and there he is, fanning a stack of printouts.",
+   "bg": "bg_yard",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "c_report",
+     "text": "\"I'm going to report you.\"",
+     "next": "emre_threat",
+     "tags": [
+      "honest"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "reputation",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "c_walk",
+     "text": "Say nothing and walk away.",
+     "next": "scandal_day",
+     "tags": [
+      "neutral"
+     ],
+     "cond": [],
+     "set": [],
+     "hidden": false
+    },
+    {
+     "id": "c_buy",
+     "text": "Quietly buy a copy.",
+     "next": "rumor_tempted",
+     "tags": [
+      "cheat"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "suspicion",
+       "op": "add",
+       "value": 2
+      },
+      {
+       "var": "grades",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "emre_threat": {
+   "pos": [
+    640.0,
+    800.0
+   ],
+   "char": "emre",
+   "mood": "angry",
+   "text": "Emre's grin curdles. \"Report me and I'll bury you with it. Everyone saw you back here, hero.\" He shoves past, slamming his shoulder into yours.",
+   "bg": "bg_yard",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "suspicion",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "scandal_day",
+   "choices": []
+  },
+  "rumor_tempted": {
+   "pos": [
+    960.0,
+    800.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The answers are warm in your bag, and heavier than any book. You tell yourself everyone does it. You almost believe it.",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "grades",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "scandal_day",
+   "choices": []
+  },
+  "scandal_day": {
+   "pos": [
+    1280.0,
+    800.0
+   ],
+   "char": "deniz",
+   "mood": "disappointed",
+   "text": "Two days later, Ms. Deniz stands before a silent class, exam papers trembling in her grip. \"The exam has leaked. Until someone tells me the truth, this entire class fails the term.\"",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [
+    "chapter3",
+    "decision",
+    "notimer"
+   ],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "s_accuse",
+     "text": "Stand up. \"It was Emre. He sold the answers.\"",
+     "next": "confront_emre",
+     "tags": [
+      "honest",
+      "brave"
+     ],
+     "cond": [
+      {
+       "var": "courage",
+       "cmp": ">=",
+       "value": 1
+      }
+     ],
+     "set": [
+      {
+       "var": "reputation",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "s_silent",
+     "text": "Say nothing. Let it pass.",
+     "next": "silence",
+     "tags": [
+      "coward"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "reputation",
+       "op": "sub",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "s_confess",
+     "text": "\"...It was me. I bought them. I'm sorry.\"",
+     "next": "confess_self",
+     "tags": [
+      "honest",
+      "sacrifice"
+     ],
+     "cond": [
+      {
+       "var": "suspicion",
+       "cmp": ">=",
+       "value": 2
+      }
+     ],
+     "set": [
+      {
+       "var": "suspicion",
+       "op": "set",
+       "value": 0
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 2
+      },
+      {
+       "var": "reputation",
+       "op": "sub",
+       "value": 1
+      }
+     ],
+     "hidden": true
+    }
+   ]
+  },
+  "confront_emre": {
+   "pos": [
+    1600.0,
+    800.0
+   ],
+   "char": "emre",
+   "mood": "angry",
+   "text": "The room detonates. Emre lunges to his feet \u2014 but Ms. Deniz's voice cuts through everything: \"SIT. DOWN.\"",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "ce_kerem",
+     "text": "Glance at Kerem for backup.",
+     "next": "kerem_backs",
+     "tags": [
+      "friendship"
+     ],
+     "cond": [
+      {
+       "var": "trust",
+       "cmp": ">=",
+       "value": 2
+      }
+     ],
+     "set": [],
+     "hidden": false
+    },
+    {
+     "id": "ce_alone",
+     "text": "Hold your ground alone.",
+     "next": "stand_alone",
+     "tags": [
+      "brave"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "kerem_backs": {
+   "pos": [
+    0.0,
+    1000.0
+   ],
+   "char": "kerem",
+   "mood": "angry",
+   "text": "Kerem stands before you can even ask. \"I saw it too, Miss. It was Emre.\" One by one, others nod. The tide turns.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "trust",
+     "op": "add",
+     "value": 1
+    },
+    {
+     "var": "reputation",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "emre_falls",
+   "choices": []
+  },
+  "stand_alone": {
+   "pos": [
+    320.0,
+    1000.0
+   ],
+   "char": "deniz",
+   "mood": "neutral",
+   "text": "No one moves. It's just your voice against his \u2014 but you don't sit down. Ms. Deniz watches you, something new in her eyes.",
+   "bg": "bg_class",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "reputation",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "emre_falls",
+   "choices": []
+  },
+  "emre_falls": {
+   "pos": [
+    640.0,
+    1000.0
+   ],
+   "char": "deniz",
+   "mood": "kind",
+   "text": "Emre's printouts are found in his locker within the hour. He's suspended. The class exhales. \"Thank you,\" Ms. Deniz says quietly, only to you.",
+   "bg": "bg_office",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "reputation",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "aftermath_hub",
+   "choices": []
+  },
+  "silence": {
+   "pos": [
+    960.0,
+    1000.0
+   ],
+   "char": "aylin",
+   "mood": "sad",
+   "text": "The silence stretches until it breaks something. \"Then you all fail,\" Ms. Deniz says, and walks out. In the hall, Aylin won't meet your eyes.",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "affection",
+     "op": "sub",
+     "value": 1
+    }
+   ],
+   "next": "",
+   "choices": [
+    {
+     "id": "sil_ownit",
+     "text": "Run after Aylin and tell her the truth you know.",
+     "next": "late_truth",
+     "tags": [
+      "honest"
+     ],
+     "cond": [
+      {
+       "var": "courage",
+       "cmp": ">=",
+       "value": 1
+      }
+     ],
+     "set": [
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "sil_bury",
+     "text": "Keep your head down and hope it blows over.",
+     "next": "cover_up",
+     "tags": [
+      "coward"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "suspicion",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "late_truth": {
+   "pos": [
+    1280.0,
+    1000.0
+   ],
+   "char": "aylin",
+   "mood": "neutral",
+   "text": "\"I know who did it,\" you tell her, breath ragged. \"And I'm done being quiet.\" Aylin studies you, then nods slowly. \"Then go fix it.\" You do.",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "reputation",
+     "op": "add",
+     "value": 1
+    },
+    {
+     "var": "affection",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "aftermath_hub",
+   "choices": []
+  },
+  "cover_up": {
+   "pos": [
+    1600.0,
+    1000.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The term is salvaged only when a teacher finds Emre's stash by accident. But your name keeps coming up in whispers. Guilt has a long shadow.",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "reputation",
+     "op": "sub",
+     "value": 1
+    }
+   ],
+   "next": "aftermath_hub",
+   "choices": []
+  },
+  "confess_self": {
+   "pos": [
+    0.0,
+    1200.0
+   ],
+   "char": "deniz",
+   "mood": "disappointed",
+   "text": "You expect fury. Instead Ms. Deniz just looks tired. \"An honest coward is still honest. Detention, a retake, and a clean slate \u2014 if you earn it.\"",
+   "bg": "bg_office",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "grades",
+     "op": "sub",
+     "value": 1
+    },
+    {
+     "var": "reputation",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "aftermath_hub",
+   "choices": []
+  },
+  "aftermath_hub": {
+   "pos": [
+    320.0,
+    1200.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The dust settles. Whatever you did, it changed how people look at you. There's a stretch of quiet days now \u2014 and only so much time to spend them.",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [
+    "decision"
+   ],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "af_aylin",
+     "text": "Spend the afternoons with Aylin.",
+     "next": "aftermath_aylin",
+     "tags": [
+      "romance"
+     ],
+     "cond": [
+      {
+       "var": "affection",
+       "cmp": ">=",
+       "value": 1
+      }
+     ],
+     "set": [
+      {
+       "var": "affection",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "af_kerem",
+     "text": "Make things right with Kerem.",
+     "next": "aftermath_kerem",
+     "tags": [
+      "friendship"
+     ],
+     "cond": [
+      {
+       "var": "trust",
+       "cmp": ">=",
+       "value": 1
+      }
+     ],
+     "set": [
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "af_study",
+     "text": "Throw yourself into the retake and finals.",
+     "next": "aftermath_study",
+     "tags": [
+      "studious"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "grades",
+       "op": "add",
+       "value": 2
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "af_alone",
+     "text": "Keep to yourself for a while.",
+     "next": "aftermath_alone",
+     "tags": [
+      "neutral"
+     ],
+     "cond": [],
+     "set": [
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    }
+   ]
+  },
+  "aftermath_aylin": {
+   "pos": [
+    640.0,
+    1200.0
+   ],
+   "char": "aylin",
+   "mood": "blush",
+   "text": "You and Aylin fall into an easy orbit \u2014 the rooftop, the art room, the long way home. One evening she shows you a sketch: it's you. She goes crimson and slams the book shut.",
+   "bg": "bg_rooftop",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "affection",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "festival_prep",
+   "choices": []
+  },
+  "aftermath_kerem": {
+   "pos": [
+    960.0,
+    1200.0
+   ],
+   "char": "kerem",
+   "mood": "happy",
+   "text": "You and Kerem clear the air on the yard wall, feet dangling. \"I thought you were leaving me behind,\" he admits. \"I wasn't,\" you say. He nods. That's all it takes, with him.",
+   "bg": "bg_yard",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "trust",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "festival_prep",
+   "choices": []
+  },
+  "aftermath_study": {
+   "pos": [
+    1280.0,
+    1200.0
+   ],
+   "char": "deniz",
+   "mood": "kind",
+   "text": "You retake the exam and crush it. Ms. Deniz slides your paper back with the ghost of a smile. \"There's a scholarship letter with your name on it, if you keep this up.\"",
+   "bg": "bg_office",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "grades",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "festival_prep",
+   "choices": []
+  },
+  "aftermath_alone": {
+   "pos": [
+    1600.0,
+    1200.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "You spend the quiet days with yourself, and find you don't mind the company. Some things you had to learn alone.",
+   "bg": "bg_hall",
+   "sound": "",
+   "tags": [],
+   "set": [],
+   "next": "festival_prep",
+   "choices": []
+  },
+  "festival_prep": {
+   "pos": [
+    0.0,
+    1400.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "Weeks blur into the spring festival. Lanterns everywhere, the rooftop strung with lights. Whatever this year was, it's almost over.",
+   "bg": "bg_festival",
+   "sound": "",
+   "tags": [
+    "chapter4"
+   ],
+   "set": [],
+   "next": "predate_hub",
+   "choices": []
+  },
+  "predate_hub": {
+   "pos": [
+    320.0,
+    1400.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The festival is tonight. Everyone's pairing off, planning, buzzing. Who are you walking in with?",
+   "bg": "bg_festival",
+   "sound": "",
+   "tags": [
+    "decision"
+   ],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "pd_aylin",
+     "text": "Ask Aylin to go with you.",
+     "next": "date_scene",
+     "tags": [
+      "romance"
+     ],
+     "cond": [
+      {
+       "var": "affection",
+       "cmp": ">=",
+       "value": 2
+      }
+     ],
+     "set": [
+      {
+       "var": "affection",
+       "op": "add",
+       "value": 1
+      },
+      {
+       "var": "courage",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "pd_gang",
+     "text": "Round up Kerem and the gang.",
+     "next": "gang_scene",
+     "tags": [
+      "friendship"
+     ],
+     "cond": [
+      {
+       "var": "trust",
+       "cmp": ">=",
+       "value": 2
+      }
+     ],
+     "set": [
+      {
+       "var": "trust",
+       "op": "add",
+       "value": 1
+      }
+     ],
+     "hidden": false
+    },
+    {
+     "id": "pd_solo",
+     "text": "Go on your own.",
+     "next": "festival_hub",
+     "tags": [
+      "neutral"
+     ],
+     "cond": [],
+     "set": [],
+     "hidden": false
+    }
+   ]
+  },
+  "date_scene": {
+   "pos": [
+    640.0,
+    1400.0
+   ],
+   "char": "aylin",
+   "mood": "happy",
+   "text": "\"Would you... go with me?\" you manage. Aylin's whole face lights like the festival lanterns. \"I thought you'd never ask,\" she breathes. You walk in together, and the night already feels different.",
+   "bg": "bg_festival",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "affection",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "festival_hub",
+   "choices": []
+  },
+  "gang_scene": {
+   "pos": [
+    960.0,
+    1400.0
+   ],
+   "char": "kerem",
+   "mood": "happy",
+   "text": "Kerem throws an arm around you at the gate. \"The whole crew, last festival, senior year. Let's make it stupid and unforgettable.\" And you do.",
+   "bg": "bg_festival",
+   "sound": "",
+   "tags": [],
+   "set": [
+    {
+     "var": "trust",
+     "op": "add",
+     "value": 1
+    }
+   ],
+   "next": "festival_hub",
+   "choices": []
+  },
+  "festival_hub": {
+   "pos": [
+    1280.0,
+    1400.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The music swells below. Up here on the rooftop, the whole city glitters. However this year ends, it ends tonight. What do you do?",
+   "bg": "bg_rooftop",
+   "sound": "",
+   "tags": [
+    "chapter4",
+    "decision",
+    "finale",
+    "notimer"
+   ],
+   "set": [],
+   "next": "",
+   "choices": [
+    {
+     "id": "end_love",
+     "text": "Find Aylin. Tell her how you feel.",
+     "next": "ending_love",
+     "tags": [
+      "romance"
+     ],
+     "cond": [
+      {
+       "var": "affection",
+       "cmp": ">=",
+       "value": 3
+      }
+     ],
+     "set": [],
+     "hidden": false
+    },
+    {
+     "id": "end_friends",
+     "text": "Pull Kerem up here and toast the year.",
+     "next": "ending_friends",
+     "tags": [
+      "friendship"
+     ],
+     "cond": [
+      {
+       "var": "trust",
+       "cmp": ">=",
+       "value": 3
+      }
+     ],
+     "set": [],
+     "hidden": false
+    },
+    {
+     "id": "end_honors",
+     "text": "Take the scholarship letter and step into your future.",
+     "next": "ending_honors",
+     "tags": [
+      "studious"
+     ],
+     "cond": [
+      {
+       "var": "grades",
+       "cmp": ">=",
+       "value": 3
+      }
+     ],
+     "set": [],
+     "hidden": false
+    },
+    {
+     "id": "end_redeem",
+     "text": "Stand up at the mic and own everything you did this year.",
+     "next": "ending_redemption",
+     "tags": [
+      "brave"
+     ],
+     "cond": [
+      {
+       "var": "courage",
+       "cmp": ">=",
+       "value": 3
+      }
+     ],
+     "set": [],
+     "hidden": false
+    },
+    {
+     "id": "end_disgrace",
+     "text": "Slip out before anyone sees you.",
+     "next": "ending_disgrace",
+     "tags": [
+      "coward"
+     ],
+     "cond": [
+      {
+       "var": "reputation",
+       "cmp": "<=",
+       "value": -1
+      }
+     ],
+     "set": [],
+     "hidden": false
+    },
+    {
+     "id": "end_alone",
+     "text": "Watch the lights alone a while, then go home.",
+     "next": "ending_alone",
+     "tags": [
+      "neutral"
+     ],
+     "cond": [],
+     "set": [],
+     "hidden": false
+    }
+   ]
+  },
+  "ending_love": {
+   "pos": [
+    1600.0,
+    1400.0
+   ],
+   "char": "aylin",
+   "mood": "happy",
+   "text": "You find her by the railing, lit gold. \"Aylin \u2014 it was always you.\" She laughs, eyes wet, and takes your hand. Some years you survive. This one, you lived.\n\n\u2014 ENDING: The Golden Year \u2014",
+   "bg": "bg_rooftop",
+   "sound": "",
+   "tags": [
+    "ending"
+   ],
+   "set": [],
+   "next": "",
+   "choices": []
+  },
+  "ending_friends": {
+   "pos": [
+    0.0,
+    1600.0
+   ],
+   "char": "kerem",
+   "mood": "happy",
+   "text": "Kerem clinks his soda against yours. \"Us against the world, remember?\" \"Always,\" you say, and mean it. Grades fade. Friends like this don't.\n\n\u2014 ENDING: Brothers in Arms \u2014",
+   "bg": "bg_rooftop",
+   "sound": "",
+   "tags": [
+    "ending"
+   ],
+   "set": [],
+   "next": "",
+   "choices": []
+  },
+  "ending_honors": {
+   "pos": [
+    320.0,
+    1600.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The scholarship letter is real in your hands. You earned every line of it, alone, in the quiet. It cost you some warmth \u2014 but the door it opens is enormous.\n\n\u2014 ENDING: Lonely Honors \u2014",
+   "bg": "bg_gate",
+   "sound": "",
+   "tags": [
+    "ending"
+   ],
+   "set": [],
+   "next": "",
+   "choices": []
+  },
+  "ending_redemption": {
+   "pos": [
+    640.0,
+    1600.0
+   ],
+   "char": "deniz",
+   "mood": "kind",
+   "text": "The mic squeals. The crowd hushes. \"I made mistakes this year. Here's every one of them.\" When you finish, no one boos. Someone starts to clap. Then everyone does.\n\n\u2014 ENDING: New Beginnings \u2014",
+   "bg": "bg_festival",
+   "sound": "",
+   "tags": [
+    "ending"
+   ],
+   "set": [],
+   "next": "",
+   "choices": []
+  },
+  "ending_disgrace": {
+   "pos": [
+    960.0,
+    1600.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "You leave the way guilt taught you to: quietly, alone, before the lights can find your face. The gate clicks shut behind you. Some doors you close yourself.\n\n\u2014 ENDING: The Long Shadow \u2014",
+   "bg": "bg_gate",
+   "sound": "",
+   "tags": [
+    "ending"
+   ],
+   "set": [],
+   "next": "",
+   "choices": []
+  },
+  "ending_alone": {
+   "pos": [
+    1280.0,
+    1600.0
+   ],
+   "char": "",
+   "mood": "",
+   "text": "The festival roars on without you, and that's okay. You watch the lanterns lift into the dark, make a quiet promise to next year, and head home.\n\n\u2014 ENDING: One More Year \u2014",
+   "bg": "bg_rooftop",
+   "sound": "",
+   "tags": [
+    "ending"
+   ],
+   "set": [],
+   "next": "",
+   "choices": []
+  }
+ }
+}

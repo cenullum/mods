@@ -1,0 +1,27 @@
+School Days - a co-op visual novel you play by voting.
+
+One school year, told from a single point of view - but every decision is made
+TOGETHER. Whenever a choice appears, the whole lobby votes; the option with the
+most votes wins (a 60-second timer keeps things moving, and some quiet moments
+have no clock at all). Between choices the story just flows - anyone can press
+Continue when everyone's done reading.
+
+Live your last year at Pinar High: partner up for the big project, fall for the
+quiet artist Aylin, keep up with your loud best friend Kerem, stay on the right
+side of Ms. Deniz - and decide what you do when an exam-answer scandal tears the
+class apart. Kindness, ambition, courage and cowardice all quietly add up: the
+year branches through four chapters into SIX different endings, from a golden
+romance to a lonely honour roll to a long, guilty shadow.
+
+This is a reference example for the Visual Novel runtime. The whole story -
+characters, dialog, branches, hidden choices, variables and every ending - lives
+in story/school_days.json, the exact format the Online Asset Editor's Visual
+Novel tab exports. All the presentation (background, character sprite, name box,
+dialog, the voting HUD) is ordinary Lua you can read in general/scripts, so you
+can see precisely how to turn an exported story into a playable game.
+
+The art in general/images is flat single-colour PLACEHOLDER template - one solid
+tint per background and per character mood (neutral / happy / sad / angry / ...).
+Repaint them freely; the story only ever references them by name, so your art
+drops straight in. Build your own story in the editor, export the JSON, point
+STORY_PATH at it, and you have a brand-new branching game.

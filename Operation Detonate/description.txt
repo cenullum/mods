@@ -1,0 +1,22 @@
+Operation: Detonate - a push-your-luck sabotage card game for 2-5 agents.
+
+You are a covert ops team pulling equipment from a shared supply deck... in
+which one Time Bomb per opponent is hiding. Draw a bomb without a Disarm Kit
+and you are out of the mission - the last agent standing wins.
+
+Sabotage tools: Ambush (next agent owes two turns), Retreat (end your turn
+without drawing), Supply Request (a chosen agent must hand over a card of
+THEIR choice), Mission Shuffle, Recon Drone (peek at the top 3 cards) and the
+Signal Jammer - a reactive counter played during the 3.5s "jam window" after
+any action; jammers can jam jammers. Collect identical weapons: a pair steals
+a random card, a triple lets you name the exact card you want.
+
+Tabletop presentation: sit at the round table and your camera rotates to your
+seat. Your hand lives at the bottom of YOUR screen only - everyone else,
+including spectators, sees card backs and counts (host-enforced, deck order
+never leaves the server). Late joiners spectate with live mouse cursors and
+queue in with one click for the next mission.
+
+Card faces are generated from the engine's "cards" JSON (same format the
+online image editor exports) with English + Turkish localization built in;
+the art PNGs in general/images are flat placeholders - repaint freely.

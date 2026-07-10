@@ -1,0 +1,17 @@
+Crazy Eights - a fast tabletop card game for 2-8 players.
+
+Bold, colorful card faces (big numbers, four colors - purple, teal, orange and
+green) with classic Crazy Eights rules: match the top card by color or value,
+eights are wild (pick the next color), skip / reverse / +2 keep the table
+spicy. First empty hand wins the round.
+
+Sit at the round table and your camera rotates to your seat - the deck and
+discard pile are shared in the middle like a real tabletop. Your cards live in
+a hand bar at the bottom of YOUR screen only: everyone else (players and
+spectators alike) just sees card backs and hand counts, enforced by the host
+(server-authoritative, no packet peeking). Join mid-round and you spectate
+with everyone's live mouse cursors until the next round starts - one click on
+"Sit at table" queues you in.
+
+Built on the engine's card system (the same "cards" JSON the online image
+editor exports), so the deck art is easy to reskin.

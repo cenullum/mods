@@ -1,0 +1,31 @@
+{
+    "map_name": "basic_map",
+    "collision": {
+
+    },
+    "one_way": {
+
+    },
+    "shadow": {
+
+    },
+    "tilesets": [],
+    "tile_size": "(32, 32)",
+    "chunk_size": 32,
+    "lobby_type": 0,
+    "shadow_effect": {
+        "visible": false,
+        "shadow_color": "(0.0039, 0.0039, 0.0157, 0.7608)",
+        "shadow_angle": 145.0,
+        "shadow_length": 64.0,
+        "shadow_blur": 2.795
+    },
+    "background_color": "(0.09, 0.1, 0.14, 1.0)",
+    "vignette_effect": {
+        "visible": false,
+        "smoothness": 0.3,
+        "strength": 1.0,
+        "color": "(0.0, 0.0, 0.0, 1.0)",
+        "radius": 0.5
+    }
+}
