@@ -798,6 +798,22 @@ function set_vignette(config) end
 ---@return table Dictionary with keys: visible, smoothness, strength, color, radius.
 function get_vignette_settings() end
 
+--- Set the global tile-shadow effect (the same settings as the map editor's
+--- "Shadow Effect Settings"). Great for day/night cycles: animate shadow_angle
+--- to move the sun and shadow_color/visible for dusk and dawn.
+--- Config parameters:
+---   - visible (boolean, optional): Enable/disable the shadow effect.
+---   - shadow_color (Color|table|string, optional): Shadow color (alpha = darkness).
+---   - shadow_angle (number, optional): Light angle in degrees (0-360).
+---   - shadow_length (number, optional): Shadow length in pixels.
+---   - shadow_blur (number, optional): Shadow blur strength (0-10).
+---@param config table Shadow configuration dictionary.
+function set_shadow(config) end
+
+--- Get current shadow effect settings.
+---@return table Dictionary with keys: visible, shadow_color, shadow_angle, shadow_length, shadow_blur.
+function get_shadow_settings() end
+
 ---------------------------------------------------
 -- PARTICLES
 ---------------------------------------------------

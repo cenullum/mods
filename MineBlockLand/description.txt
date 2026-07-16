@@ -1,1 +1,13 @@
-This is a default mod description. 
+MineBlockLand - a top-down co-op survival island.
+
+Every world is generated from a seed: forests, beaches, rocky hills, farmland,
+a shallow sea you can wade through and a deep sea you cannot pass. Chop trees,
+mine rock, craft tools (better gear works faster, tires you less and finds
+rarer gems), farm melons, and loot the stone dungeon east of the camp.
+
+At night the dead walk. Survive six of them - at nightfall of day 7 the
+Guardian of the Isle rises and fills the sky with projectiles. Slay it for the
+confetti, the scoreboard and the glory. The world is saved on the host, so you
+can come back days later and continue where you left off.
+
+Commands: /friendlyfire (host), /newworld (host), /seed, /stats
