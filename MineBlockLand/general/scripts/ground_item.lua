@@ -18,9 +18,12 @@ local item = run_function("-items", "get_item", { item_id })
 set_image({ parent_name = name, name = "icon", image_path = item.image,
     scale = Vector2(12, 12), z_index = 1 })
 if count and count > 1 then
+    -- Crisp world-space text: big font_size drawn small via scale
+    -- (48 * 0.125 = the old size 6, but sharp instead of blurry).
     set_label({ parent_name = name, name = "cnt", text = "x" .. math.floor(count),
-        position = Vector2(-16, 8), size = Vector2(32, 8), font_size = 5,
-        outline_size = 2, outline_color = Color(0, 0, 0, 1), z_index = 1 })
+        position = Vector2(-16, 8), size = Vector2(256, 64),
+        scale = Vector2(0.125, 0.125), horizontal_alignment = 1, font_size = 48,
+        outline_size = 12, outline_color = Color(0, 0, 0, 1), z_index = 1 })
 end
 set_area({ parent_name = name, name = "area", shape = "circle", size = 10,
     collision_mask = { 2 } }) -- player bodies

@@ -20,8 +20,4 @@ Novel tab exports. All the presentation (background, character sprite, name box,
 dialog, the voting HUD) is ordinary Lua you can read in general/scripts, so you
 can see precisely how to turn an exported story into a playable game.
 
-The art in general/images is flat single-colour PLACEHOLDER template - one solid
-tint per background and per character mood (neutral / happy / sad / angry / ...).
-Repaint them freely; the story only ever references them by name, so your art
-drops straight in. Build your own story in the editor, export the JSON, point
-STORY_PATH at it, and you have a brand-new branching game.
+

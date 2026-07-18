@@ -620,6 +620,12 @@ function set_image_pixel(parent_name, image_name, pixel_size) end
 ---   - anchor_bottom (number, optional): For UI labels, bottom anchor (0.0 to 1.0).
 ---   - rotation (number, optional): LOCAL-ONLY visual rotation in radians, around
 ---     the label's own centre. Never synced automatically — set it per peer.
+---   - scale (number|Vector2, optional): visual scale (float = uniform). CRISP
+---     WORLD-SPACE TEXT: small font sizes render blurry, so pick a BIG font_size
+---     and scale the label down instead — e.g. font_size = 48, scale = 0.25
+---     looks like size 12 but razor sharp. Set once; no per-frame work needed.
+---     Remember position/size are pre-scale (size 384x72 at scale 0.25 covers
+---     96x18 world pixels).
 ---@param config table Label configuration dictionary.
 ---@return string The created/updated label node name.
 function set_label(config) end
@@ -798,6 +804,20 @@ function set_vignette(config) end
 ---@return table Dictionary with keys: visible, smoothness, strength, color, radius.
 function get_vignette_settings() end
 
+--- Briefly show a colored vignette that fades back out on its own (e.g. a hit
+--- flash, a pickup glow, a warning pulse). Fully independent from
+--- set_vignette/get_vignette_settings (its own overlay + shader instance), so
+--- triggering a flash never reads or overwrites whatever set_vignette is
+--- currently showing - the two layer cleanly on top of each other.
+--- Config parameters (all optional):
+---   - color (Color|table|string, optional): Flash color. Default: red (0.8, 0.05, 0.05, 1).
+---   - duration (number, optional): Seconds to fade back to invisible. Default: 0.25.
+---   - strength (number, optional): Vignette strength/intensity. Default: 1.6.
+---   - radius (number, optional): Vignette radius (0.0 to 1.0). Default: 0.35.
+---   - smoothness (number, optional): Edge smoothness (0.0 to 1.0). Default: 0.35.
+---@param config table Vignette flash configuration dictionary.
+function flash_vignette(config) end
+
 --- Set the global tile-shadow effect (the same settings as the map editor's
 --- "Shadow Effect Settings"). Great for day/night cycles: animate shadow_angle
 --- to move the sun and shadow_color/visible for dusk and dawn.
@@ -831,6 +851,7 @@ function get_shadow_settings() end
 ---   - local_coords (boolean, optional): Use local coordinates. Default: false.
 ---   - fixed_fps (integer, optional): Fixed FPS for particle simulation. Default: 30.
 ---   - fract_delta (boolean, optional): Use fractional delta. Default: true.
+---   - z_index (integer, optional): Draw order, clamped to [-999, 999]. Default: 10 (above ground tiles, which sit at 0-1).
 ---   - direction (table, optional): Emission direction {x=number, y=number}. Default: none.
 ---   - spread (number, optional): Emission spread angle in degrees. Default: 0.0.
 ---   - initial_velocity_min (number, optional): Minimum initial velocity. Default: 0.0.
@@ -950,9 +971,11 @@ function set_camera_rotation(radians) end
 function get_camera_rotation() end
 
 --- Create screen shake effect.
----@param intensity number Shake strength.
+--- Note: the actual argument order is (duration, intensity) - matches every
+--- existing caller (e.g. Campfire Survivors' `screenshake(1, shake_intensity)`).
 ---@param duration number Shake duration in seconds.
-function screenshake(intensity, duration) end
+---@param intensity number Shake strength.
+function screenshake(duration, intensity) end
 
 ---------------------------------------------------
 -- CARD SYSTEM (tabletop decks, hands, table cards)
@@ -1549,6 +1572,10 @@ function update_panel_settings(panel_name, settings) end
 ---     Cell config can include:
 ---       - text (string, optional): Cell button text content. Default: "".
 ---       - color (Color|string, required): Cell button background color (also affects hover/pressed states).
+---       - icon_path (string, optional): Icon path under mod/general/images/ (without .png extension). Default: "" (no icon).
+---       - icon_alignment (integer, optional): HORIZONTAL_ALIGNMENT_* for the icon. Default: LEFT (CENTER if text is empty).
+---       - expand_icon (boolean, optional): Whether the icon expands to fit the cell. Default: true.
+---       - size (Vector2, optional): Cell button minimum size. Default: Vector2(60, 30).
 ---       - Any other metadata: Custom key-value pairs will be stored in the button's metadata (accessible via get_meta()).
 ---   - entity_name (string, optional): Entity with callback function for cell clicks. Required if using function_name.
 ---   - function_name (string, optional): Function to call when a cell is clicked. Required if using entity_name.
@@ -1775,6 +1802,70 @@ function get_tile(x, y) end
 ---@param tileset_id? number Tileset source id (default 0).
 ---@return boolean True on success, false if no tileset is loaded.
 function set_tile(x, y, atlas_coords, tileset_id) end
+
+--- HOST ONLY: allow or forbid the minimap (default: forbidden). This is the only
+--- thing that travels over the network — the map IMAGE itself never does: every
+--- peer renders its own minimap locally from the tiles it has loaded, so it also
+--- doubles as a fog-of-war (you only see what streamed in on your machine).
+---@param allowed boolean true to let every peer use get_minimap().
+function set_minimap(allowed) end
+
+--- Get the minimap texture key for set_image, e.g.:
+---   set_image({ name = "_map", image_path = get_minimap(), visible = true })
+--- Returns "" while the host has not called set_minimap(true) — check for it.
+--- The texture is built locally and keeps updating live while it is on screen
+--- (new chunks appear as they load). Each (tileset, tile) pair gets its own
+--- colour (the average of its texture); tiles with collision are drawn darker;
+--- 47-blob autotile sources use one shared colour. Works in any mod — nothing
+--- about it is game-specific.
+---@return string Texture key for set_image's image_path, or "" if not allowed.
+function get_minimap() end
+
+--- Track a moving entity OR a fixed spot on the minimap (icon + optional label);
+--- the ENGINE keeps it positioned every frame — no per-frame Lua. Give exactly
+--- one of `entity_name` (re-resolved every frame) or `world_position` (a fixed
+--- Vector2, e.g. the world spawn point).
+--- Targets are LOCAL (not networked): register them per peer (e.g. in the player
+--- entity script, which runs on every peer for every player).
+--- `image_name` is only needed if you draw your OWN minimap HUD from a raw
+--- `set_image` element (STRETCH_SCALE; markers become its children so they
+--- pan/zoom with it). Skip it if you only use create_minimap_panel or your own
+--- render loop off get_minimap_targets()/get_minimap_target_position() — the
+--- target is still tracked and available either way.
+--- config keys:
+---   name (required)      unique marker id
+---   entity_name?         world entity whose position is followed
+---   world_position?      fixed Vector2 world position (static marker)
+---   image_name?          a raw HUD image element to auto-draw the marker over
+---   parent_name?         owner used to resolve image_name (default "")
+---   icon?                image path under general/images (default: coloured dot)
+---   icon_size?           Vector2 marker size in px (default (10,10))
+---   text?                optional label under the marker
+---   color?               icon/label tint (default white)
+---@param config table Minimap target configuration.
+function set_minimap_target(config) end
+
+--- Current world position of a target: a Node2D lookup for entity_name targets,
+--- or the stored Vector2 for world_position ones.
+---@param name string The marker id.
+---@return Vector2|nil World position, or nil if not resolvable right now.
+function get_minimap_target_position(name) end
+
+--- Remove a marker created with set_minimap_target.
+---@param name string The marker id passed as `name`.
+function delete_minimap_target(name) end
+
+--- Open the ready-made minimap popup (the minimap twin of create_painting_panel):
+--- the live map with zoom in/out, a lock-on-target toggle that keeps a tracked
+--- entity centred, and < / > arrows to cycle between set_minimap_target markers —
+--- all with zero UI code. Or build your own HUD from get_minimap() +
+--- set_minimap_target instead. Needs the host to have allowed the minimap.
+--- config keys mirror create_panel (title, close, minimum_size, offset_ratio,
+--- resizable, color, panel_name) plus:
+---   lock_target?  entity or target name to start centred/locked on.
+---@param config table Panel configuration.
+---@return string panel_name The popup name.
+function create_minimap_panel(config) end
 
 --- Cast a 2D ray through the physics world (walls, entity bodies, areas) and
 --- return the first thing it hits. Server-authoritative games should raycast on

@@ -15,6 +15,8 @@ set_input_display_name("key_12", "Use / Attack")
 set_input_display_name("key_9", "Interact")
 set_input_display_name("key_6", "Inventory")
 set_input_display_name("key_5", "Next Item")
+set_input_display_name("key_7", "Drop Held Item")
+set_input_display_name("key_11", "Map")
 
 change_view("gameplay")
 
@@ -25,6 +27,8 @@ function update_inputs_label()
         "@key_9@ Interact (plant - harvest - eat)",
         "@key_6@ Inventory & Craft",
         "@key_5@ Next Item",
+        "@key_7@ Drop Held Item",
+        "@key_11@ Map",
     }, "\n") })
 end
 

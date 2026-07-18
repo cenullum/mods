@@ -11,20 +11,22 @@ network_mode = 0
 --   desc         short in-game description of what it actually does
 --   image        icon path under general/images (no .png)
 --   heal         eating restores this much HP (food only)
---   tool         "axe" | "pickaxe" | "sword" | "bow" (equippable tools only)
+--   tool         "pickaxe" | "shovel" | "sword" | "bow" (equippable tools only)
 --   power        gather strength: higher chops/mines faster and finds rarer ore
 --   damage       melee/arrow damage
 --   stamina      stamina cost per use (worse tools cost MORE, per design)
 --   cooldown     seconds between uses
 --   shape        melee telegraph shape: {kind="rect",w,h,ahead} or {kind="circle",r,ahead}
+--   place_kind   holding this + Interact places it as a world tile of this kind
+--                (see worldgen.lua's K_* constants; host-validated in game_manager.lua)
 -- =============================================================================
 
 ITEMS = {
     -- materials -------------------------------------------------------------
-    wood = { name = "Wood", image = "items/15x15_wood",
-        desc = "Sturdy timber from trees. The base of most recipes." },
-    stone = { name = "Stone", image = "items/15x15_stone",
-        desc = "Chipped rock from boulders. Combine with wood to craft tools." },
+    wood = { name = "Wood", image = "items/15x15_wood", place_kind = 3, -- K_TREE
+        desc = "Sturdy timber from trees. The base of most recipes. Right-click on bare ground to place it as a block." },
+    stone = { name = "Stone", image = "items/15x15_stone", place_kind = 9, -- K_STONE
+        desc = "Chipped rock from boulders. Combine with wood to craft tools. Right-click on bare ground to place it as a block." },
     coal = { name = "Coal", image = "items/15x15_coal",
         desc = "Black mineral fuel. Needed to forge crystal and diamond gear." },
     crystal = { name = "Crystal", image = "items/15x15_cristal",
@@ -32,7 +34,7 @@ ITEMS = {
     diamond = { name = "Diamond", image = "items/15x15_diamond",
         desc = "The hardest gem there is. Crafts the finest tools." },
     seed = { name = "Seed", image = "items/15x15_seed",
-        desc = "Interact with grass or farmland to plant. Grows into a melon crop." },
+        desc = "Interact with tilled farmland to plant (make a plot with a shovel). Grows into a melon crop." },
     arrow = { name = "Arrow", image = "items/15x15_arrow",
         desc = "Ammunition for the bow. Crafted from wood and stone." },
     -- Not a backpack item: walking over a chest opens it on the spot.
@@ -50,34 +52,71 @@ ITEMS = {
         desc = "A feast in your hands. Eat: fully restores HP." },
 
     -- tools & weapons ---------------------------------------------------------
-    stone_axe = { name = "Stone Axe", image = "items/15x15_stone_axe",
-        tool = "axe", power = 2, damage = 8, stamina = 10, cooldown = 0.6,
+    -- Three tool families, four material tiers each. PICKAXES gather (they chop
+    -- trees AND mine rock at their power); SHOVELS till grass into farmland;
+    -- SWORDS are pure weapons. Tool textures live at the images root (no
+    -- "items/" prefix). Iron is "smelted" in recipes from stone + coal, so no
+    -- separate iron-ore item/icon is needed.
+
+    -- Pickaxes (gather trees + rock; better tiers find rarer ore) ------------
+    wooden_pickaxe = { name = "Wooden Pickaxe", image = "wooden_pickaxe",
+        tool = "pickaxe", power = 1, damage = 6, stamina = 12, cooldown = 0.75,
         shape = { kind = "rect", w = 22, h = 16, ahead = 14 },
-        desc = "Fells trees in 2 swings. A clumsy weapon in a pinch." },
-    stone_pickaxe = { name = "Stone Pickaxe", image = "items/15x15_stone_pickaxe",
-        tool = "pickaxe", power = 2, damage = 8, stamina = 12, cooldown = 0.7,
+        desc = "Chops trees and cracks rock, slowly. Your first real tool." },
+    stone_pickaxe = { name = "Stone Pickaxe", image = "stone_pickaxe",
+        tool = "pickaxe", power = 2, damage = 8, stamina = 10, cooldown = 0.65,
         shape = { kind = "rect", w = 22, h = 16, ahead = 14 },
-        desc = "Cracks rock, slowly. Heavy on stamina - upgrade when you can." },
-    diamond_pickaxe = { name = "Diamond Pickaxe", image = "items/15x15_diamond_pickaxe",
-        tool = "pickaxe", power = 6, damage = 14, stamina = 6, cooldown = 0.45,
+        desc = "Faster on wood and stone than a wooden pick." },
+    iron_pickaxe = { name = "Iron Pickaxe", image = "iron_pickaxe",
+        tool = "pickaxe", power = 4, damage = 12, stamina = 8, cooldown = 0.5,
+        shape = { kind = "rect", w = 24, h = 18, ahead = 14 },
+        desc = "Bites through trees and rock, and finds gems more often." },
+    diamond_pickaxe = { name = "Diamond Pickaxe", image = "diamond_pickaxe",
+        tool = "pickaxe", power = 6, damage = 16, stamina = 6, cooldown = 0.45,
         shape = { kind = "rect", w = 24, h = 18, ahead = 14 },
         desc = "Shatters rock in one blow, barely tiring you. Finds rare gems far more often." },
-    wooden_sword = { name = "Wooden Sword", image = "items/15x15_wooden_sword",
+
+    -- Shovels (strike grass to till it into farmland) -----------------------
+    wooden_shovel = { name = "Wooden Shovel", image = "wooden_shovel",
+        tool = "shovel", power = 1, damage = 6, stamina = 6, cooldown = 0.5,
+        shape = { kind = "rect", w = 22, h = 16, ahead = 14 },
+        desc = "Strike grass to till it into farmland, then plant seeds on it." },
+    stone_shovel = { name = "Stone Shovel", image = "stone_shovel",
+        tool = "shovel", power = 1, damage = 8, stamina = 6, cooldown = 0.5,
+        shape = { kind = "rect", w = 22, h = 16, ahead = 14 },
+        desc = "Tills farmland and doubles as a passable club." },
+    iron_shovel = { name = "Iron Shovel", image = "iron_shovel",
+        tool = "shovel", power = 1, damage = 11, stamina = 5, cooldown = 0.45,
+        shape = { kind = "rect", w = 24, h = 18, ahead = 14 },
+        desc = "Tills quickly and hits harder than lesser shovels." },
+    diamond_shovel = { name = "Diamond Shovel", image = "diamond_shovel",
+        tool = "shovel", power = 1, damage = 14, stamina = 5, cooldown = 0.4,
+        shape = { kind = "rect", w = 24, h = 18, ahead = 14 },
+        desc = "Effortless tilling and a nasty edge when cornered." },
+
+    -- Swords (pure combat) --------------------------------------------------
+    wooden_sword = { name = "Wooden Sword", image = "wooden_sword",
         tool = "sword", damage = 12, stamina = 8, cooldown = 0.5,
         shape = { kind = "rect", w = 26, h = 18, ahead = 16 },
         desc = "A trusty plank with a point. Better than fists against the night." },
-    stone_sword = { name = "Stone Sword", image = "items/15x15_stone_sword",
+    stone_sword = { name = "Stone Sword", image = "stone_sword",
         tool = "sword", damage = 18, stamina = 12, cooldown = 0.6,
         shape = { kind = "rect", w = 28, h = 20, ahead = 16 },
         desc = "Heavy edge that hits hard but drains stamina fast." },
+    iron_sword = { name = "Iron Sword", image = "iron_sword",
+        tool = "sword", damage = 26, stamina = 8, cooldown = 0.45,
+        shape = { kind = "rect", w = 30, h = 20, ahead = 17 },
+        desc = "A soldier's blade: fast, sharp and reliable." },
+    diamond_sword = { name = "Diamond Sword", image = "diamond_sword",
+        tool = "sword", damage = 34, stamina = 6, cooldown = 0.4,
+        shape = { kind = "rect", w = 34, h = 22, ahead = 18 },
+        desc = "The last blade you will ever craft. Devastating and effortless." },
+
+    -- Special --------------------------------------------------------------
     crystal_sword = { name = "Crystal Sword", image = "items/15x15_crystal_sword",
         tool = "sword", damage = 26, stamina = 8, cooldown = 0.35,
         shape = { kind = "circle", r = 17, ahead = 14 },
         desc = "Feather-light shard blade. Fast, wide slashes for little stamina." },
-    diamond_sword = { name = "Diamond Sword", image = "items/15x15_diamond_sword",
-        tool = "sword", damage = 34, stamina = 6, cooldown = 0.4,
-        shape = { kind = "rect", w = 34, h = 22, ahead = 18 },
-        desc = "The last blade you will ever craft. Devastating and effortless." },
     bow = { name = "Bow", image = "items/15x15_bow",
         tool = "bow", damage = 22, stamina = 12, cooldown = 0.8,
         desc = "Fires arrows exactly where you aim. Each shot uses one arrow." },
@@ -93,14 +132,25 @@ FISTS = {
 -- Ordered craft list (Terraria style: everything is always listed; the button
 -- colour tells you how close you are to affording it).
 RECIPES = {
+    -- Wooden tier (wood only).
+    { id = "wooden_pickaxe",  count = 1, needs = { wood = 4 } },
+    { id = "wooden_shovel",   count = 1, needs = { wood = 3 } },
     { id = "wooden_sword",    count = 1, needs = { wood = 6 } },
-    { id = "stone_axe",       count = 1, needs = { wood = 3, stone = 3 } },
+    -- Stone tier.
     { id = "stone_pickaxe",   count = 1, needs = { wood = 3, stone = 4 } },
+    { id = "stone_shovel",    count = 1, needs = { wood = 2, stone = 3 } },
     { id = "stone_sword",     count = 1, needs = { wood = 2, stone = 5 } },
+    -- Iron tier (smelted: stone + coal).
+    { id = "iron_pickaxe",    count = 1, needs = { wood = 2, stone = 3, coal = 2 } },
+    { id = "iron_shovel",     count = 1, needs = { wood = 2, stone = 2, coal = 2 } },
+    { id = "iron_sword",      count = 1, needs = { wood = 2, stone = 4, coal = 2 } },
+    -- Ranged.
     { id = "bow",             count = 1, needs = { wood = 7 } },
     { id = "arrow",           count = 4, needs = { wood = 1, stone = 1 } },
+    -- Top tier.
     { id = "crystal_sword",   count = 1, needs = { wood = 2, coal = 1, crystal = 3 } },
     { id = "diamond_pickaxe", count = 1, needs = { wood = 2, coal = 2, diamond = 2 } },
+    { id = "diamond_shovel",  count = 1, needs = { wood = 2, coal = 1, diamond = 2 } },
     { id = "diamond_sword",   count = 1, needs = { wood = 2, coal = 2, diamond = 3 } },
     { id = "hamburger",       count = 1, needs = { potato = 2, apple = 1, watermelon = 1 } },
 }
@@ -182,7 +232,13 @@ end
 function is_equippable(item_id)
     local item = ITEMS[item_id]
     if not item then return false end
-    return (item.tool ~= nil) or (item.heal ~= nil) or (item_id == "seed")
+    return (item.tool ~= nil) or (item.heal ~= nil) or (item_id == "seed") or (item.place_kind ~= nil)
+end
+
+-- Tile kind this item becomes when placed with Interact, or nil if it can't be.
+function get_place_kind(item_id)
+    local item = ITEMS[item_id]
+    return item and item.place_kind or nil
 end
 
 function get_tree_drops() return TREE_DROPS end

@@ -32,6 +32,10 @@ set_image({ parent_name = name, name = "body", image_path = image,
     scale = Vector2(size, size), modulate = tint, z_index = 2 })
 set_collision({ parent_name = name, name = "col", shape = "circle", size = size / 2,
     collision_layer = { 3 }, collision_mask = { 1 } })
+-- Read by -combat's melee hit test: without this, a swing that visually
+-- clipped the zombie's body but missed its exact centre point counted as a
+-- miss (the check only knew the victim's position, not how big it is).
+set_value("", name, "hit_radius", size / 2)
 
 -- =============================================================================
 -- Host AI.

@@ -11,7 +11,7 @@ network_mode = 1
 -- =============================================================================
 
 -- Tile kind ids (each entity has its own Lua env; must match worldgen.lua).
-local K_GRASS, K_TREE, K_FARM, K_FARM_SEEDED, K_FARM_GROWN, K_STONE = 1, 3, 4, 5, 6, 9
+local K_GRASS, K_SAND, K_TREE, K_FARM, K_FARM_SEEDED, K_FARM_GROWN, K_STONE = 1, 2, 3, 4, 5, 6, 9
 
 -- Day/night: 5 real minutes of day + 2.5 of night; clock shows 06:00 -> 06:00.
 local DAY_SECONDS = 300
@@ -20,6 +20,8 @@ local DAWN_HOUR = 6
 local BOSS_DAY = 7
 
 local SAVE_PATH = "server/world_save.json"
+local DEFAULT_SEED = 784242144
+local SEED_PANEL = "_mbl_seed_setup"
 local AUTOSAVE_SECONDS = 60
 local GROW_SECONDS = 150          -- seeded farmland -> harvestable crop
 local ZOMBIE_WAVE_SECONDS = 25
@@ -30,8 +32,19 @@ local SUN_END_ANGLE = 260
 
 local NIGHT_BG = Color(24 / 255, 20 / 255, 37 / 255, 1)      -- Ink
 local DAY_BG = Color(0.3, 0.3, 0.3, 1)
+-- Vignette right at dusk (fade target) vs. at the darkest point of the night
+-- (just before dawn) - the night keeps creeping in instead of sitting flat at
+-- one look for its whole ~2.5 minutes.
 local NIGHT_VIGNETTE = { visible = true, strength = 1.3, radius = 0.6,
     smoothness = 0.5, color = Color(0, 0, 0, 1) }
+local NIGHT_VIGNETTE_PEAK_STRENGTH = 1.7
+local NIGHT_VIGNETTE_PEAK_RADIUS = 0.4
+local PHASE_FADE_SECONDS = 3.0   -- dusk/dawn creep in - vignette AND shadows, never a hard cut
+local PHASE_FADE_STEP = 0.05
+
+local phase_fade_elapsed = -1       -- < 0 = not fading
+local shadow_rgb = nil              -- captured once from the map's own shadow_color (rgb only)
+local shadow_alpha_full = 1.0       -- ...and its full alpha, faded to/from 0
 
 -- Enemy archetypes (night zombies scale with the day; dungeon guards are
 -- fixed-strength elites so the dungeon is dangerous from day one).
@@ -67,6 +80,7 @@ local breaks = {}         -- "x,y" -> remaining hit points of the tree/rock
 local dungeon_done = {}   -- poi id -> true (chest looted / guard slain)
 local saved_positions = {}
 local boss_entity = ""
+local typed_seed = tostring(DEFAULT_SEED) -- host-only seed-setup panel state
 
 -- Local (every peer).
 local nav_icon_name = ""
@@ -78,8 +92,40 @@ local function game_time()
     return (day - 1) * CYCLE_SECONDS + t
 end
 
+-- Numbers that crossed the Lua<->GDScript boundary come back as floats;
+-- floor them so "3,5" and "3.0,5.0" never coexist as different keys.
 local function key_of(x, y)
-    return x .. "," .. y
+    return math.floor(x) .. "," .. math.floor(y)
+end
+
+-- 0 right at dawn, 1 at the last second before dusk.
+local function day_progress()
+    return math.min(math.max(t / DAY_SECONDS, 0), 1)
+end
+
+-- 0 right at dusk, 1 at the last second before dawn.
+local function night_progress()
+    return math.min(math.max((t - DAY_SECONDS) / (CYCLE_SECONDS - DAY_SECONDS), 0), 1)
+end
+
+-- Reads the map's own configured shadow colour once, so the fade respects
+-- whatever the editor set instead of hardcoding the engine default.
+local function capture_shadow_base()
+    if shadow_rgb then return end
+    local c = get_shadow_settings().shadow_color
+    shadow_rgb = Color(c.r, c.g, c.b, 1)
+    shadow_alpha_full = c.a
+end
+
+-- The night's vignette config for right now: strength/radius interpolated
+-- from NIGHT_VIGNETTE (dusk) toward the *_PEAK values (just before dawn).
+function night_vignette_now()
+    local p = night_progress()
+    local cfg = {}
+    for key, value in pairs(NIGHT_VIGNETTE) do cfg[key] = value end
+    cfg.strength = NIGHT_VIGNETTE.strength + (NIGHT_VIGNETTE_PEAK_STRENGTH - NIGHT_VIGNETTE.strength) * p
+    cfg.radius = NIGHT_VIGNETTE.radius + (NIGHT_VIGNETTE_PEAK_RADIUS - NIGHT_VIGNETTE.radius) * p
+    return cfg
 end
 
 -- =============================================================================
@@ -88,6 +134,7 @@ end
 
 function host_boot()
     if not IS_HOST then return end
+    set_minimap(true) -- allow every peer to render its own island map (G key)
     local data = load_json(SAVE_PATH)
     if data and data.seed then
         seed_value = math.floor(data.seed)
@@ -104,11 +151,17 @@ function host_boot()
         run_function("-gen", "set_all_muts", { data.muts or {} })
         run_function("-inv", "load_save_data", { data.inv or {} })
         announce("World restored - day " .. day .. ". Welcome back!")
+        finish_boot()
     else
-        seed_value = get_os_time_unix() % 1000000007
-        run_function("-gen", "set_seed", { seed_value })
-        announce("A fresh world awakens. Chop, mine, survive the nights - the 7th night brings a monster.")
+        -- No save yet: let the host pick the seed (default/random/typed)
+        -- before the island is generated - see show_seed_setup() below.
+        show_seed_setup()
     end
+end
+
+-- Finishes booting once a seed is known (either restored from disk or just
+-- chosen by the host in the seed-setup panel).
+function finish_boot()
     spawn_dungeon_population()
     apply_phase_visuals()
     refresh_clock()
@@ -121,6 +174,50 @@ function host_boot()
         run_function("-inv", "host_sync_all_to", { user_name })
     end
     save_world()
+end
+
+-- =============================================================================
+-- First-boot seed setup (host only, local panel - shown only when there is no
+-- save yet; a restored world never asks). No close button: the host must
+-- actually pick a seed before the island generates and anyone can play.
+-- =============================================================================
+
+local function begin_world(new_seed)
+    if is_panel_exists(SEED_PANEL) then close_panel(SEED_PANEL) end
+    seed_value = math.floor(new_seed)
+    run_function("-gen", "set_seed", { seed_value })
+    announce("A fresh world awakens (seed " .. seed_value
+        .. "). Chop, mine, survive the nights - the 7th night brings a monster.")
+    finish_boot()
+end
+
+function on_seed_input(args)
+    -- The input's value is delivered keyed by its label ("Seed").
+    typed_seed = tostring(args["Seed"] or "")
+end
+
+function on_use_seed(args)
+    local s = tonumber(typed_seed)
+    if not s or math.floor(s) == 0 then s = DEFAULT_SEED end
+    begin_world(s)
+end
+
+function on_random_seed(args)
+    begin_world(get_os_time_unix() % 1000000007)
+end
+
+function show_seed_setup()
+    if is_panel_exists(SEED_PANEL) then return end
+    create_panel({ name = SEED_PANEL, title = "MineBlockLand - Host",
+        text = "Pick the world seed (same seed always builds the same island).\nDefault: "
+            .. DEFAULT_SEED,
+        set_time = false, close = false, resizable = false, minimum_size = Vector2(400, 220) })
+    add_input_to_panel(SEED_PANEL, { entity_name = name, function_name = "on_seed_input",
+        text = "Seed", default_value = typed_seed })
+    add_button_to_panel(SEED_PANEL, { entity_name = name, function_name = "on_use_seed",
+        text = "Use This Seed", color = Color(0.3, 0.55, 0.35) })
+    add_button_to_panel(SEED_PANEL, { entity_name = name, function_name = "on_random_seed",
+        text = "Random Seed", color = Color(0.35, 0.45, 0.6) })
 end
 
 function save_world()
@@ -145,6 +242,12 @@ end
 start_timer({ timer_id = "gm_boot", entity_name = name, function_name = "host_boot",
     wait_time = 0.5, duration = 0.5 })
 start_timer({ timer_id = "gm_tick", entity_name = name, function_name = "tick", wait_time = 1.0 })
+
+-- Spawn always shows on the minimap (a fixed spot, not an entity - every peer
+-- sets this up locally, same as the player dots in user.lua).
+set_minimap_target({ name = "spawn", world_position = map_to_local(Vector2(0, 0)),
+    text = "Spawn", icon_size = Vector2(8, 8), color = Color(1, 1, 1, 1) })
+
 if IS_HOST then
     start_timer({ timer_id = "gm_autosave", entity_name = name, function_name = "save_world",
         wait_time = AUTOSAVE_SECONDS })
@@ -215,8 +318,13 @@ function tick()
     refresh_clock()
     -- The sun crawls across the sky: nudge the shadow angle a little each tick.
     if not is_night and t % 3 == 0 then
-        local progress = math.min(t / DAY_SECONDS, 1.0)
-        set_shadow({ shadow_angle = SUN_START_ANGLE + (SUN_END_ANGLE - SUN_START_ANGLE) * progress })
+        set_shadow({ shadow_angle = SUN_START_ANGLE + (SUN_END_ANGLE - SUN_START_ANGLE) * day_progress() })
+    end
+    -- The vignette keeps creeping in through the night instead of sitting at
+    -- one flat look for its whole length (skipped while the dusk fade-in
+    -- itself is still running - phase_fade_step already owns the vignette then).
+    if is_night and phase_fade_elapsed < 0 and t % 3 == 0 then
+        set_vignette(night_vignette_now())
     end
 end
 
@@ -253,7 +361,10 @@ function phase_ALL(sender_id, new_day, new_t, night)
     day = new_day
     t = new_t
     is_night = night
-    apply_phase_visuals()
+    -- phase_ALL only ever fires for a LIVE dusk/dawn transition (both
+    -- directions), so it always fades - "true", not "night" (a state restore
+    -- - host_boot/state_ALL - is the only case that snaps straight to look).
+    apply_phase_visuals(true)
     refresh_clock()
     if night then
         announce_local("Night falls... the dead are walking.")
@@ -262,15 +373,68 @@ function phase_ALL(sender_id, new_day, new_t, night)
     end
 end
 
-function apply_phase_visuals()
-    if is_night then
-        set_vignette(NIGHT_VIGNETTE)
-        set_shadow({ visible = false })
-        set_background_color(NIGHT_BG)
+function apply_phase_visuals(fade)
+    capture_shadow_base()
+    set_background_color(is_night and NIGHT_BG or DAY_BG)
+    if fade then
+        -- Both effects fade over PHASE_FADE_SECONDS instead of popping in/out.
+        phase_fade_elapsed = 0
+        if is_night then
+            local cfg = {}
+            for key, value in pairs(NIGHT_VIGNETTE) do cfg[key] = value end
+            cfg.color = Color(0, 0, 0, 0)
+            set_vignette(cfg)
+            set_shadow({ visible = true }) -- stays visible while its alpha ramps down to 0
+        else
+            set_vignette({ visible = true }) -- stays visible while its alpha ramps down to 0
+            set_shadow({ visible = true, shadow_angle = SUN_START_ANGLE,
+                shadow_color = Color(shadow_rgb.r, shadow_rgb.g, shadow_rgb.b, 0) })
+        end
+        start_timer({ timer_id = "phase_fade", entity_name = name,
+            function_name = "phase_fade_step", wait_time = PHASE_FADE_STEP })
     else
-        set_vignette({ visible = false })
-        set_shadow({ visible = true, shadow_angle = SUN_START_ANGLE })
-        set_background_color(DAY_BG)
+        -- State restore (join / new world): snap straight to the correct look
+        -- for however far into the day/night we actually are right now.
+        phase_fade_elapsed = -1
+        stop_timer("phase_fade")
+        if is_night then
+            set_vignette(night_vignette_now())
+            set_shadow({ visible = false })
+        else
+            set_vignette({ visible = false })
+            set_shadow({ visible = true,
+                shadow_angle = SUN_START_ANGLE + (SUN_END_ANGLE - SUN_START_ANGLE) * day_progress(),
+                shadow_color = Color(shadow_rgb.r, shadow_rgb.g, shadow_rgb.b, shadow_alpha_full) })
+        end
+    end
+end
+
+-- Ramps the vignette and shadow alpha over PHASE_FADE_SECONDS (local only):
+-- dusk fades the vignette in and the shadow out; dawn is the mirror image.
+function phase_fade_step()
+    if phase_fade_elapsed < 0 then
+        stop_timer("phase_fade")
+        return
+    end
+    phase_fade_elapsed = phase_fade_elapsed + PHASE_FADE_STEP
+    local progress = math.min(phase_fade_elapsed / PHASE_FADE_SECONDS, 1.0)
+    if is_night then
+        set_vignette({ color = Color(0, 0, 0, NIGHT_VIGNETTE.color.a * progress) })
+        set_shadow({ shadow_color = Color(shadow_rgb.r, shadow_rgb.g, shadow_rgb.b,
+            shadow_alpha_full * (1 - progress)) })
+    else
+        set_vignette({ color = Color(0, 0, 0, NIGHT_VIGNETTE.color.a * (1 - progress)) })
+        set_shadow({ shadow_color = Color(shadow_rgb.r, shadow_rgb.g, shadow_rgb.b,
+            shadow_alpha_full * progress) })
+    end
+    if progress >= 1.0 then
+        phase_fade_elapsed = -1
+        stop_timer("phase_fade")
+        if is_night then
+            set_shadow({ visible = false })
+        else
+            set_vignette({ visible = false })
+        end
     end
 end
 
@@ -289,6 +453,13 @@ end
 
 function announce_local(text)
     add_to_chat(text, false)
+    banner_local(text)
+end
+
+-- Same on-screen banner as announce_local, but WITHOUT the chat line - for
+-- transient toasts (e.g. "No arrows!") that are already visible on screen and
+-- would just spam the chat log otherwise.
+function banner_local(text)
     set_label({ name = "_mbl_banner", text = text })
     start_timer({ timer_id = "mbl_banner", entity_name = name,
         function_name = "clear_banner", wait_time = 5.0, duration = 5.0 })
@@ -346,31 +517,47 @@ local function roll_drops(drop_table, power, x, y)
     end
 end
 
--- One swing against a tree or rock. Returns true when the swing did something
--- (so the caller only spends stamina on real work).
+-- One swing against a tree, rock or (with a shovel) the ground. Returns true
+-- when the swing was a gather action (the caller melee-swings otherwise). Every
+-- hit on a tree/rock shows a floating damage number - a 0 tells the player their
+-- tool cannot hurt this (e.g. punching a rock).
 function host_gather_hit(args)
-    local steam_id, x, y = args.steam_id, args.x, args.y
+    local steam_id = args.steam_id
+    local x, y = math.floor(args.x), math.floor(args.y)
     local tool, power = args.tool, args.power or 1
     local kind = run_function("-gen", "kind_at", { x, y })
+
+    -- Shovel on grass tills it into farmland (farm plots are made, not generated).
+    if tool == "shovel" and kind == K_GRASS then
+        host_mutate(x, y, K_FARM)
+        run_network_function(name, "gather_fx_ALL", { x, y, kind })
+        return true
+    end
+
     local hit_damage, break_hp, drops, stat_key
     if kind == K_TREE then
-        hit_damage = (tool == "axe") and power or 1
+        -- Pickaxes chop at full power; anything else nibbles 1 per hit.
+        hit_damage = (tool == "pickaxe") and power or 1
         break_hp = run_function("-items", "get_tree_hp")
         drops = run_function("-items", "get_tree_drops")
         stat_key = "trees"
     elseif kind == K_STONE then
-        if tool ~= "pickaxe" then return false end
-        hit_damage = power
+        hit_damage = (tool == "pickaxe") and power or 0 -- wrong tool: shows a 0
         break_hp = run_function("-items", "get_stone_hp")
         drops = run_function("-items", "get_stone_drops")
         stat_key = "stones"
     else
         return false
     end
-    local break_key = key_of(x, y)
-    local hp = breaks[break_key] or break_hp
-    hp = hp - hit_damage
+    hit_damage = math.floor(hit_damage)
+    local world = map_to_local(Vector2(x, y))
+    run_function("-combat", "show_damage", { world.x, world.y, hit_damage, "npc" })
+    if hit_damage <= 0 then
+        return true -- wrong tool: no real hit landed, so no chip particle either
+    end
     run_network_function(name, "gather_fx_ALL", { x, y, kind })
+    local break_key = key_of(x, y)
+    local hp = (breaks[break_key] or break_hp) - hit_damage
     if hp > 0 then
         breaks[break_key] = hp
         return true
@@ -394,11 +581,13 @@ function gather_fx_ALL(sender_id, x, y, kind)
     start_particle({ particle_id = "mbl_chip", position = world })
 end
 
--- Interact intents: plant / harvest.
+-- Interact intents: plant / harvest. Seeds only take on tilled farmland
+-- (make a plot by hitting grass with a shovel first).
 function host_plant(args)
-    local steam_id, x, y = args.steam_id, args.x, args.y
+    local steam_id = args.steam_id
+    local x, y = math.floor(args.x), math.floor(args.y)
     local kind = run_function("-gen", "kind_at", { x, y })
-    if kind ~= K_GRASS and kind ~= K_FARM then return false end
+    if kind ~= K_FARM then return false end
     if not run_function("-inv", "host_consume",
             { { steam_id = steam_id, item_id = "seed", count = 1 } }) then
         return false
@@ -409,11 +598,48 @@ function host_plant(args)
 end
 
 function host_harvest(args)
-    local x, y = args.x, args.y
+    local x, y = math.floor(args.x), math.floor(args.y)
     local kind = run_function("-gen", "kind_at", { x, y })
     if kind ~= K_FARM_GROWN then return false end
     host_mutate(x, y, K_FARM)
     roll_drops(run_function("-items", "get_harvest_drops"), 0, x, y)
+    return true
+end
+
+-- True if any user or npc (zombie/boss) currently stands on tile (x, y) -
+-- placing a block under someone's feet (including the placer's own) is
+-- rejected.
+local function tile_occupied(x, y)
+    for _, tag in ipairs({ "user", "npc" }) do
+        for _, entity_name in ipairs(get_entity_names_by_tag(tag)) do
+            local pos = get_value("", entity_name, "position")
+            if pos then
+                local tile = local_to_map(pos)
+                if math.floor(tile.x) == x and math.floor(tile.y) == y then
+                    return true
+                end
+            end
+        end
+    end
+    return false
+end
+
+-- Place a held material back down as a world block (wood -> a choppable tree,
+-- stone -> a mineable rock; the same gather loop reclaims it later). Only
+-- bare, walkable ground can receive one, never a tile someone is standing on.
+function host_place_block(args)
+    local steam_id, item_id = args.steam_id, args.item_id
+    local x, y = math.floor(args.x), math.floor(args.y)
+    local place_kind = run_function("-items", "get_place_kind", { item_id })
+    if not place_kind then return false end
+    local kind = run_function("-gen", "kind_at", { x, y })
+    if kind ~= K_GRASS and kind ~= K_SAND then return false end
+    if tile_occupied(x, y) then return false end
+    if not run_function("-inv", "host_consume",
+            { { steam_id = steam_id, item_id = item_id, count = 1 } }) then
+        return false
+    end
+    host_mutate(x, y, place_kind)
     return true
 end
 
@@ -422,9 +648,10 @@ function check_growth()
     for grow_key, when in pairs(pending_growth) do
         if now >= when then
             pending_growth[grow_key] = nil
-            local x, y = string.match(grow_key, "(-?%d+),(-?%d+)")
+            -- Tolerate float-form keys ("3.0,5.0") left behind by older saves.
+            local x, y = string.match(grow_key, "^(-?[%d%.]+),(-?[%d%.]+)$")
             x, y = tonumber(x), tonumber(y)
-            if run_function("-gen", "kind_at", { x, y }) == K_FARM_SEEDED then
+            if x and y and run_function("-gen", "kind_at", { x, y }) == K_FARM_SEEDED then
                 host_mutate(x, y, K_FARM_GROWN)
             end
         end

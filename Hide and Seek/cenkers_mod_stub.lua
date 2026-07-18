@@ -408,6 +408,9 @@ function get_nearest_entity_by_tag(entity_name, tag, excluded_entities) end
 ---   - modulate (Color|string, optional): Color tint. Default: Color(1, 1, 1, 1).
 ---   - z_index (integer, optional): Rendering order (-999 to 999). Default: 0.
 ---   - is_repeat (boolean, optional): Enable texture repeat/tiling. Default: false.
+---   - rotation (number, optional): LOCAL-ONLY visual rotation in radians, around
+---     the image's own centre. Never synced automatically — set it per peer
+---     (e.g. to counter-rotate a seat avatar under a rotated per-seat camera).
 ---
 ---@param config table Image configuration dictionary.
 ---@return string The created/updated image node name.
@@ -615,6 +618,14 @@ function set_image_pixel(parent_name, image_name, pixel_size) end
 ---   - anchor_right (number, optional): For UI labels, right anchor (0.0 to 1.0).
 ---   - anchor_top (number, optional): For UI labels, top anchor (0.0 to 1.0).
 ---   - anchor_bottom (number, optional): For UI labels, bottom anchor (0.0 to 1.0).
+---   - rotation (number, optional): LOCAL-ONLY visual rotation in radians, around
+---     the label's own centre. Never synced automatically — set it per peer.
+---   - scale (number|Vector2, optional): visual scale (float = uniform). CRISP
+---     WORLD-SPACE TEXT: small font sizes render blurry, so pick a BIG font_size
+---     and scale the label down instead — e.g. font_size = 48, scale = 0.25
+---     looks like size 12 but razor sharp. Set once; no per-frame work needed.
+---     Remember position/size are pre-scale (size 384x72 at scale 0.25 covers
+---     96x18 world pixels).
 ---@param config table Label configuration dictionary.
 ---@return string The created/updated label node name.
 function set_label(config) end
@@ -793,6 +804,22 @@ function set_vignette(config) end
 ---@return table Dictionary with keys: visible, smoothness, strength, color, radius.
 function get_vignette_settings() end
 
+--- Set the global tile-shadow effect (the same settings as the map editor's
+--- "Shadow Effect Settings"). Great for day/night cycles: animate shadow_angle
+--- to move the sun and shadow_color/visible for dusk and dawn.
+--- Config parameters:
+---   - visible (boolean, optional): Enable/disable the shadow effect.
+---   - shadow_color (Color|table|string, optional): Shadow color (alpha = darkness).
+---   - shadow_angle (number, optional): Light angle in degrees (0-360).
+---   - shadow_length (number, optional): Shadow length in pixels.
+---   - shadow_blur (number, optional): Shadow blur strength (0-10).
+---@param config table Shadow configuration dictionary.
+function set_shadow(config) end
+
+--- Get current shadow effect settings.
+---@return table Dictionary with keys: visible, shadow_color, shadow_angle, shadow_length, shadow_blur.
+function get_shadow_settings() end
+
 ---------------------------------------------------
 -- PARTICLES
 ---------------------------------------------------
@@ -918,10 +945,412 @@ function set_camera_zoom(zoom) end
 ---@param position Vector2 Camera world position.
 function set_camera_position(position) end
 
+--- Rotate the camera view (radians). Useful for tabletop mods: rotate each
+--- player's camera toward their seat so the table center stays "up" for them.
+--- Screen-space UI (hand bar, panels) is not affected.
+---@param radians number Camera rotation in radians.
+function set_camera_rotation(radians) end
+
+--- Get the current camera rotation in radians.
+---@return number Camera rotation in radians.
+function get_camera_rotation() end
+
 --- Create screen shake effect.
 ---@param intensity number Shake strength.
 ---@param duration number Shake duration in seconds.
 function screenshake(intensity, duration) end
+
+---------------------------------------------------
+-- CARD SYSTEM (tabletop decks, hands, table cards)
+---------------------------------------------------
+-- Definitions (what cards look like) are loaded on EVERY peer from your mod's
+-- own files/data. Shared state (deck order, hands, table) is HOST-authoritative:
+-- deck order exists only on the host, and a card's identity is only sent to the
+-- peers allowed to know it (per-deck "visibility" policy), so clients cannot
+-- cheat by sniffing packets. Clients never mutate state directly - send an
+-- intent with run_network_function("..._HOST"), validate on the host, then call
+-- the card_* functions there.
+--
+-- Listener callbacks (define on the entity you pass to card_set_listener; all
+-- optional, all run on every peer unless noted):
+--   _on_cards_loaded(set_id)                      -- definitions ready (textures rendered)
+--   _on_deck_clicked(deck_name)                   -- LOCAL click on a deck
+--   _on_hand_card_clicked(uid, card_id)           -- LOCAL tap on your hand bar
+--   _on_hand_card_dropped(uid, card_id)           -- LOCAL drag of a hand card onto the drop zone
+--   _on_table_card_clicked(uid, card_id)          -- LOCAL click on a table card ("" if hidden)
+--   _on_card_drawn(owner_steam_id, deck_name, uid)
+--   _on_card_played(owner_steam_id, uid, card_id) -- card_id "" if hidden from you
+--   _on_card_flipped(uid, face_up, card_id)
+--   _on_card_transferred(from_steam_id, to_steam_id, uid)
+--   _on_card_returned(uid, deck_name)
+--   _on_card_removed(uid)
+--   _on_deck_shuffled(deck_name, count)
+--   _on_card_peek(deck_name, ids)                 -- only on the peeking peer
+--   _on_player_left_cards(steam_id, uids)         -- HOST only, before cleanup
+
+--- Load a card set JSON exported by the online image editor's Card tool.
+--- The path is relative to your mod folder and sandboxed (no "..").
+---@param relative_path string e.g. "cards/my_set.cards.json"
+---@return string Set id ("" on failure).
+function load_cards_from_json(relative_path) end
+
+--- Load a card set from a JSON string (e.g. assembled at runtime).
+---@param json_string string The card set JSON text.
+---@param set_id string|nil Optional set id override.
+---@return string Set id ("" on failure).
+function load_cards_from_json_data(json_string, set_id) end
+
+--- Load a card set from a Lua table using the same structure as the JSON
+--- format (kind="cards", card_w, card_h, cards={...} etc.). The easiest way
+--- to generate decks procedurally.
+---@param data table Card set table.
+---@param set_id string|nil Optional set id override.
+---@return string Set id ("" on failure).
+function load_cards_from_data(data, set_id) end
+
+--- Build a card set from a pre-rendered PNG sprite sheet in your mod. Unlike
+--- load_cards_from_json/from_data (which render live, so the shadow gets
+--- baked in at load and the text can react to language changes), a PNG sheet
+--- is a flat image prepared ahead of time — export it from the online image
+--- editor's Card tool with the shadow you want already in the pixels.
+---
+--- Localization for PNG sheets works by FILE NAME (same convention as the
+--- image_localizer tool): given front_sheet = "cards.png", this also looks for
+--- a sibling "cards_<lang>.png" matching the engine's current locale (e.g.
+--- "cards_tr.png" for Turkish, "cards_en.png" for English) and uses it when
+--- present; with no matching file it silently falls back to "cards.png".
+--- back_image is looked up the same way.
+--- Config parameters:
+---   - set_id (string, required): Unique set id.
+---   - front_sheet (string, required): Sheet path under general/images/ (e.g. "cards.png").
+---   - cols, rows (integer, required): Grid layout of the sheet.
+---   - count (integer, optional): How many cells are real cards. Default: cols*rows.
+---   - back_image (string, optional): Back face image path. Default: flat red.
+---   - ids (table, optional): Array of card ids, one per cell. Default: "<set>_1"...
+---   - keywords (table, optional): {card_id = {key = value}} keyword map.
+---@param config table Sheet configuration.
+---@return string Set id ("" on failure).
+function load_cards_from_png(config) end
+
+--- Read a keyword value of a card. Checks the card's explicit keywords first,
+--- then layout cells whose "keyword" field matches (their text/icon/source is
+--- returned). E.g. get_card_keyword("red_7", "power") -> 7.
+---@param card_id string Card id.
+---@param key string Keyword name.
+---@return any Value, or nil when the card/keyword does not exist.
+function get_card_keyword(card_id, key) end
+
+--- Get basic info about a card definition.
+---@param card_id string Card id.
+---@return table {id, name, set_id, keywords} (empty table when unknown).
+function get_card_info(card_id) end
+
+--- List loaded card ids (of one set, or all sets).
+---@param set_id string|nil Optional set filter.
+---@return table Sorted array of card ids.
+function get_card_ids(set_id) end
+
+--- Check whether a card id is loaded.
+---@param card_id string Card id.
+---@return boolean True when the card definition exists.
+function is_card(card_id) end
+
+--- HOST ONLY: create a deck of cards at a world position.
+--- Config parameters:
+---   - name (string, required): Deck identifier.
+---   - position (Vector2, required): World position of the deck.
+---   - cards (table, required): Array of card ids (duplicates allowed; index 1 = top).
+---   - size (Vector2, optional): On-table card size in world units. Default: Vector2(90, 126).
+---   - visibility (string, optional): Who learns a drawn card's identity:
+---       "owner" (only the drawer - default), "all" (everyone), "none" (nobody).
+---   - show_count (boolean, optional): Show the remaining-card counter. Default: true.
+---@param config table Deck configuration.
+---@return boolean True on success.
+function card_create_deck(config) end
+
+--- HOST ONLY: remove a deck (cards already drawn stay in play).
+---@param deck_name string Deck identifier.
+function card_destroy_deck(deck_name) end
+
+--- HOST ONLY: shuffle a deck. Pass a seed for a reproducible order; omit (or 0)
+--- for a random shuffle.
+---@param deck_name string Deck identifier.
+---@param seed integer|nil Optional RNG seed.
+function card_shuffle(deck_name, seed) end
+
+--- Number of cards left in a deck (works on every peer).
+---@param deck_name string Deck identifier.
+---@return integer Remaining cards.
+function card_deck_count(deck_name) end
+
+--- Whether a deck exists (works on every peer).
+---@param deck_name string Deck identifier.
+---@return boolean
+function card_deck_exists(deck_name) end
+
+--- HOST ONLY: deal the top card of a deck to a player's hand. Everyone sees a
+--- card-back fly from the deck to that player; only the allowed peers learn
+--- which card it is.
+---@param deck_name string Deck identifier.
+---@param target_steam_id string Receiving player's Steam id string.
+---@return string The card's uid ("" when the deck is empty).
+function card_draw(deck_name, target_steam_id) end
+
+--- HOST ONLY: privately show the top N card ids of a deck to one player
+--- (See-the-Future style). Fires _on_card_peek(deck_name, ids) on that peer.
+---@param deck_name string Deck identifier.
+---@param count integer How many cards from the top.
+---@param target_steam_id string Peeking player's Steam id string.
+function card_peek(deck_name, count, target_steam_id) end
+
+--- HOST ONLY: put a card (from a hand or the table) back into a deck.
+---@param uid string Card uid.
+---@param deck_name string Deck identifier.
+---@param index integer|nil 0 = top (default), big = bottom, negative = random spot.
+---@return boolean True on success.
+function card_return_to_deck(uid, deck_name, index) end
+
+--- HOST ONLY: play a card from a hand onto the table. face_up=true reveals the
+--- card to EVERYONE (that is what playing openly means); face_down keeps it
+--- hidden. The card animates from the owner's anchor to the position.
+---@param uid string Card uid.
+---@param position Vector2 World position on the table.
+---@param face_up boolean|nil Default: true.
+---@return boolean True on success.
+function card_play(uid, position, face_up) end
+
+--- HOST ONLY: slide a table card to a new position.
+---@param uid string Card uid.
+---@param position Vector2 Target world position.
+---@param duration number|nil Tween seconds. Default: 0.3.
+function card_move(uid, position, duration) end
+
+--- HOST ONLY: flip a table card. Turning it face up reveals it to everyone.
+---@param uid string Card uid.
+---@param face_up boolean New facing.
+function card_flip(uid, face_up) end
+
+--- HOST ONLY: move a card between hands ("" uid = random card of the giver -
+--- blind steal). The receiver always learns what they got; others only see the
+--- movement.
+---@param uid string Card uid or "" for random.
+---@param from_steam_id string Giving player.
+---@param to_steam_id string Receiving player.
+---@return string The moved uid ("" on failure).
+function card_transfer(uid, from_steam_id, to_steam_id) end
+
+--- HOST ONLY: remove a card from the game (from a hand or the table).
+---@param uid string Card uid.
+function card_discard(uid) end
+
+--- HOST ONLY: clear all decks, hands and table cards (e.g. between rounds).
+function card_destroy_all() end
+
+--- Get a player's hand. Your own (or revealed) cards include card_id; other
+--- players' cards come back with card_id = "". On the host, card_id is always
+--- filled - use that to validate the rules server-side.
+---@param steam_id string Player's Steam id string.
+---@return table Array of {uid = string, card_id = string}.
+function card_get_hand(steam_id) end
+
+--- Number of cards in a player's hand (works on every peer).
+---@param steam_id string Player's Steam id string.
+---@return integer
+function card_hand_count(steam_id) end
+
+--- Hand sizes of every player: {steam_id_string = count}.
+---@return table
+function card_hand_counts() end
+
+--- Uids of every card currently on the table (sorted).
+---@return table Array of uid strings.
+function card_table_cards() end
+
+--- Info about one card instance.
+---@param uid string Card uid.
+---@return table {uid, card_id ("" if hidden from you), owner, on_table, face_up, position} or {}.
+function card_uid_info(uid) end
+
+--- Choose which entity's Lua script receives the _on_card_* callbacks on this
+--- peer (usually your world singleton). Call it on every peer.
+---@param entity_name string Listener entity name (e.g. "-w").
+function card_set_listener(entity_name) end
+
+--- Set where a player's cards animate from/to in world space (their seat).
+--- Call on every peer for every seated player.
+---@param steam_id string Player's Steam id string.
+---@param world_pos Vector2 Anchor position.
+function card_set_player_anchor(steam_id, world_pos) end
+
+--- Configure the local bottom-of-screen hand bar. The hand stays centred at the
+--- bottom, may spill to the right and wrap into extra rows above, but never
+--- crosses into the left chat strip. Every card is always shown.
+--- Config parameters (all optional):
+---   - visible (boolean): Show/hide the hand bar. Default: true.
+---   - height (number): Card height in screen pixels (40-400). Default: 150.
+---   - bottom (number): Distance from the bottom edge. Default: 14.
+---   - separation (integer): Pixel gap between cards (negative = overlap). Default: -34.
+---   - left_clear (number): Fraction of the screen kept clear on the left (chat). Default: 0.30.
+---   - right_clear (number): Fraction kept clear on the right. Default: 0.01.
+---@param config table Hand bar configuration.
+function card_set_hand_ui(config) end
+
+--- LOCAL ONLY: counter-rotate every card/deck/hand-fan node so they stay
+--- upright for THIS peer while the camera itself sits rotated (per-seat
+--- tabletop view). Pass the SAME angle you give set_camera_rotation — position
+--- is the only thing that ever travels the network; rotation is always local.
+---@param radians number Local counter-rotation in radians (usually = your camera's rotation).
+function card_set_world_rotation(radians) end
+
+--- Define where a DRAGGED hand card counts as "played". Drop a dragged card
+--- within `radius` world units of `world_pos` and the engine fires
+--- _on_hand_card_dropped(uid, card_id); drop it anywhere else and it snaps back
+--- to the hand. Pass radius <= 0 to accept a drop anywhere. Tapping a card still
+--- fires _on_hand_card_clicked regardless.
+---@param world_pos Vector2 Centre of the play/drop area in world space.
+---@param radius number Accept radius in world units (<= 0 = anywhere).
+function card_set_drop_zone(world_pos, radius) end
+
+---------------------------------------------------
+-- VISUAL NOVEL / BRANCHING STORY (VNStory format)
+---------------------------------------------------
+-- Runtime for stories authored in the Online Asset Editor's Visual Novel tab
+-- (or built by hand as a table). The engine is DETERMINISTIC AND LOCAL: each
+-- peer loads the same story file and advances its OWN copy with explicit
+-- calls. It never networks story state for you — a multiplayer mod stays
+-- host-authoritative the usual way (clients send an intent with
+-- run_network_function("..._HOST"), the host validates + broadcasts the
+-- winning choice id with "..._ALL", every peer runs the SAME vn_choose()).
+--
+-- Presentation is entirely up to the mod. Node/choice `bg`, `sound` and a
+-- character mood `image` are opaque path strings for you to feed to
+-- set_image / set_audio; choices carry their id + tags so you can attach any
+-- effect in Lua. Conditions/variables are evaluated by the engine exactly the
+-- way the editor's Preview does.
+--
+-- A NODE table (returned by vn_start / vn_current / vn_advance / vn_choose /
+-- vn_goto / vn_node_info) has:
+--   id (string), char (string, "" = narrator), char_name (string),
+--   char_color (string "(r,g,b,a)"), mood (string), image (string mood image
+--   path), text (string), bg (string), sound (string), tags (string[]),
+--   next (string), has_choices (bool), is_end (bool).
+-- A CHOICE table (from vn_choices / _on_vn_choice) has:
+--   index (int, 1-based), id (string), text (string), tags (string[]),
+--   next (string), enabled (bool), hidden (bool).
+
+--- Load a story JSON exported by the Visual Novel editor from the mod folder
+--- (path relative to the mod root, no ".."). Call once, e.g. in world.lua.
+---@param relative_path string Path to the story .json inside the mod folder.
+---@return string Story id (the file's base name), or "" on failure.
+function vn_load(relative_path) end
+
+--- Load a story straight from a Lua table (same shape as the exported JSON).
+---@param data table Story table (kind="vn", start, vars, chars, nodes).
+---@param story_id? string Optional id to register it under. Default: auto.
+---@return string Story id, or "" on failure.
+function vn_load_data(data, story_id) end
+
+--- Choose which entity's Lua script receives the story callbacks on this peer:
+---   _on_vn_node(story_id, node)              -- a node was entered
+---   _on_vn_choice(story_id, node_id, choice) -- a choice was accepted
+---   _on_vn_end(story_id, node_id)            -- the story reached an end
+---@param entity_name string Entity whose script defines the _on_vn_* callbacks.
+function vn_set_listener(entity_name) end
+
+--- (Re)start a story: variables reset to their defaults and the entry node is
+--- entered (its on-enter variable operations apply, callbacks fire).
+---@param story_id string Story id from vn_load.
+---@param node_id? string Optional start node override. Default: story start.
+---@return table The entered node table (see above), or {} on failure.
+function vn_start(story_id, node_id) end
+
+--- Get the current node table without changing anything.
+---@param story_id string Story id.
+---@return table Current node table, or {} if none is active.
+function vn_current(story_id) end
+
+--- Current node's choices with conditions evaluated against the story
+--- variables. Disabled choices come back enabled=false; SECRET failing choices
+--- (hidden=true) are omitted. Empty = linear node (use vn_advance) or an end.
+---@param story_id string Story id.
+---@return table Array of choice tables (see above).
+function vn_choices(story_id) end
+
+--- Follow the current node's linear "next" link.
+---@param story_id string Story id.
+---@return table The entered node table, or {} if the node has choices / ended.
+function vn_advance(story_id) end
+
+--- Pick a choice of the current node BY ID. Rejected (returns {}) if that
+--- choice's conditions currently fail. On success the choice's variable
+--- operations apply, _on_vn_choice fires, and the target node is entered.
+---@param story_id string Story id.
+---@param choice_id string The choice's id (from vn_choices).
+---@return table The entered node table, or {} if the choice was not allowed.
+function vn_choose(story_id, choice_id) end
+
+--- Jump to any node. With apply_enter_ops=true (default) it enters normally:
+--- the node's on-enter variable operations apply and _on_vn_node fires (chapter
+--- select / debug). With apply_enter_ops=false it is a PURE SEEK (set the
+--- current node without applying ops or firing the callback) — use it for
+--- late-joiner sync: vn_set_var the shared variables first, then seek + render.
+---@param story_id string Story id.
+---@param node_id string Target node id.
+---@param apply_enter_ops? boolean Apply the node's on-enter ops + fire callback. Default: true.
+---@return table The node table, or {} on failure.
+function vn_goto(story_id, node_id, apply_enter_ops) end
+
+--- True when the story has ended (no current node, or the node has neither
+--- choices nor a next link).
+---@param story_id string Story id.
+---@return boolean
+function vn_is_end(story_id) end
+
+--- Read a story variable's current value (number, boolean or string).
+---@param story_id string Story id.
+---@param var_name string Variable name.
+---@return any The value, or nil if the story/variable is unknown.
+function vn_get_var(story_id, var_name) end
+
+--- Set a story variable directly (bypasses node/choice operations). In
+--- multiplayer you must call this identically on every peer.
+---@param story_id string Story id.
+---@param var_name string Variable name.
+---@param value any New value (number, boolean or string).
+function vn_set_var(story_id, var_name, value) end
+
+--- Get a copy of ALL current story variables as a table.
+---@param story_id string Story id.
+---@return table {var_name = value, ...}.
+function vn_get_vars(story_id) end
+
+--- Inspect ANY node without entering it. Includes its raw `choices` array (with
+--- their conditions) for building custom visualizations in Lua.
+---@param story_id string Story id.
+---@param node_id string Node id.
+---@return table Node table plus a `choices` array, or {} if unknown.
+function vn_node_info(story_id, node_id) end
+
+--- All node ids of a loaded story, sorted (deterministic across peers).
+---@param story_id string Story id.
+---@return table Array of node id strings.
+function vn_node_ids(story_id) end
+
+--- Callback: a story node was entered (via vn_start/advance/choose/goto).
+---@param story_id string Story id.
+---@param node table The entered node table.
+function _on_vn_node(story_id, node) end
+
+--- Callback: a choice was accepted, fired BEFORE its target node is entered.
+---@param story_id string Story id.
+---@param node_id string The node the choice belonged to.
+---@param choice table The chosen choice table.
+function _on_vn_choice(story_id, node_id, choice) end
+
+--- Callback: the story reached an end (an end node, or an empty "next").
+---@param story_id string Story id.
+---@param node_id string The last node id ("" if it ran off a dangling link).
+function _on_vn_end(story_id, node_id) end
 
 --- Set a navigation icon marker on an entity.
 --- This creates an off-screen indicator that points to the target entity when it's outside the viewport.
@@ -1352,6 +1781,24 @@ function get_tile(x, y) end
 ---@param tileset_id? number Tileset source id (default 0).
 ---@return boolean True on success, false if no tileset is loaded.
 function set_tile(x, y, atlas_coords, tileset_id) end
+
+--- HOST ONLY: allow or forbid the minimap (default: forbidden). This is the only
+--- thing that travels over the network — the map IMAGE itself never does: every
+--- peer renders its own minimap locally from the tiles it has loaded, so it also
+--- doubles as a fog-of-war (you only see what streamed in on your machine).
+---@param allowed boolean true to let every peer use get_minimap().
+function set_minimap(allowed) end
+
+--- Get the minimap texture key for set_image, e.g.:
+---   set_image({ name = "_map", image_path = get_minimap(), visible = true })
+--- Returns "" while the host has not called set_minimap(true) — check for it.
+--- The texture is built locally and keeps updating live while it is on screen
+--- (new chunks appear as they load). Each (tileset, tile) pair gets its own
+--- colour (the average of its texture); tiles with collision are drawn darker;
+--- 47-blob autotile sources use one shared colour. Works in any mod — nothing
+--- about it is game-specific.
+---@return string Texture key for set_image's image_path, or "" if not allowed.
+function get_minimap() end
 
 --- Cast a 2D ray through the physics world (walls, entity bodies, areas) and
 --- return the first thing it hits. Server-authoritative games should raycast on

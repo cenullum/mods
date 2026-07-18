@@ -23,6 +23,7 @@ local DAMAGE_COLORS = {
     heal = Color(99 / 255, 199 / 255, 77 / 255, 1),            -- healing (Glade)
 }
 local DAMAGE_LABEL_SECONDS = 2.0
+local DAMAGE_LABEL_JITTER = 10  -- pixels; keeps repeated hits from stacking exactly on top of each other
 local TRACER_SECONDS = 0.12
 local TRACER_COLOR = Color(234 / 255, 212 / 255, 170 / 255, 0.9) -- Birch
 local ARROW_RANGE = 320
@@ -47,7 +48,9 @@ local dmg_counter = 0
 function start_telegraph(cfg)
     if not IS_HOST then return end
     tg_counter = tg_counter + 1
-    local id = tg_counter
+    -- String id: Lua->GDScript number round-trips come back as floats, so a
+    -- numeric id would turn "tgf3" into "tgf3.0" ('.' is invalid in node names).
+    local id = tostring(tg_counter)
     local w, h
     if cfg.shape == "circle" then
         w, h = cfg.r * 2, cfg.r * 2
@@ -83,10 +86,11 @@ function tg_show_ALL(sender_id, cfg)
     base.modulate = FILL_COLOR
     base.z_index = 1
     set_image(base)
-    if cfg.shape == "circle" then
-        set_shader({ parent_name = name, image_name = zone_name, shader_name = "circle" })
-        set_shader({ parent_name = name, image_name = fill_name, shader_name = "circle" })
-    end
+    -- Both shapes get the same white-outline treatment so a sword's rectangle
+    -- reads exactly like a fist's circle (outline ring + coloured fill).
+    local shader = (cfg.shape == "circle") and "circle" or "rect_telegraph"
+    set_shader({ parent_name = name, image_name = zone_name, shader_name = shader })
+    set_shader({ parent_name = name, image_name = fill_name, shader_name = shader })
     active_tg[cfg.id] = { w = cfg.w, h = cfg.h, windup = cfg.windup, elapsed = 0,
         zone_name = zone_name, fill_name = fill_name }
 end
@@ -116,23 +120,33 @@ function tg_done_ALL(sender_id, id)
     remove_tg(id)
 end
 
--- Point-in-shape test (rect is centred and rotated by 'angle').
-local function inside(cfg, px, py)
+-- Shape-vs-circle test (rect is centred and rotated by 'angle'). 'radius' is
+-- the victim's own body radius - without it, only the victim's exact centre
+-- pixel counted, so a swing that visually clipped a zombie's edge (its body
+-- is way bigger than a point) would read as a miss. See 'hit_radius'.
+local function inside(cfg, px, py, radius)
+    radius = radius or 0
     local dx, dy = px - cfg.x, py - cfg.y
     if cfg.shape == "circle" then
-        return dx * dx + dy * dy <= cfg.r * cfg.r
+        local rr = cfg.r + radius
+        return dx * dx + dy * dy <= rr * rr
     end
     local c, s = math.cos(-cfg.angle), math.sin(-cfg.angle)
     local rx = dx * c - dy * s
     local ry = dx * s + dy * c
-    return math.abs(rx) <= cfg.w / 2 and math.abs(ry) <= cfg.h / 2
+    local hw, hh = cfg.w / 2, cfg.h / 2
+    local cx = math.max(-hw, math.min(hw, rx))
+    local cy = math.max(-hh, math.min(hh, ry))
+    local ddx, ddy = rx - cx, ry - cy
+    return ddx * ddx + ddy * ddy <= radius * radius
 end
 
 local function each_victim(cfg, tag, handler)
     for _, victim in ipairs(get_entity_names_by_tag(tag)) do
         if victim ~= cfg.attacker then
             local pos = get_value("", victim, "position")
-            if pos and inside(cfg, pos.x, pos.y) then
+            local radius = get_value("", victim, "hit_radius") or 0
+            if pos and inside(cfg, pos.x, pos.y, radius) then
                 handler(victim, pos)
             end
         end
@@ -166,20 +180,27 @@ end
 -- =============================================================================
 
 -- HOST helper: broadcast a floating number at a world position.
--- kind: "player" | "npc" | "heal" (picks the colour).
+-- kind: "player" | "npc" | "heal" (picks the colour). A small random offset is
+-- baked in host-side (before broadcasting) so every peer sees the same jittered
+-- spot instead of numbers stacking exactly on top of each other on repeat hits.
 function show_damage(x, y, amount, kind)
     if not IS_HOST then return end
-    run_network_function(name, "damage_fx_ALL", { x, y, amount, kind })
+    local jx = x + (math.random() * 2 - 1) * DAMAGE_LABEL_JITTER
+    local jy = y + (math.random() * 2 - 1) * DAMAGE_LABEL_JITTER
+    run_network_function(name, "damage_fx_ALL", { jx, jy, amount, kind })
 end
 
 function damage_fx_ALL(sender_id, x, y, amount, kind)
     dmg_counter = dmg_counter + 1
     local label_name = "dmg" .. LOCAL_STEAM_ID .. "_" .. dmg_counter
     local prefix = (kind == "heal") and "+" or "-"
+    -- Crisp world-space text: big font_size rendered small via scale
+    -- (48 * 0.1667 = the old size 8, but sharp).
     set_label({ parent_name = name, name = label_name,
         text = prefix .. tostring(math.floor(amount)),
-        position = Vector2(x, y - 14), size = Vector2(64, 12),
-        font_size = 8, outline_size = 2, outline_color = Color(0, 0, 0, 1),
+        position = Vector2(x - 32, y - 16), size = Vector2(384, 72),
+        scale = Vector2(1 / 6, 1 / 6), horizontal_alignment = 1,
+        font_size = 48, outline_size = 12, outline_color = Color(0, 0, 0, 1),
         font_color = DAMAGE_COLORS[kind] or DAMAGE_COLORS.npc, z_index = 60 })
     start_timer({ timer_id = label_name, entity_name = name,
         function_name = "clear_damage_label", wait_time = DAMAGE_LABEL_SECONDS,
@@ -206,7 +227,10 @@ function host_arrow(shooter, aim_x, aim_y, dmg)
     local hit = raycast({ from = from, direction = dir, length = ARROW_RANGE,
         collision_mask = mask, exclude = { shooter } })
     run_network_function(name, "tracer_ALL", { from.x, from.y, hit.position.x, hit.position.y })
-    if not hit.hit then return end
+    -- collision_mask includes layer 1 (tiles), so a miss often means the arrow
+    -- hit the TileMap itself - not a registered entity. has_tag() errors if
+    -- asked about a name that isn't a real entity, so skip it in that case.
+    if not hit.hit or hit.collider == "" or hit.collider == "TileMap" then return end
     if has_tag(hit.collider, "npc") then
         local angle = math.atan(dir.y, dir.x)
         run_function(hit.collider, "npc_take_damage", { dmg, shooter, 60, angle })
