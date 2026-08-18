@@ -22,7 +22,7 @@ local TABLE_IMAGE = "ce_table"
 -- "if not input_name in display_names: continue"). Without this call every
 -- peer's stick_2 is nil forever and no one's cursor ever shows up (same
 -- requirement Hook Up's world.lua has for its own cursor).
-set_input_display_name("stick_2", "Mouse")
+set_input_display_name("stick_2","{mouse}")
 
 set_background_color(Color(0.09, 0.10, 0.14, 1))
 set_camera_position(Vector2(0, 0))
@@ -46,10 +46,10 @@ set_image({
 -- Card definitions (four colors, values 0-9 + skip + reverse + draw2)
 -- -----------------------------------------------------------------------------
 local COLOR_DEFS = {
-    { key = "purple", label = "Purple", body = "(0.45, 0.16, 0.72, 1)", dark = "(0.27, 0.08, 0.45, 1)" },
-    { key = "teal",   label = "Teal",   body = "(0.05, 0.62, 0.60, 1)", dark = "(0.02, 0.38, 0.37, 1)" },
-    { key = "orange", label = "Orange", body = "(0.92, 0.50, 0.08, 1)", dark = "(0.60, 0.30, 0.02, 1)" },
-    { key = "green",  label = "Green",  body = "(0.30, 0.68, 0.20, 1)", dark = "(0.16, 0.42, 0.10, 1)" },
+    { key = "purple", label ="{purple}", body = "(0.45, 0.16, 0.72, 1)", dark = "(0.27, 0.08, 0.45, 1)" },
+    { key = "teal",   label ="{teal}",   body = "(0.05, 0.62, 0.60, 1)", dark = "(0.02, 0.38, 0.37, 1)" },
+    { key = "orange", label ="{orange}", body = "(0.92, 0.50, 0.08, 1)", dark = "(0.60, 0.30, 0.02, 1)" },
+    { key = "green",  label ="{green}",  body = "(0.30, 0.68, 0.20, 1)", dark = "(0.16, 0.42, 0.10, 1)" },
 }
 
 local WHITE = "(1, 1, 1, 1)"

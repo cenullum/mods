@@ -19,7 +19,7 @@ singleton_name = "w"
 -- "if not input_name in display_names: continue"). Without this call every
 -- peer's stick_2 is nil forever and no one's cursor ever shows up (same
 -- requirement Hook Up's world.lua has for its own cursor).
-set_input_display_name("stick_2", "Mouse")
+set_input_display_name("stick_2","{mouse}")
 
 set_background_color(Color(0.07, 0.08, 0.11, 1))
 set_camera_position(Vector2(0, 0))
@@ -57,43 +57,43 @@ local ICONS = {
 local CATALOG = {
     { id = "time_bomb", type = "bomb", icon = ICONS.bomb, bg = "(0.32, 0.06, 0.06, 1)",
       en = { "Time Bomb", "Draw this without a Disarm Kit and you are out of the mission." },
-      tr = { "Saatli Bomba", "Etkisiz Hale Getirme Kiti olmadan cekersen gorevden elenirsin." } },
+      tr = { "Saatli Bomba", "Etkisizleştirme Kiti olmadan çekersen görevden elenirsin." } },
     { id = "disarm_kit", type = "disarm", icon = ICONS.disarm, bg = "(0.05, 0.35, 0.32, 1)",
       en = { "Disarm Kit", "Defuses a Time Bomb - then hide the bomb anywhere in the deck." },
-      tr = { "Kit: Etkisizlestirme", "Saatli Bombayi cozer - bombayi destede istedigin yere gizle." } },
+      tr = { "Etkisizleştirme Kiti", "Saatli Bombayı etkisiz hâle getirir - bombayı destede istediğin yere gizle." } },
     { id = "ambush", type = "attack", icon = ICONS.attack, bg = "(0.45, 0.16, 0.05, 1)",
       en = { "Ambush", "End your turn instantly; the next agent must take TWO turns." },
-      tr = { "Pusu", "Turun aninda biter; siradaki ajan IKI tur oynamak zorunda kalir." } },
+      tr = { "Pusu", "Turun anında biter; sıradaki ajan İKİ tur oynamak zorunda kalır." } },
     { id = "retreat", type = "skip", icon = ICONS.skip, bg = "(0.12, 0.25, 0.42, 1)",
       en = { "Retreat", "End your turn without drawing a card." },
-      tr = { "Geri Cekil", "Kart cekmeden turunu bitirirsin." } },
+      tr = { "Geri Çekil", "Kart çekmeden turunu bitirirsin." } },
     { id = "supply_request", type = "favor", icon = ICONS.favor, bg = "(0.42, 0.32, 0.14, 1)",
       en = { "Supply Request", "Pick an agent: they must hand you a card of their choice." },
-      tr = { "Ikmal Talebi", "Bir ajan sec: sana elinden sectigi bir karti vermek zorundadir." } },
+      tr = { "İkmal Talebi", "Bir ajan seç: sana elinden seçtiği bir kartı vermek zorundadır." } },
     { id = "mission_shuffle", type = "shuffle", icon = ICONS.shuffle, bg = "(0.28, 0.16, 0.4, 1)",
       en = { "Mission Shuffle", "Shuffle the whole deck." },
-      tr = { "Gorev Karistirmasi", "Desteyi tamamen karistirir." } },
+      tr = { "Görev Karıştırması", "Desteyi tamamen karıştırır." } },
     { id = "recon_drone", type = "future", icon = ICONS.future, bg = "(0.5, 0.42, 0.06, 1)",
       en = { "Recon Drone", "Secretly look at the top 3 cards of the deck." },
-      tr = { "Kesif Dronu", "Destenin en ustundeki 3 karti gizlice gorursun." } },
+      tr = { "Keşif Dronu", "Destenin en üstündeki 3 kartı gizlice görürsün." } },
     { id = "signal_jammer", type = "nope", icon = ICONS.nope, bg = "(0.2, 0.23, 0.3, 1)",
       en = { "Signal Jammer", "Cancel another agent's action card. Jammers can jam jammers." },
-      tr = { "Sinyal Kesici", "Baska bir ajanin aksiyon kartini iptal eder. Kesici kesiciyi keser." } },
+      tr = { "Sinyal Kesici", "Başka bir ajanın aksiyon kartını iptal eder. Kesici kesiciyi keser." } },
     { id = "pistol_9mm", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.2, 0.22, 1)",
       en = { "9mm Pistol", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "9mm Tabanca", "Tek basina gucu yok. Ayni silahtan 2: rastgele kart cal. 3: kart iste." } },
+      tr = { "9mm Tabanca", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
     { id = "heavy_revolver", type = "weapon", icon = ICONS.weapon, bg = "(0.24, 0.19, 0.15, 1)",
       en = { "Heavy Revolver", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "Agir Toplu Tabanca", "Tek basina gucu yok. Ayni silahtan 2: rastgele kart cal. 3: kart iste." } },
+      tr = { "Ağır Toplu Tabanca", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
     { id = "machine_pistol", type = "weapon", icon = ICONS.weapon, bg = "(0.25, 0.25, 0.28, 1)",
       en = { "Machine Pistol", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "Makineli Tabanca", "Tek basina gucu yok. Ayni silahtan 2: rastgele kart cal. 3: kart iste." } },
+      tr = { "Makineli Tabanca", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
     { id = "compact_smg", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.23, 0.3, 1)",
       en = { "Compact SMG", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "Kompakt SMG", "Tek basina gucu yok. Ayni silahtan 2: rastgele kart cal. 3: kart iste." } },
+      tr = { "Kompakt SMG", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
     { id = "tactical_handgun", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.26, 0.2, 1)",
       en = { "Tactical Handgun", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "Taktik Tabanca", "Tek basina gucu yok. Ayni silahtan 2: rastgele kart cal. 3: kart iste." } },
+      tr = { "Taktik Tabanca", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
 }
 
 local cards = {}

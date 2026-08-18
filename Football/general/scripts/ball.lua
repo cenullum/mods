@@ -10,7 +10,7 @@ set_camera_target(name)
 navigation_name=set_navigation_icon({--image_path is not set, so it will be arrow
 target_name=name,
 is_rotate= true,
-text="Ball",
+text="{ball}",
 outline_color=Color(0,0,0,1),--Black
 outline_size=8,
 is_show_distance=true,
@@ -54,9 +54,10 @@ function on_body_body_entered(data)
         entity_name=data["body_name"]
         if entity_name~= "TileMap" then
             local _script_name = get_value("",entity_name, "script_name")
-            if _script_name == "user" then
-                local nickname = get_value("", entity_name, "nickname")
-                set_last_touching_steam_id(entity_name)-- entity_name is steam_id
+            -- bots are dribblers too: without this a bot-scored goal has no
+            -- scorer and -ui_manager drops it on the floor
+            if _script_name == "user" or _script_name == "bot" then
+                set_last_touching_steam_id(entity_name)-- entity_name is steam_id (or the bot entity name)
             end
         end
     end
@@ -95,7 +96,7 @@ function on_area_body_entered(body_name)
     end
     local _script_name= get_value("", body_name, "script_name")
 
-    if  _script_name == "user" then
+    if  _script_name == "user" or _script_name == "bot" then
         run_function(body_name, "set_ball_interactable", {true})
     end
 end
@@ -106,7 +107,7 @@ function on_area_body_exited(body_name)
     end
     local _script_name= get_value("", body_name, "script_name")
 
-    if _script_name=="user" then
+    if _script_name=="user" or _script_name == "bot" then
         run_function(body_name,"set_ball_interactable",{false})
     end
 end

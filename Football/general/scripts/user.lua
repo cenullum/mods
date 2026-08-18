@@ -95,7 +95,7 @@ function change_team_ALL(sender_id, _team)
         set_camera_target(name)
     end
     nickname_config = { parent_name = name, name = nickname_label_name, text = nickname, position = Vector2(-256, 16), size =
-    Vector2(512, 16), horizontal_alignment = 1, vertical_alignment = 1 }
+    Vector2(4096, 128), font_size = 64, scale = Vector2(0.125, 0.125), horizontal_alignment = 1, vertical_alignment = 1 }
     nickname_label_name = set_label(nickname_config)
     if is_avatar_loaded then
         image_name = set_image({ parent_name = name, name = image_name, image_path = name }) -- name in user entity is steam_id and path of avatar image
@@ -135,7 +135,7 @@ function _process(delta, inputs)
 
         if is_ball_interactable then
             ball_pos = get_value("", "*ball", "position")
-            interaction_config = { text = "Press @key_6@", position = ball_pos + Vector2(-64, 32), name =
+            interaction_config = { text ="{press_key_6}", position = ball_pos + Vector2(-64, 32), name =
             interact_label_name }
             set_label(interaction_config)
         else

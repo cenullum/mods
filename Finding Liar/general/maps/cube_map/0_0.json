@@ -99,7 +99,7 @@
             "m": "(1, 1, 1, 1)",
             "v": 0,
             "h": 0,
-            "t": "You can do double jump",
+            "t": "{map_you_can_double_jump}",
             "o": "(1, 1, 1, 1)",
             "z": 0,
             "f": "(1, 1, 1, 1)",

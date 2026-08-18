@@ -18,7 +18,7 @@ if IS_HOST then
     set_label({
         parent_name = "",
         name = "_center_information",
-        text = "Go To Campfire To Start Wave",
+        text ="{go_to_campfire_to_start_wave}",
         font_color = Color(1, 1, 1, 1)
     })
 end
@@ -99,7 +99,7 @@ wait_time = 0.25,
 navigation_name=set_navigation_icon({
 target_name=name,
 is_rotate= true,
-text="Campfire",
+text="{campfire}",
 outline_color=Color(0,0,0,1),
 outline_size=8,
 is_show_distance=true,
@@ -137,6 +137,15 @@ end
 function start_game()
     run_function("-wm","wave_trigger")
 
+    -- Tell everyone what they are actually training for: the Guardian shows up
+    -- BOSS_TIME seconds in, whether or not they are ready for it.
+    if IS_HOST then
+        local boss_minutes = math.floor((get_value("", "-bm", "BOSS_TIME") or 1800) / 60)
+        add_to_chat("[color=#ddcc77]"
+            .. string.format(translate("{boss_arrives_in_minutes_get_stronger}"), boss_minutes)
+            .. "[/color]", true)
+    end
+
     set_progress_bar({
     parent_name=name,
     name="interaction_progress_bar",
@@ -153,11 +162,11 @@ function start_game()
 end
 
 function set_campfire_interactable(state)
-    _text="Go To Campfire To Start Wave"
+    _text="{go_to_campfire_to_start_wave}"
     is_campfire_interactable=state
 
     if is_campfire_interactable then
-        _text="Hold @key_6@ to start wave"
+        _text="{hold_key_6_to_start_wave}"
     end
 
     if wave_state=="active" then
@@ -215,7 +224,7 @@ function reset_campfire_state()
         set_label({
             parent_name = "",
             name = "_center_information",
-            text = "Go To Campfire To Start Wave",
+            text ="{go_to_campfire_to_start_wave}",
             font_color = Color(1, 1, 1, 1)
         })
     end
@@ -228,8 +237,15 @@ function update_time_display(args)
     local seconds = current_time % 60
     set_label({
         name = "_time_label",
-        text = string.format("Time: %02d:%02d", minutes, seconds)
+        text = string.format(translate("{time_label}"),
+            string.format("%02d", math.floor(minutes)), string.format("%02d", math.floor(seconds)))
     })
+
+    -- This clock is the run's survival time, so the host uses it as the single
+    -- source of truth for when the boss is due.
+    if IS_HOST then
+        run_function("-bm", "check_boss_time", { current_time })
+    end
 end
 
 

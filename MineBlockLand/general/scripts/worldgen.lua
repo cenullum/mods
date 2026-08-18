@@ -32,16 +32,27 @@ K_SEA = 7
 K_DEEP = 8
 K_STONE = 9
 K_FLOOR = 10 -- dungeon floor
+K_SAPLING = 11 -- planted tree seed, grows into K_TREE (appended, don't renumber the above)
+K_CACTUS = 12  -- desert-sand equivalent of a tree (blocks, choppable)
+K_PALM = 13    -- beach-sand equivalent of a tree (blocks, choppable)
+K_FLOWER = 14  -- purely decorative grass detail (walkable, not actionable)
+K_WOOD_BLOCK = 15 -- player-placed wood block (mined/gathered material, not a tree)
 
 local TILESET_STONE = 0 -- 47-blob autotile source (stone_47_blob_texture.png)
 local TILESET_MAIN = 1  -- tiles.png
+local TILESET_WOOD = 2  -- 47-blob autotile source (wood_atlas.png)
 
 -- kind -> atlas coords in tiles.png
 local ATLAS = {
     [K_GRASS] = { 1, 0 }, [K_SAND] = { 0, 0 }, [K_TREE] = { 2, 0 },
     [K_FARM] = { 3, 0 }, [K_FARM_SEEDED] = { 4, 0 }, [K_FARM_GROWN] = { 5, 0 },
     [K_SEA] = { 6, 0 }, [K_DEEP] = { 7, 0 }, [K_FLOOR] = { 0, 1 },
+    [K_SAPLING] = { 1, 1 }, [K_CACTUS] = { 2, 1 }, [K_PALM] = { 3, 1 },
+    [K_FLOWER] = { 4, 1 },
 }
+
+-- Kinds painted from an autotile source instead of a fixed ATLAS coord.
+local AUTOTILE_SOURCES = { [K_STONE] = TILESET_STONE, [K_WOOD_BLOCK] = TILESET_WOOD }
 
 -- World dimensions (1 chunk = 32x32 tiles, fixed by the engine).
 local CHUNK_TILES = 32
@@ -58,9 +69,22 @@ local BOSS_ARENA_R = 7
 -- Dungeon rect (64x64 tiles = 2x2 chunks of area), east of spawn, entrance west.
 DUNGEON_X0, DUNGEON_Y0 = 120, -32
 DUNGEON_SIZE = 64
+local JUG_CORNER_CHANCE = 65 -- percent, rolled per room corner
 
 -- Noise salts (any distinct constants).
 local SALT_COAST, SALT_STONE, SALT_SAND, SALT_TREE, SALT_TREE2 = 11, 22, 33, 44, 55
+local SALT_SPAWN_TREE = 66
+local SALT_CACTUS, SALT_CACTUS2 = 77, 88
+local SALT_PALM, SALT_PALM2 = 99, 110
+local SALT_FLOWER = 121
+
+-- Desert/beach flora is deliberately rarer than the grassland's trees: the
+-- noise gate is tighter AND a per-tile hash thins out whatever survives it.
+local CACTUS_NOISE, CACTUS_CHANCE = 0.66, 0.04
+local PALM_NOISE, PALM_CHANCE = 0.62, 0.22
+local FLOWER_CHANCE = 0.035 -- scattered single tiles, no clustering
+
+local SPAWN_TREE_COUNT = 10 -- trees ringed near the edge of the spawn clearing
 
 -- Chunk generation pacing. A whole 32x32 chunk in one frame is a visible
 -- hitch, so queued chunks are painted a few ROWS per step instead.
@@ -68,14 +92,21 @@ local VIEW_CHUNK_RADIUS = 2      -- generate chunks this far around each player
 local GEN_SCAN_INTERVAL = 0.3    -- how often player positions are checked
 local GEN_STEP_INTERVAL = 0.05   -- one slice of the queued chunk per step
 local GEN_ROWS_PER_STEP = 8      -- rows painted per step (8 x 32 tiles)
+-- /openallmap's background queue paints twice as fast: it is a one-off request
+-- with 256 chunks to get through, and it only ever runs while nothing a player
+-- is actually walking into is waiting (see gen_step).
+local REVEAL_ROWS_PER_STEP = 16
 
 seed = nil                       -- set by -gm (host rolls it / save restores it)
 local muts = {}                  -- "x,y" -> kind (host-ordered terrain changes)
 local generated = {}             -- "cx,cy" -> true (fully painted)
 local gen_queue = {}             -- array of {cx, cy, next_row}
 local queued = {}                -- "cx,cy" -> true (queued or being painted)
+local reveal_queue = {}          -- /openallmap: same shape, strictly lower priority
 local dungeon_grid = nil         -- [local_y*64+local_x] -> K_FLOOR / K_STONE
 local dungeon_pois = {}          -- {{type="chest"/"witch"/"brute", x, y, id}, ...}
+local dungeon_entrance = nil     -- {x, y} tile of the west-side corridor mouth
+local spawn_trees = {}           -- "x,y" -> true (ring of trees near the spawn clearing's edge)
 
 -- =============================================================================
 -- Deterministic hashing / noise (pure Lua 5.4 integer math).
@@ -120,6 +151,21 @@ end
 
 local function key_of(x, y)
     return x .. "," .. y
+end
+
+-- Ring of SPAWN_TREE_COUNT trees near the edge of the spawn clearing (not on
+-- top of the player, who spawns at the centre). Positions are pure functions
+-- of 'seed' via hash01, so every peer computes the exact same ring.
+local function build_spawn_trees()
+    spawn_trees = {}
+    local edge_r = SPAWN_CLEAR_R - 1
+    for i = 1, SPAWN_TREE_COUNT do
+        local angle = hash01(i, 0, SALT_SPAWN_TREE) * math.pi * 2.0
+        local radius = edge_r * (0.7 + 0.3 * hash01(i, 1, SALT_SPAWN_TREE))
+        local tx = math.floor(math.cos(angle) * radius + 0.5)
+        local ty = math.floor(math.sin(angle) * radius + 0.5)
+        spawn_trees[key_of(tx, ty)] = true
+    end
 end
 
 -- =============================================================================
@@ -175,8 +221,13 @@ local function build_dungeon()
     dungeon_grid[din(0, entry.cy - 1)] = K_FLOOR
     dungeon_grid[din(0, entry.cy)] = K_FLOOR
     dungeon_grid[din(0, entry.cy + 1)] = K_FLOOR
+    -- The door, in world tiles: what the map marker points at (the middle of a
+    -- 64x64 stone block would just say "somewhere in there").
+    dungeon_entrance = { x = DUNGEON_X0, y = DUNGEON_Y0 + entry.cy }
 
     -- Loot + guards: every room except the entrance gets a chest and guards.
+    -- Every room (the entrance hall included) also gets clay jugs tucked into
+    -- its corners - smash them for a chance at loot, or for nothing at all.
     local guard_id = 0
     for i, room in ipairs(rooms) do
         if i ~= 4 then
@@ -188,6 +239,20 @@ local function build_dungeon()
                 table.insert(dungeon_pois, { type = kinds[g], id = "dg" .. guard_id .. "_" .. g,
                     x = DUNGEON_X0 + room.cx + rng_range(-3, 3),
                     y = DUNGEON_Y0 + room.cy + rng_range(-3, 3) })
+            end
+        end
+    end
+    -- Jugs are rolled in their own pass so they never shift the guard/chest
+    -- placement of a seed that existed before jugs did.
+    for i, room in ipairs(rooms) do
+        local corners = {
+            { room.x0 + 1, room.y0 + 1 }, { room.x1 - 1, room.y0 + 1 },
+            { room.x0 + 1, room.y1 - 1 }, { room.x1 - 1, room.y1 - 1 },
+        }
+        for c, corner in ipairs(corners) do
+            if rng_range(1, 100) <= JUG_CORNER_CHANCE then
+                table.insert(dungeon_pois, { type = "jug", id = "dj" .. i .. "_" .. c,
+                    x = DUNGEON_X0 + corner[1], y = DUNGEON_Y0 + corner[2] })
             end
         end
     end
@@ -212,17 +277,31 @@ local function near(x, y, cx, cy, r)
     return dx * dx + dy * dy < r * r
 end
 
--- Ground with no features on it (what mining/chopping reveals).
+-- Which biome a tile belongs to, independent of whatever feature (tree, rock,
+-- cactus...) happens to sit on it: "dungeon" | "deep" | "sea" | "beach" |
+-- "desert" | "grass". Both sandy biomes read as K_SAND on the ground, but they
+-- grow different things and host different wildlife, so the distinction lives
+-- here once instead of being re-derived by every caller.
 -- NOTE: every public entry point floors its coords - numbers that crossed the
 -- Lua<->GDScript boundary come back as floats and "3.0" keys/hashes would
 -- silently mismatch the integer ones used during generation.
-function ground_kind(x, y)
+function biome_at(x, y)
     x, y = math.floor(x), math.floor(y)
-    if in_dungeon(x, y) then return K_FLOOR end
+    if in_dungeon(x, y) then return "dungeon" end
     local coast = coast_at(x, y)
-    if coast > LAND_RADIUS - 5 then return K_SAND end -- beaches
-    if value_noise(x, y, 26, SALT_SAND) > 0.62 then return K_SAND end
-    return K_GRASS
+    if coast > DEEP_RADIUS then return "deep" end
+    if coast > LAND_RADIUS then return "sea" end
+    if coast > LAND_RADIUS - 5 then return "beach" end
+    if value_noise(x, y, 26, SALT_SAND) > 0.62 then return "desert" end
+    return "grass"
+end
+
+-- Ground with no features on it (what mining/chopping reveals).
+function ground_kind(x, y)
+    local biome = biome_at(x, y)
+    if biome == "dungeon" then return K_FLOOR end
+    if biome == "grass" then return K_GRASS end
+    return K_SAND -- beach and desert share the sand tile
 end
 
 function base_kind(x, y)
@@ -234,8 +313,15 @@ function base_kind(x, y)
     if coast > DEEP_RADIUS then return K_DEEP end
     if coast > LAND_RADIUS then return K_SEA end
     local ground = ground_kind(x, y)
-    -- Keep spawn and the boss arena free of blocking features.
-    if near(x, y, 0, 0, SPAWN_CLEAR_R) or near(x, y, BOSS_ARENA_X, BOSS_ARENA_Y, BOSS_ARENA_R) then
+    -- Keep spawn and the boss arena free of blocking features, except for a
+    -- ring of trees near the edge of the spawn clearing (see spawn_trees).
+    if near(x, y, 0, 0, SPAWN_CLEAR_R) then
+        if ground == K_GRASS and spawn_trees[key_of(x, y)] then
+            return K_TREE
+        end
+        return ground
+    end
+    if near(x, y, BOSS_ARENA_X, BOSS_ARENA_Y, BOSS_ARENA_R) then
         return ground
     end
     if coast < LAND_RADIUS - 6 and value_noise(x, y, 18, SALT_STONE) > 0.68 then
@@ -244,6 +330,23 @@ function base_kind(x, y)
     if ground == K_GRASS and value_noise(x, y, 10, SALT_TREE) > 0.60
             and hash01(x, y, SALT_TREE2) < 0.45 then
         return K_TREE
+    end
+    -- Sand grows its own (much sparser) flora: cacti inland, palms on the coast.
+    if ground == K_SAND then
+        local biome = biome_at(x, y)
+        if biome == "desert" and value_noise(x, y, 12, SALT_CACTUS) > CACTUS_NOISE
+                and hash01(x, y, SALT_CACTUS2) < CACTUS_CHANCE then
+            return K_CACTUS
+        end
+        if biome == "beach" and value_noise(x, y, 9, SALT_PALM) > PALM_NOISE
+                and hash01(x, y, SALT_PALM2) < PALM_CHANCE then
+            return K_PALM
+        end
+        return ground
+    end
+    -- Grass that stayed bare gets the occasional flower (decoration only).
+    if ground == K_GRASS and hash01(x, y, SALT_FLOWER) < FLOWER_CHANCE then
+        return K_FLOWER
     end
     return ground
 end
@@ -259,21 +362,24 @@ end
 function is_walkable(x, y)
     local k = kind_at(math.floor(x), math.floor(y))
     return k ~= K_DEEP and k ~= K_SEA and k ~= K_STONE and k ~= K_TREE
+        and k ~= K_CACTUS and k ~= K_PALM and k ~= K_WOOD_BLOCK
 end
 
 -- =============================================================================
 -- Painting tiles.
 -- =============================================================================
 
-local function paint(x, y, kind, was_stone)
-    if kind == K_STONE then
-        set_tile(x, y, Vector2(0, 0), TILESET_STONE) -- autotile picks the blob
+local function paint(x, y, kind, was_kind)
+    local src = AUTOTILE_SOURCES[kind]
+    if src then
+        set_tile(x, y, Vector2(0, 0), src) -- autotile picks the blob
         return
     end
-    if was_stone then
-        -- Erase through the autotile source first so neighbouring stone blobs
+    local was_src = was_kind and AUTOTILE_SOURCES[was_kind]
+    if was_src then
+        -- Erase through the autotile source first so neighbouring blobs
         -- re-fit around the new hole (see the Hide and Seek generator notes).
-        set_tile(x, y, Vector2(-1, -1), TILESET_STONE)
+        set_tile(x, y, Vector2(-1, -1), was_src)
     end
     local atlas = ATLAS[kind]
     set_tile(x, y, Vector2(atlas[1], atlas[2]), TILESET_MAIN)
@@ -292,7 +398,7 @@ function apply_mut(x, y, kind)
     -- Paint if the chunk is on screen (fully painted OR currently streaming
     -- in row by row - an already-painted row would otherwise stay stale).
     if generated[ck] or queued[ck] then
-        paint(x, y, kind, was == K_STONE)
+        paint(x, y, kind, was)
     end
 end
 
@@ -323,7 +429,7 @@ local function paint_chunk_rows(cx, cy, row0, row1)
     for y = ty0 + row0, ty0 + row1 do
         for x = tx0, tx0 + CHUNK_TILES - 1 do
             local k = muts[key_of(x, y)] or base_kind(x, y)
-            paint(x, y, k, false)
+            paint(x, y, k, nil)
         end
     end
 end
@@ -372,11 +478,68 @@ function gen_scan()
     end
 end
 
+-- =============================================================================
+-- /openallmap: paint EVERY chunk of the island, so the G map (which is built
+-- purely from the tiles this peer has actually placed - the engine's minimap is
+-- a picture of the TileMapLayer, there is no separate overlay to draw on) shows
+-- the whole thing instead of just where you have been.
+--
+-- Strictly background work: the reveal queue is only touched when gen_queue is
+-- empty, so land a player is walking into is always painted first, and a chunk
+-- that the normal generator claims in the meantime is simply dropped from it.
+-- =============================================================================
+
+local function reveal_step()
+    local entry = reveal_queue[1]
+    if not entry then return end
+    local cx, cy, row = entry[1], entry[2], entry[3]
+    local ck = key_of(cx, cy)
+    if generated[ck] or queued[ck] then -- the player got there first
+        table.remove(reveal_queue, 1)
+        return
+    end
+    local last_row = math.min(row + REVEAL_ROWS_PER_STEP - 1, CHUNK_TILES - 1)
+    paint_chunk_rows(cx, cy, row, last_row)
+    if last_row >= CHUNK_TILES - 1 then
+        table.remove(reveal_queue, 1)
+        generated[ck] = true
+        if #reveal_queue == 0 then
+            run_function("-gm", "announce_local", { "{whole_island_on_map}" })
+        end
+    else
+        entry[3] = last_row + 1
+    end
+end
+
+-- Queues every not-yet-painted chunk in the world. Returns how many are left to
+-- go, so the command that called it can say something useful.
+function reveal_all()
+    if seed == nil then return 0 end
+    reveal_queue = {}
+    for cy = WORLD_CHUNK_MIN, WORLD_CHUNK_MAX do
+        for cx = WORLD_CHUNK_MIN, WORLD_CHUNK_MAX do
+            local ck = key_of(cx, cy)
+            if not generated[ck] and not queued[ck] then
+                table.insert(reveal_queue, { cx, cy, 0 })
+            end
+        end
+    end
+    return #reveal_queue
+end
+
+function is_revealing()
+    return #reveal_queue > 0
+end
+
 -- Paints GEN_ROWS_PER_STEP rows of the front chunk, spreading the work over
--- several frames so walking into new land never hitches.
+-- several frames so walking into new land never hitches. With nothing urgent
+-- left, the same budget goes to an /openallmap reveal instead.
 function gen_step()
     local entry = gen_queue[1]
-    if not entry then return end
+    if not entry then
+        reveal_step()
+        return
+    end
     local cx, cy, row = entry[1], entry[2], entry[3]
     local ck = key_of(cx, cy)
     if generated[ck] then -- built synchronously in the meantime (set_seed)
@@ -422,7 +585,9 @@ function set_seed(new_seed)
     generated = {}
     gen_queue = {}
     queued = {}
+    reveal_queue = {}
     muts = {}
+    build_spawn_trees()
     build_dungeon()
     -- Solid ground under everyone's feet immediately; the rest streams in.
     for cy = -1, 0 do
@@ -436,8 +601,39 @@ function get_dungeon_pois()
     return dungeon_pois
 end
 
+-- Tile of the dungeon's west door (nil until a seed has been set).
+function get_dungeon_entrance()
+    return dungeon_entrance
+end
+
+-- Has this peer actually painted the chunk this tile sits in? That is what
+-- "explored" means here: -gm uses it to decide when the dungeon has been found
+-- and may go on the map.
+function is_tile_generated(x, y)
+    local cx = math.floor(x) // CHUNK_TILES
+    local cy = math.floor(y) // CHUNK_TILES
+    return generated[key_of(cx, cy)] == true
+end
+
 function is_seed_ready()
     return seed ~= nil
+end
+
+-- Forces the next set_seed call to run its full wipe even if the seed the
+-- host ends up picking matches the one already loaded here. Called on every
+-- peer when a boss-wiped run resets (game_manager.lua's boss_wipe_ALL):
+-- set_seed's "if seed == new_seed then return" guard is there to skip
+-- redundant repaints on ordinary re-syncs, but it also means picking the
+-- SAME seed after a wipe left old mutations (chopped trees, mined stone,
+-- placed blocks) sitting on the map untouched.
+function force_wipe()
+    seed = nil
+end
+
+-- Lets -wild derive its own deterministic hash from the same world seed
+-- (see wildlife.lua's whash01) without duplicating -gen's seed bookkeeping.
+function get_seed()
+    return seed
 end
 
 start_timer({ timer_id = "gen_scan", entity_name = name, function_name = "gen_scan",

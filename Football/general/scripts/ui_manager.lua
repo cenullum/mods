@@ -10,7 +10,7 @@ is_score_table_input_last = false
 
 change_view("gameplay")
 
-set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_6@ Hit Ball\n@key_11@ Scoreboard\n@stick_1@ Movement") -- right bottom  inputs label
+set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_6@ {hit_ball}\n@key_11@ {scoreboard}\n@stick_1@ {movement}") -- right bottom  inputs label
 
 
 blue_score = 0
@@ -43,13 +43,13 @@ end
 
 function update_match_score_ALL(sender_id, _red_score, _blue_score)
     label_config = {
-        text = "RED TEAM " .. math.floor(_red_score),
+        text ="{red_team}" .. math.floor(_red_score),
         name = "_L1O0Bnkl5f5W4PXI1737915307"
     }
     set_label(label_config)
 
     label_config2 = {
-        text = "BLUE TEAM " .. math.floor(_blue_score),
+        text ="{blue_team}" .. math.floor(_blue_score),
         name = "_nht0GjrXZngWZM5b1737915305"
     }
     set_label(label_config2)
@@ -63,13 +63,13 @@ function update_match_score_ALL(sender_id, _red_score, _blue_score)
 end
 
 function _on_user_disconnected(steam_id, nickname)
-    add_to_chat(nickname .. " disconnected")
+    add_to_chat(nickname .. "{disconnected}")
     remove_user_from_scoreboard(steam_id)
 end
 
 function _on_user_connected(steam_id, nickname)
     --Not safe to call network functions
-    add_to_chat(nickname .. " connected")
+    add_to_chat(nickname .. "{connected}")
 end
 
 function _on_user_initialized(steam_id, nickname)
@@ -93,7 +93,11 @@ end
 function check_and_create_user_visuals()
     -- Check each user's visuals if they're not spectators
     for steam_id, user_data in pairs(users) do -- get_entity_names_by_tag("user") can also be used but we already store users
-        if user_data.team ~= 0 then            -- Not a spectator
+        -- Bots build their own visuals in bot.lua on every peer, and their
+        -- entity may not have spawned here yet: never poke them.
+        if user_data.is_bot then
+            -- nothing to do
+        elseif user_data.team ~= 0 then        -- Not a spectator
             local image_name = get_value("", steam_id, "image_name")
             if image_name == "" then           -- Visuals not initialized
                 -- Call change_team_ALL with their current team
@@ -114,6 +118,22 @@ function add_user_to_scoreboard(steam_id, nickname)
             nickname = nickname,
             assists = 0,
             team = 0 -- users start without team
+        }
+        run_network_function(name, "update_users_score_ALL", { users })
+    end
+end
+
+-- Add a bot to the scoreboard (-bot_manager calls this when one is spawned).
+-- Bots live in the same table as players on purpose: that is what lets them
+-- score, pick up assists and be clicked in the score table like anyone else.
+function add_bot_to_scoreboard(bot_name, bot_label, team)
+    if IS_HOST then
+        users[bot_name] = {
+            goals = 0,
+            nickname = bot_label,
+            assists = 0,
+            team = math.floor(team),
+            is_bot = true
         }
         run_network_function(name, "update_users_score_ALL", { users })
     end
@@ -203,8 +223,8 @@ function handle_goal_ui_ALL(sender_id, last_touching_steam_id, previous_touching
     end
 
     if is_own_goal then
-        goal_text = "Ops! " ..
-            users[last_touching_steam_id].nickname .. " OWN GOAL!!! 🥲\n" .. scoring_team_str .. " team scored"
+        goal_text ="{ops}" ..
+            users[last_touching_steam_id].nickname .. "{own_goal}" .. scoring_team_str .. "{team_scored}"
         own_goal_scores(last_touching_steam_id)
     else
         local assist_id = nil
@@ -216,10 +236,10 @@ function handle_goal_ui_ALL(sender_id, last_touching_steam_id, previous_touching
             end
         end
 
-        goal_text = users[last_touching_steam_id].nickname .. " SCORED A GOAL!!!\n" .. scoring_team_str .. " team scored"
+        goal_text = users[last_touching_steam_id].nickname .. "{scored_a_goal}" .. scoring_team_str .. "{team_scored}"
 
         if assist_id then
-            goal_text = goal_text .. "\nAssist by " .. users[assist_id].nickname
+            goal_text = goal_text .. "{assist_by}" .. users[assist_id].nickname
         end
 
         addition_scores(last_touching_steam_id, assist_id)
@@ -262,7 +282,7 @@ function refresh_scoreboard(is_create_if_not_exist)
             return
         end
         local settings = {
-            title = "Scoreboard",
+            title ="{scoreboard}",
             resizable = true,
             is_scrollable = true,
             name = SCORE_PANEL_NAME,
@@ -274,12 +294,19 @@ function refresh_scoreboard(is_create_if_not_exist)
 
     if IS_HOST and panel_exists == false then
         add_button_to_panel(SCORE_PANEL_NAME, {
-            text = "Start Match",
+            text ="{start_match}",
             entity_name = name,
             function_name = "show_match_settings_panel",
             is_vertical = true,
             icon_path = "forward",
             color = Color(0, 1, 0) -- Green color
+        })
+        add_button_to_panel(SCORE_PANEL_NAME, {
+            text ="{bot_management}",
+            entity_name = "-bot_manager",
+            function_name = "show_bot_panel",
+            is_vertical = true,
+            color = Color(0.2, 0.55, 0.9)
         })
     end
 
@@ -299,7 +326,7 @@ function show_match_settings_panel()
     close_panel(SCORE_PANEL_NAME)
     local panel_config = {
         text = "",
-        title = "Match Settings",
+        title ="{match_settings}",
         name = "football_match_settings_panel_id",
         no_multiple_tag = "football_match_settings", -- Prevent multiple panels
         resizable = false
@@ -308,7 +335,7 @@ function show_match_settings_panel()
     local panel_name = create_panel(panel_config)
 
     add_button_to_panel(panel_name, {
-        text = "Start Match",
+        text ="{start_match}",
         entity_name = name,
         function_name = "match_countdown",
         is_vertical = true,
@@ -316,14 +343,15 @@ function show_match_settings_panel()
     })
 
     add_optionbox_to_panel(panel_name, {
-        text = "Time Limit",
+        text ="{time_limit}",
         options = { 1, 2, 5, 10, 15, 20, 30, 60, 90, "∞" }, --"∞" means infinite
         entity_name = name,
     })
 end
 
 function match_countdown(args)
-    run_network_function(name, "start_match_countdown_ALL", { args["Time Limit"] })
+    -- Panel values are keyed by the widget's RAW text, which is the token itself.
+    run_network_function(name, "start_match_countdown_ALL", { args["{time_limit}"] })
     close_panel(args.panel_name)
 end
 
@@ -412,13 +440,13 @@ function handle_game_over_ALL(sender_id, winner)
     local message, color
 
     if winner == 2 then
-        message = "BLUE TEAM WON"
+        message = "{blue_team_won}"
         color = Color(0, 0, 1)
     elseif winner == 1 then
-        message = "RED TEAM WON"
+        message = "{red_team_won}"
         color = Color(1, 0, 0)
     else
-        message = "DRAW"
+        message = "{draw_result}"
         color = Color(1, 1, 1)
     end
 
@@ -434,10 +462,10 @@ function create_scoreboard_data()
     local table_data = {}
 
     -- Header row
-    table_data[vector2_to_string(Vector2(0, 0))] = { text = "User", color = "#808080" }
-    table_data[vector2_to_string(Vector2(1, 0))] = { text = "Team", color = "#808080" }
-    table_data[vector2_to_string(Vector2(2, 0))] = { text = "Goals", color = "#808080" }
-    table_data[vector2_to_string(Vector2(3, 0))] = { text = "Assists", color = "#808080" }
+    table_data[vector2_to_string(Vector2(0, 0))] = { text ="{user_2}", color = "#808080" }
+    table_data[vector2_to_string(Vector2(1, 0))] = { text ="{team}", color = "#808080" }
+    table_data[vector2_to_string(Vector2(2, 0))] = { text ="{goals}", color = "#808080" }
+    table_data[vector2_to_string(Vector2(3, 0))] = { text ="{assists}", color = "#808080" }
 
     -- Sort users
     local sorted_users = {}
@@ -468,7 +496,8 @@ function create_scoreboard_data()
         table_data[vector2_to_string(Vector2(0, row))] = {
             text = data.nickname,
             color = color,
-            steam_id = steam_id
+            steam_id = steam_id,
+            is_bot = data.is_bot == true -- cell metadata: comes back on click
         }
 
         local team_name = "Spectator"
@@ -500,7 +529,8 @@ end
 function on_user_clicked(args) --custom function on cell of the table clicked
     local cell_data = args.cell_data
     if cell_data and cell_data.steam_id then
-        run_function("-user_action_panel", "show_user_actions", { cell_data.steam_id, cell_data.text })
+        run_function("-user_action_panel", "show_user_actions",
+            { cell_data.steam_id, cell_data.text, cell_data.is_bot == true })
     end
 end
 

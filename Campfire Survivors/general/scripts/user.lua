@@ -129,7 +129,7 @@ function update_stats(stats)
         -- Update health label
         set_label({
         name = "_health_label",
-        text = string.format("Health: %d/%d", math.floor(current_health), math.floor(max_health))
+        text = string.format(translate("{health_label}"), math.floor(current_health), math.floor(max_health))
         })
     end
 
@@ -154,10 +154,11 @@ function create_user_ALL(sender_id)
     name=nickname_label_name,
     text=nickname,
     outline_color=Color(0,0,0,1),
-    outline_size=4,
-    font_size=8,
+    outline_size=32,
+    font_size=64,
     position=Vector2(-256,-48),
-    size=Vector2(512,16),
+    size=Vector2(4096,128),
+    scale=Vector2(0.125,0.125),
     horizontal_alignment=1,
     vertical_alignment=1}
 
@@ -341,7 +342,7 @@ function update_collected_xp_CLIENT(sender_id, _collected_xp, _current_level, _r
         -- Update level display with XP progress
         set_label({
             name = "_level_label",
-            text = string.format("Level %d: XP %d/%d", current_level, math.floor(collected_xp), required_xp)
+            text = string.format(translate("{level_xp_label}"), math.floor(current_level), math.floor(collected_xp), math.floor(required_xp))
         })
         -- Update progress bar with the collected_xp from host
         set_progress_bar({
@@ -381,7 +382,7 @@ function add_health(amount)
         -- Update health label
         set_label({
             name = "_health_label",
-            text = string.format("Health: %d/%d", math.floor(_current_health), math.floor(max_health))
+            text = string.format(translate("{health_label}"), math.floor(_current_health), math.floor(max_health))
             })
     end
     
@@ -459,7 +460,7 @@ function handle_death()
         sync_player_state(current_health, true)
         
         -- Announce death
-        add_to_chat("[color=#aa4499]"..nickname.."[/color]".."[color=#883377] has been downed! Go to revive![/color]",true)
+        add_to_chat("[color=#aa4499]"..nickname.."[/color]".."{has_been_downed_go_to_revive}",true)
 
         -- Check if all players are dead
         run_function("-wm", "check_game_over")
@@ -498,7 +499,7 @@ function reset_player_ui_ALL(sender_id)
         -- Update level display
         set_label({
             name = "_level_label",
-            text = string.format("Level %d: %d/%d", current_level, 0, required_xp)
+            text = string.format(translate("{level_progress_label}"), math.floor(current_level), 0, math.floor(required_xp))
         })
         
         -- Reset level progress bar
@@ -516,13 +517,13 @@ function reset_player_ui_ALL(sender_id)
         })
         set_label({
             name = "_health_label",
-            text = string.format("Health: %d/%d", math.floor(max_health), math.floor(max_health))
+            text = string.format(translate("{health_label}"), math.floor(max_health), math.floor(max_health))
         })
         
         -- Reset time display
         set_label({
             name = "_time_label",
-            text = "Time: 00:00"
+            text ="{time_00_00}"
         })
         
         -- Clear center information
@@ -549,9 +550,17 @@ function refill_health_ALL()
         -- Update health label
         set_label({
             name = "_health_label",
-            text = string.format("Health: %d/%d", math.floor(current_health), math.floor(max_health))
+            text = string.format(translate("{health_label}"), math.floor(current_health), math.floor(max_health))
             })
     end
+end
+
+-- Move this player to a world position. Every peer applies it (a user entity is
+-- simulated locally, so a host-only write would be overwritten immediately).
+-- Used when the boss arena shrinks back and players would be left outside it.
+function teleport_ALL(sender_id, x, y)
+    set_value("", name, "linear_velocity", Vector2(0, 0))
+    set_value("", name, "position", Vector2(x, y))
 end
 
 -- Start revive process for a downed player
@@ -610,7 +619,7 @@ function update_revive_progress(args)
         run_function("-stats", "add_player_stat", {args.extra_args.revivor_id, "revives_performed", 1})
         
         -- Announce revive
-        add_to_chat("[color=#117733]"..nickname.."[/color][color=#0f6622] has been revived by [/color][color=#117733]"..get_value("", args.extra_args.revivor_id, "nickname").."[/color]", true)
+        add_to_chat("[color=#117733]"..nickname.."{has_been_revived_by}"..get_value("", args.extra_args.revivor_id, "nickname").."[/color]", true)
         
         -- Stop timer
         stop_timer("revive_timer_" .. name)
@@ -687,7 +696,7 @@ function update_max_health(increase_percentage)
         -- Update health label
         set_label({
             name = "_health_label",
-            text = string.format("Health: %d/%d", math.floor(current_health), math.floor(max_health))
+            text = string.format(translate("{health_label}"), math.floor(current_health), math.floor(max_health))
             })
     end
 
@@ -898,7 +907,7 @@ function update_player_state_ALL(sender_id, health, dead_status)
         -- Update health label
         set_label({
             name = "_health_label",
-            text = string.format("Health: %d/%d", math.floor(current_health), math.floor(max_health))
+            text = string.format(translate("{health_label}"), math.floor(current_health), math.floor(max_health))
             })
         
         -- Show death message if player died
@@ -906,7 +915,7 @@ function update_player_state_ALL(sender_id, health, dead_status)
             -- Display message that teammates can revive you
             set_label({
                 name = "_center_information",
-                text = "You died! Your teammates can revive you.",
+                text ="{you_died_your_teammates_can_revive_you}",
                 font_color = Color(1, 0.3, 0.3, 1)  -- Light red color
             })
         else
@@ -1002,7 +1011,7 @@ end
 function show_teammate_down_message(downed_nickname)
     if IS_LOCAL ==false then-- Show only other players
         -- Show the message in purple
-        label_text=downed_nickname .. " is down!"
+        label_text=downed_nickname .. "{is_down}"
         set_label({
             name = "_center_information",
             text = label_text,

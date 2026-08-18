@@ -8,6 +8,7 @@ singleton_name = "dtw_ui"
 -- =============================================================================
 
 local MANAGER = "-dtw_manager"
+local DATA = "-dtw_data"   -- word/text helpers (mask building in MY language)
 
 -- Panel handles
 local HUD = "dtw_hud"
@@ -48,7 +49,7 @@ local function set_hud(text)
         update_panel_settings(HUD, { text = text })
     else
         HUD = create_panel({
-            title = "Draw The Word",
+            title = "{dtw_title}",
             text = text,
             close = false,
             set_time = false,
@@ -64,24 +65,29 @@ local function refresh_hud()
     local txt
     if hud_phase == "choosing" then
         if am_drawer then
-            txt = "[center][b]Your turn![/b]\nPick a word to draw.[/center]"
+            txt = "[center][b]{your_turn}[/b]\n{pick_a_word}[/center]"
         else
-            txt = "[center][b]" .. drawer_name .. "[/b] is picking a word...[/center]"
+            txt = string.format("[center]%s[/center]",
+                string.format(translate("{x_is_picking}"), "[b]" .. drawer_name .. "[/b]"))
         end
     elseif hud_phase == "drawing" then
         if am_drawer then
             -- Drawer sees their word inline: one line, yellow, slightly larger.
-            txt = "[center]You are drawing [color=#ffff66][font_size=22]" ..
-                string.upper(my_word) .. "[/font_size][/color][/center]"
+            -- translate(): my_word is a keyword, and string.upper would mangle
+            -- multi-byte letters anyway.
+            txt = string.format("[center]%s[/center]", string.format(
+                translate("{you_are_drawing}"),
+                "[color=#ffff66][font_size=22]" .. translate(my_word) .. "[/font_size][/color]"))
         else
             -- Guessers see who is drawing. Mask goes to the view label; time to the
             -- time label. Keep the panel minimal.
-            txt = "[center][b]" .. drawer_name .. "[/b] is drawing[/center]"
+            txt = string.format("[center]%s[/center]",
+                string.format(translate("{x_is_drawing}"), "[b]" .. drawer_name .. "[/b]"))
         end
     elseif hud_phase == "intermission" then
-        txt = "[center]Get ready for the next round...[/center]"
+        txt = "[center]{get_ready}[/center]"
     else
-        txt = "[center][b]Draw The Word[/b]\nWaiting for players...[/center]"
+        txt = "[center][b]{dtw_title}[/b]\n{waiting_for_players}[/center]"
     end
     set_hud(txt)
 end
@@ -117,8 +123,8 @@ local function show_report_panel()
     if am_drawer then return end
     if is_panel_exists(REPORT) then return end
     REPORT = create_panel({
-        title = "Report",
-        text = "Drawer not playing fairly?",
+        title = "{report}",
+        text = "{not_playing_fairly}",
         close = false,
         set_time = false,
         resizable = false,
@@ -127,7 +133,7 @@ local function show_report_panel()
         offset_ratio = Vector2(2, 0),
     })
     add_button_to_panel(REPORT, {
-        text = "Report drawer",
+        text = "{report_drawer}",
         entity_name = "-dtw_ui",
         function_name = "report_click",
         color = Color(0.85, 0.3, 0.3, 1),
@@ -142,7 +148,8 @@ end
 function on_report_update(report_count, threshold)
     if is_panel_exists(REPORT) then
         update_panel_settings(REPORT, {
-            text = "Reports: [color=#ff8866]" .. report_count .. "[/color] / " .. threshold .. " to skip",
+            text = string.format(translate("{reports_x_of_y}"),
+                "[color=#ff8866]" .. report_count .. "[/color]", threshold),
         })
     end
 end
@@ -153,8 +160,8 @@ end
 function show_word_choice_CLIENT(sender_id, choices, choose_time)
     close_choice()
     CHOICE = create_panel({
-        title = "Choose a word",
-        text = "[center]Pick the word you want to draw:[/center]",
+        title = "{choose_a_word}",
+        text = "[center]{pick_word_to_draw}[/center]",
         close = false,
         set_time = false,
         resizable = false,
@@ -174,7 +181,7 @@ function show_word_choice_CLIENT(sender_id, choices, choose_time)
         })
     end
     add_button_to_panel(CHOICE, {
-        text = "Pass / Skip my turn",
+        text = "{pass_turn}",
         entity_name = "-dtw_ui",
         function_name = "pass_turn_click",
         color = Color(0.6, 0.6, 0.6, 1),
@@ -211,7 +218,7 @@ function start_drawing_CLIENT(sender_id, word, image_name, max_reveal)
     close_paint()
     paint_panel = create_painting_panel({
         name = image_name,
-        title = "Draw: " .. string.upper(word),
+        title = string.format(translate("{draw_x}"), translate(word)),
         close = false,
         offset_ratio = Vector2(0, 0.9),
     })
@@ -265,7 +272,8 @@ function on_round_start(p_drawer_id, p_drawer_name, p_mask, p_total_letters, p_t
     if not am_drawer then
         my_word = ""
         show_report_panel()
-        add_to_chat("[color=#88ccff]" .. p_drawer_name .. " is now drawing. Type your guesses in chat![/color]", false)
+        add_to_chat("[color=#88ccff]" ..
+        string.format(translate("{x_now_drawing_guess}"), p_drawer_name) .. "[/color]", false)
     end
     refresh_hud()
 end
@@ -290,14 +298,16 @@ end
 
 function on_correct_guess(guesser_id, guesser_name, pts)
     if guesser_id == LOCAL_STEAM_ID then
-        add_to_chat("[color=#66ff99][b]You guessed it! +" .. pts .. " points[/b][/color]", false)
+        add_to_chat("[color=#66ff99][b]" ..
+            string.format(translate("{you_guessed_it}"), pts) .. "[/b][/color]", false)
     else
-        add_to_chat("[color=#66ff99][b]" .. guesser_name .. "[/b] guessed correctly! (+" .. pts .. ")[/color]", false)
+        add_to_chat("[color=#66ff99]" .. string.format(
+            translate("{x_guessed_correctly}"), "[b]" .. guesser_name .. "[/b]", pts) .. "[/color]", false)
     end
 end
 
 function notify_close_CLIENT(sender_id)
-    add_to_chat("[color=#ffcc44]You guessed close![/color]", false)
+    add_to_chat("[color=#ffcc44]{you_guessed_close}[/color]", false)
 end
 
 function on_relayed_chat(chat_name, chat_text)
@@ -309,7 +319,7 @@ function on_turn_skipped(skipped_name, reason)
     am_drawer = false
     clear_round_ui()
     set_label({ name = LBL_TIME, text = "" })
-    add_to_chat("[color=#ffaa66]" .. skipped_name .. " " .. reason .. ".[/color]", false)
+    add_to_chat("[color=#ffaa66]" .. skipped_name .. " " .. translate(reason) .. ".[/color]", false)
     refresh_hud()
 end
 
@@ -318,14 +328,16 @@ function on_round_end(word, p_drawer_name, bonus, lines)
     clear_round_ui()
     set_label({ name = LBL_TIME, text = "" })
 
-    local summary = "[color=#ffff66]The word was: [b]" .. string.upper(word) .. "[/b][/color]"
+    local summary = "[color=#ffff66]" .. string.format(
+        translate("{the_word_was}"), "[b]" .. translate(word) .. "[/b]") .. "[/color]"
     if #lines == 0 then
-        summary = summary .. "\n[color=#ff8888]Nobody guessed it.[/color]"
+        summary = summary .. "\n[color=#ff8888]{nobody_guessed}[/color]"
     else
         for _, l in ipairs(lines) do
             summary = summary .. "\n[color=#66ff99]" .. l.name .. "[/color] +" .. l.points
         end
-        summary = summary .. "\n[color=#88ccff]" .. p_drawer_name .. " (drawer) +" .. bonus .. "[/color]"
+        summary = summary .. "\n[color=#88ccff]" .. string.format(
+            translate("{x_drawer_bonus}"), p_drawer_name, bonus) .. "[/color]"
     end
     add_to_chat(summary, false)
     am_drawer = false
@@ -338,7 +350,7 @@ end
 function on_scoreboard(scoreboard)
     if is_panel_exists(SCORE) then close_panel(SCORE) end
     SCORE = create_panel({
-        title = "Scores",
+        title = "{scores}",
         text = "",
         close = false,
         set_time = false,
@@ -356,7 +368,7 @@ function on_scoreboard(scoreboard)
             col = Color(0.3, 0.55, 0.8, 1)
         end
         if p.steam_id == LOCAL_STEAM_ID then
-            label = label .. " (you)"
+            label = label .. " " .. translate("{you_paren}")
             col = Color(0.3, 0.7, 0.4, 1)
         end
         add_button_to_panel(SCORE, {
@@ -380,8 +392,8 @@ function on_game_over(scoreboard)
 
     close_podium()
     PODIUM = create_panel({
-        title = "Final Results",
-        text = "[center][b][font_size=22]Game Over![/font_size][/b][/center]",
+        title = "{final_results}",
+        text = "[center][b][font_size=22]{game_over}[/font_size][/b][/center]",
         close = true,
         set_time = false,
         resizable = true,
@@ -398,7 +410,8 @@ function on_game_over(scoreboard)
     for i = 1, math.min(3, #scoreboard) do
         local p = scoreboard[i]
         add_button_to_panel(PODIUM, {
-            text = medals[i] .. "  " .. p.name .. "  -  " .. p.score .. " pts",
+            text = medals[i] .. "  " .. p.name .. "  -  " ..
+                string.format(translate("{x_pts}"), p.score),
             entity_name = "-dtw_ui",
             function_name = "open_player_profile",
             extra_args = { steam_id = p.steam_id },
@@ -411,7 +424,7 @@ function on_game_over(scoreboard)
     for i = 4, #scoreboard do
         local p = scoreboard[i]
         add_button_to_panel(PODIUM, {
-            text = i .. ". " .. p.name .. "  -  " .. p.score .. " pts",
+            text = i .. ". " .. p.name .. "  -  " .. p.score .. "{pts}",
             color = Color(0.4, 0.45, 0.5, 1),
             is_vertical = true,
         })
@@ -437,11 +450,17 @@ end
 -- =============================================================================
 -- Late-joiner sync
 -- =============================================================================
-function sync_state_CLIENT(sender_id, phase, p_drawer_name, p_drawer_id, p_mask, p_total_letters, p_time)
+function sync_state_CLIENT(sender_id, phase, p_drawer_name, p_drawer_id, p_word_key,
+                           p_used, p_seed, p_total_letters, p_time)
     hud_phase = phase
     drawer_name = p_drawer_name
     am_drawer = (p_drawer_id ~= "" and LOCAL_STEAM_ID == p_drawer_id)
-    mask = p_mask or ""
+    -- The host sends the word KEYWORD; the blanks are laid out for my language.
+    if p_word_key ~= nil and p_word_key ~= "" then
+        mask = run_function(DATA, "dtw_local_mask", { p_word_key, p_used or 0, p_seed or 0 })
+    else
+        mask = ""
+    end
     time_left = p_time or 0
     -- Populate the view labels to match the current round state.
     if phase == "drawing" then

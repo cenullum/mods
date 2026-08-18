@@ -247,10 +247,11 @@ function create_user(sender_id, player_color, pos)
         name = nickname_label_name,
         text = nickname,
         outline_color = outline_color,
-        outline_size = 4,
-        font_size = 8,
+        outline_size = 32,
+        font_size = 64,
         position = Vector2(-256, -48),
-        size = Vector2(512, 16),
+        size = Vector2(4096, 128),
+        scale = Vector2(0.125, 0.125),
         horizontal_alignment = 1,
         vertical_alignment = 1,
         z_index = 5
@@ -300,14 +301,15 @@ function create_user(sender_id, player_color, pos)
         parent_name = cursor_name, -- Child of cursor, will move automatically
         name = cursor_nickname_name,
         text = nickname,
-        font_size = 12,
+        font_size = 96,
         position = Vector2(-100, 20),      -- Relative to cursor position
-        size = Vector2(200, 20),
+        size = Vector2(1600, 160),
+        scale = Vector2(0.125, 0.125),
         horizontal_alignment = 1,          -- Center
         vertical_alignment = 1,            -- Center
         --modulate = outline_color, --its already set in set_image
         outline_color = Color(0, 0, 0, 1), -- Black outline
-        outline_size = 8,
+        outline_size = 64,
         z_index = 10,
         --visible = not IS_LOCAL  --its already set in set_image Local player doesn't see their own cursor nickname
     })
@@ -405,7 +407,7 @@ end
 
 function _on_user_disconnected(steam_id, nickname)
     if steam_id == name then
-        add_to_chat(nickname .. " disconnected")
+        add_to_chat(nickname .. "{disconnected}")
         destroy("", hook_entity_name)
         destroy("", cursor_name)
         destroy("", cursor_nickname_name)
@@ -460,7 +462,7 @@ function _process(delta, inputs)
                 if IS_LOCAL then
                     set_label({
                         name = "_hook_timeout_label",
-                        text = "Hook timed out! You can fire again.",
+                        text ="{hook_timed_out_you_can_fire_again}",
                         position = Vector2(20, 60),
                         size = Vector2(400, 20),
                         modulate = Color(1, 0.8, 0, 1),
@@ -756,10 +758,10 @@ function update_hook_power_ui()
         local label_color = Color(1, 1, 1, 1) -- Default white
 
         if hook_state == "READY" then
-            power_label_text = "Hook Power"
+            power_label_text ="{hook_power}"
             label_color = Color(0.5, 0.8, 1.0, 1.0) -- Light blue for hook power
         elseif hook_state == "ATTACHED" then
-            power_label_text = "Jump Power"
+            power_label_text ="{jump_power}"
             label_color = Color(1.0, 0.7, 0.3, 1.0) -- Orange for jump power
         end
 
@@ -826,7 +828,7 @@ function request_cancel_searching_HOST(sender_id)
     end
 
     -- Show cancellation bubble effect before stopping fishing
-    run_function("-fishing_game", "show_world_space_result", { name, "", "🚫 Fishing cancelled" })
+    run_function("-fishing_game", "show_world_space_result", { name, "", "{fishing_cancelled}" })
 
     -- Stop searching timer if active
     run_function("-fishing_game", "stop_searching_for_player", { name })

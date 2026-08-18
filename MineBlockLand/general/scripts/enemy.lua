@@ -1,14 +1,24 @@
+network_mode = 2 -- the host walks it around, so every peer needs its position streamed
 lock_rotation = true
 linear_damp = 0
+friction = 0 -- slide along walls instead of sticking when chasing a target on the other side
 
 -- =============================================================================
 -- MineBlockLand - one data-driven enemy script for every hostile NPC.
--- The spawner (-gm) passes everything as spawn config: image, size, hp, dmg,
--- speed, windup, cooldown, reach, ranged, shoot_cd, tint, is_night_npc,
--- dungeon_id. Night zombies burn at dawn; dungeon guards hold their room.
+-- The spawner (-gm) passes everything as spawn config: etype, image, size, hp,
+-- dmg, speed, windup, cooldown, reach, ranged, shoot_cd, bolt_color, phasing,
+-- tint, is_night_npc, dungeon_id. Night zombies burn at dawn; dungeon guards
+-- hold their room. 'etype' is what decides the loot table (see -items).
+--
+-- The AI is host-only (retarget/check_attack/go_to_target all bail on a client),
+-- so the entity MUST be DYNAMIC: without it a client spawned the zombie once and
+-- then watched it stand still forever while the host's copy chased people.
 --
 -- NPCs collide with TILES ONLY (mask {1}); they walk straight through players
--- and each other. All damage flows through -combat's telegraphed zones.
+-- and each other. A 'phasing' enemy (the ghost) drops even that, so walls,
+-- trees and rock do not stop it - but it still sits on layer 3, so arrows,
+-- melee telegraphs and every other damage path treat it like anything else.
+-- All damage flows through -combat's telegraphed zones.
 -- =============================================================================
 
 add_tag(name, "npc")
@@ -31,7 +41,7 @@ set_value("", name, "speed", speed)
 set_image({ parent_name = name, name = "body", image_path = image,
     scale = Vector2(size, size), modulate = tint, z_index = 2 })
 set_collision({ parent_name = name, name = "col", shape = "circle", size = size / 2,
-    collision_layer = { 3 }, collision_mask = { 1 } })
+    collision_layer = { 3 }, collision_mask = phasing and {} or { 1 } })
 -- Read by -combat's melee hit test: without this, a swing that visually
 -- clipped the zombie's body but missed its exact centre point counted as a
 -- miss (the check only knew the victim's position, not how big it is).
@@ -76,7 +86,7 @@ function check_attack()
     elseif ranged and dist <= RANGED_MAX_RANGE then
         attack_ready = false
         local angle = math.atan(target_pos.y - my_pos.y, target_pos.x - my_pos.x)
-        spawn_entity_host({ t = "bullet", p = my_pos, r = angle,
+        spawn_entity_host({ t = "bullet", p = my_pos, r = angle, bolt_color = bolt_color,
             dmg = dmg, speed = BULLET_SPEED, life = BULLET_LIFE })
         start_timer({ timer_id = "cd" .. name, entity_name = name,
             function_name = "reset_attack", wait_time = shoot_cd, duration = shoot_cd })
@@ -106,7 +116,7 @@ function npc_take_damage(dmg_in, attacker, kb, angle)
     if my_pos then
         run_function("-combat", "show_damage", { my_pos.x, my_pos.y, dmg_in, "npc" })
     end
-    if attacker and has_tag(attacker, "user") then
+    if attacker and attacker ~= "" and has_tag(attacker, "user") then
         run_function("-gm", "add_stat", { attacker, "dmg_dealt", dmg_in })
     end
     if kb and kb > 0 and angle then
@@ -114,7 +124,7 @@ function npc_take_damage(dmg_in, attacker, kb, angle)
     end
     if hp <= 0 then
         if my_pos then
-            for _, drop in ipairs(run_function("-items", "get_zombie_drops")) do
+            for _, drop in ipairs(run_function("-items", "get_enemy_drops", { etype })) do
                 if math.random() < drop.chance then
                     spawn_entity_host({ t = "ground_item", p = my_pos,
                         item_id = drop.id, count = math.random(drop.min, drop.max) })

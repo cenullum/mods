@@ -218,8 +218,8 @@ function start_round(r)
     run_network_function(name, "set_hidden_phase_ALL", { true, connected })
 
     run_network_function(name, "banner_ALL", {
-        "Round " .. r .. "/" .. ROUNDS .. " (seed " .. seed .. ") - roam, hide & paint! "
-        .. "Hunt begins in " .. HIDE_LOCK .. "s", 5 })
+        "{round}" .. r .. "/" .. ROUNDS .. "{seed_2}" .. seed .. "{roam_hide_paint}"
+        .. "{hunt_begins_in}" .. HIDE_LOCK .. "s", 5 })
     broadcast_stats()
 
     phase = "hiding"
@@ -285,7 +285,7 @@ function pre_lock_seekers()
     run_function(GEN, "seal_room", {})
     run_network_function(name, "reseal_room_CLIENT", {})
     run_network_function(name, "lock_seekers_ALL", {})
-    run_network_function(name, "banner_ALL", { "Seekers return to the room - hunt begins in " .. PRE_LOCK_WARN .. "s!", 4 })
+    run_network_function(name, "banner_ALL", { "{seekers_return_to_the_room}" .. PRE_LOCK_WARN .. "s!", 4 })
 end
 
 function hide_lock_done(args)
@@ -297,7 +297,7 @@ function hide_lock_done(args)
     run_network_function(name, "open_room_CLIENT", {})
     run_network_function(name, "release_seekers_ALL", {})
     run_network_function(name, "set_hidden_phase_ALL", { false, connected })
-    run_network_function(name, "banner_ALL", { "Seekers released! Hunt begins!", 4 })
+    run_network_function(name, "banner_ALL", { "{seekers_released_hunt_begins}", 4 })
 
     start_timer({ timer_id = "hs_seek", entity_name = name, function_name = "seek_done",
         wait_time = SEEK_TIME, duration = SEEK_TIME })
@@ -508,8 +508,8 @@ function host_begin(seed_arg)
         end
         place_players()
         run_network_function(name, "set_roles_ALL", { role_map(), 0, hider_list() })
-        run_network_function(name, "banner_ALL", { "Preview (seed " .. seed .. ") - waiting for "
-            .. (MIN_PLAYERS - #connected) .. " more to start the hunt.", 5 })
+        run_network_function(name, "banner_ALL", { "{preview_seed}" .. seed .. "{waiting_for_2}"
+            .. (MIN_PLAYERS - #connected) .. "{more_to_start_the_hunt}", 5 })
         broadcast_stats()
         -- The panel was already closed above; preview is a "gameplay" state (the
         -- host is exploring), so it stays hidden. It reopens naturally once the
@@ -685,7 +685,7 @@ function _on_user_disconnected(steam_id, nickname)
         phase = "gameover"
         round_no = 0
         for _, p in pairs(players) do p.role = 0 end
-        run_network_function(name, "banner_ALL", { "Not enough players - match stopped.", 4 })
+        run_network_function(name, "banner_ALL", { "{not_enough_players_match_stopped}", 4 })
         run_network_function(name, "set_roles_ALL", { role_map(), 0, {} })
         -- A deliberate state change (the match was just interrupted), unlike a
         -- plain join/leave - show the host a fresh seed panel to start over.

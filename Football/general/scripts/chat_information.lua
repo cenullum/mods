@@ -10,8 +10,8 @@ function format_unix_time(unix_time)
     -- Month data
     local MONTH_DAYS = {31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31}
     local MONTH_NAMES = {
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
+        "{month_january}", "{month_february}", "{month_march}", "{month_april}", "{month_may}", "{month_june}",
+        "{month_july}", "{month_august}", "{month_september}", "{month_october}", "{month_november}", "{month_december}"
     }
 
     -- Extract time components
@@ -76,9 +76,9 @@ print(format_unix_time(get_os_time()))-- THIS WRITES CURRENT TIME AS ENGLISH
 
 function _on_user_kicked(steam_id,nickname, reason)
     if reason and reason ~= "" then
-        add_to_chat("User " .. nickname .. " was KICKED: " .. reason)
+        add_to_chat("{user}" .. nickname .. "{was_kicked}" .. reason)
     else
-        add_to_chat("User " .. nickname .. " was KICKED")
+        add_to_chat("{user}" .. nickname .. "{was_kicked_2}")
     end
 end
 
@@ -87,9 +87,9 @@ function _on_user_banned(steam_id, nickname, duration, reason)
     local unban_time = format_duration(duration)--duration is unix number
 	
     if reason and reason ~= "" then
-        add_to_chat("User " .. nickname .. " was BANNED until " .. unban_time .. "\nReason: " .. reason)
+        add_to_chat("{user}" .. nickname .. "{was_banned_until}" .. unban_time .. "{reason}" .. reason)
     else
-        add_to_chat("User " .. nickname .. " was BANNED until " .. unban_time)
+        add_to_chat("{user}" .. nickname .. "{was_banned_until}" .. unban_time)
     end
 end
 
@@ -153,7 +153,7 @@ function format_duration(seconds)
         return parts[1]
     else
         local last = table.remove(parts)
-        return table.concat(parts, ", ") .. " and " .. last
+        return table.concat(parts, ", ") .. "{and}" .. last
     end
 end
 

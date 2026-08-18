@@ -36,10 +36,11 @@ function create_user_ALL(sender_id, player_color)
         name = nickname_label_name,
         text = nickname,
         outline_color = player_color,
-        outline_size = 4,
-        font_size = 8,
+        outline_size = 32,
+        font_size = 64,
         position = Vector2(-256, -48),
-        size = Vector2(512, 16),
+        size = Vector2(4096, 128),
+        scale = Vector2(0.125, 0.125),
         horizontal_alignment = 1,
         vertical_alignment = 1,
         z_index = 5
@@ -139,6 +140,6 @@ end
 
 function _on_user_disconnected(steam_id, nickname)
     if steam_id == name then
-        add_to_chat(nickname .. " disconnected", false)
+        add_to_chat(nickname .. "{disconnected}", false)
     end
 end

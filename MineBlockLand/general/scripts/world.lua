@@ -9,26 +9,26 @@ singleton_name = "w"
 set_controller_type(1)               -- TOP_DOWN: stick_1 walks the avatar
 set_gravity_direction(Vector2(0, 0)) -- top-down: no gravity pull
 
-set_input_display_name("stick_1", "Move")
-set_input_display_name("stick_2", "Aim")
-set_input_display_name("key_12", "Use / Attack")
-set_input_display_name("key_9", "Interact")
-set_input_display_name("key_6", "Inventory")
-set_input_display_name("key_5", "Next Item")
-set_input_display_name("key_7", "Drop Held Item")
-set_input_display_name("key_11", "Map")
+set_input_display_name("stick_1","{move}")
+set_input_display_name("stick_2","{aim}")
+set_input_display_name("key_12","{use_attack}")
+set_input_display_name("key_9","{interact}")
+set_input_display_name("key_6","{inventory}")
+set_input_display_name("key_5","{next_item}")
+set_input_display_name("key_7","{drop_held_item}")
+set_input_display_name("key_11","{map}")
 
 change_view("gameplay")
 
 function update_inputs_label()
     set_label({ name = "_mbl_inputs", text = table.concat({
-        "@stick_1@ Move   @stick_2@ Aim",
-        "@key_12@ Use / Attack",
-        "@key_9@ Interact (plant - harvest - eat)",
-        "@key_6@ Inventory & Craft",
-        "@key_5@ Next Item",
-        "@key_7@ Drop Held Item",
-        "@key_11@ Map",
+        "{hint_move_aim}",
+        "{hint_use_attack}",
+        "{hint_interact}",
+        "{hint_inventory_craft}",
+        "{hint_next_item}",
+        "{hint_drop_held_item}",
+        "{hint_map}",
     }, "\n") })
 end
 

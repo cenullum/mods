@@ -50,8 +50,8 @@ function show_words_panel()
 
     -- Create separate words panel at center-right (slightly above players)
     local words_panel_config = {
-        title = "Word Options",
-        text = "Waiting for role assignment...",
+        title ="{word_options}",
+        text ="{waiting_for_role_assignment}",
         resizable = true,
         is_scrollable = true,
         minimum_size = Vector2(250, 460),
@@ -103,7 +103,7 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
     local can_vote = (local_user_role == "innocent")
     local vote_instruction = ""
     if can_vote then
-        vote_instruction = "\n\nClick to vote:"
+        vote_instruction = "{click_to_vote}"
     end
 
     -- Create role-specific header text
@@ -111,18 +111,18 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
     if local_user_role == "innocent" then
         local word_info = ""
         if current_correct_word ~= "" then
-            word_info = "The selected word is: [b][color=#66ff66]" .. current_correct_word .. "[/color][/b]\n"
+            word_info = "{the_selected_word_is}" .. current_correct_word .. "[/color][/b]\n"
         end
-        role_info = "You are innocent.\n" ..
-            word_info .. "Find the liar by asking questions and voting!\nType /rules to see the rules.\n\n"
+        role_info = "{you_are_innocent}" ..
+            word_info .. "{find_the_liar_by_asking_questions_and_vo}"
     elseif local_user_role == "liar" then
-        role_info = "You are the liar.\nAsk questions to others.\nType /rules to see the rules.\n\n"
+        role_info = "{you_are_the_liar_info}"
     elseif local_user_role == "spectator" then
-        role_info = "You are spectating.\nType /rules to see the rules.\n\n"
+        role_info = "{you_are_spectating_info}"
     end
 
     local header_text = role_info ..
-        "Game: " .. alive_count .. "/" .. game_count .. " alive | Spectators: " .. #spectators .. vote_instruction
+        "{game}" .. alive_count .. "/" .. game_count .. "{alive_spectators}" .. #spectators .. vote_instruction
 
     -- Always recreate the panel to avoid duplicate buttons
     if is_panel_exists(USERS_PANEL_NAME) then
@@ -131,7 +131,7 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
 
     -- Create new users panel
     local users_panel_config = {
-        title = "Game Info & Users",
+        title ="{game_info_users}",
         text = header_text,
         resizable = true,
         is_scrollable = true,
@@ -154,14 +154,14 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
 
         if LOCAL_STEAM_ID == steam_id then
             button_color = Color(0, 1, 0, 1) -- Green for local user
-            user_name = user_name .. " (YOU)"
+            user_name = user_name .. "{you}"
             can_vote = false                 -- Can't vote for yourself
         end
 
         -- Check if user is eliminated
         if not is_alive then
             button_color = Color(1, 0.3, 0.3, 1) -- Red for eliminated
-            user_name = "✗ " .. user_name .. " (ELIMINATED)"
+            user_name = "✗ " .. user_name .. "{eliminated}"
             can_vote = false
         end
 
@@ -189,7 +189,7 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
     -- Add separator if there are both participants and spectators
     if #game_participants > 0 and #spectators > 0 then
         add_button_to_panel(USERS_PANEL_NAME, {
-            text = "--- SPECTATORS ---",
+            text ="{spectators}",
             color = Color(0.5, 0.5, 0.5, 1),
             is_vertical = true
         })
@@ -201,11 +201,11 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
         local nickname = spectator.nickname
 
         local button_color = Color(0.4, 0.4, 0.4, 1) -- Dark gray for spectators
-        local user_name = nickname .. " (SPECTATOR)"
+        local user_name = nickname .. "{spectator}"
 
         if LOCAL_STEAM_ID == steam_id then
             button_color = Color(0.6, 0.6, 0.6, 1) -- Slightly lighter gray for local spectator
-            user_name = user_name .. " (YOU)"
+            user_name = user_name .. "{you}"
         end
 
         -- Spectators are always non-clickable
@@ -230,8 +230,8 @@ function show_word_options_for_innocent(words, correct_word, category_name)
     end
 
     update_panel_settings(WORDS_PANEL_NAME, {
-        text = "Category: [b]" ..
-            category_name .. "[/b]\n[color=#66ff66]The correct word: " .. correct_word .. "[/color]"
+        text ="{category}" ..
+            category_name .. "{the_correct_word}" .. correct_word .. "[/color]"
     })
 
     for i, word in ipairs(display_words) do
@@ -241,7 +241,7 @@ function show_word_options_for_innocent(words, correct_word, category_name)
         -- Highlight the correct word
         if word == correct_word then
             button_color = Color(0.4, 1, 0.4, 1) -- Light green for correct word
-            button_text = "✓ " .. word .. " (CORRECT)"
+            button_text = "✓ " .. word .. "{correct}"
         end
 
         add_button_to_panel(WORDS_PANEL_NAME, {
@@ -266,7 +266,7 @@ function show_word_options_for_liar(words, category_name)
     end
 
     update_panel_settings(WORDS_PANEL_NAME, {
-        text = "Category: [b]" .. category_name .. "[/b]\nGuess the correct word to win:\nClick to select"
+        text ="{category}" .. category_name .. "{guess_the_correct_word_to_win_click_to_s}"
     })
 
     for i, word in ipairs(display_words) do
@@ -293,9 +293,9 @@ function process_word_click_CLIENT(sender_id, args)
 
     -- Show confirmation dialog
     local confirm_config = {
-        title = "Confirm Word Selection",
-        text = "You are about to choose this word: [b]" ..
-            word .. "[/b]\n\nIf it's wrong, you'll lose. If it's correct, you'll win.\n\nAre you sure?",
+        title ="{confirm_word_selection}",
+        text ="{you_are_about_to_choose_this_word}" ..
+            word .. "{if_it_s_wrong_you_ll_lose_if_it_s_correc}",
         resizable = false,
         no_multiple_tag = "word_confirm"
     }
@@ -304,7 +304,7 @@ function process_word_click_CLIENT(sender_id, args)
 
     -- Add Continue button
     add_button_to_panel(confirm_panel, {
-        text = "Continue",
+        text ="{continue}",
         entity_name = "-finding_liar_ui",
         function_name = "confirm_word_selection",
         extra_args = { word = word },
@@ -314,7 +314,7 @@ function process_word_click_CLIENT(sender_id, args)
 
     -- Add Cancel button
     add_button_to_panel(confirm_panel, {
-        text = "Cancel",
+        text ="{cancel}",
         entity_name = "-finding_liar_ui",
         function_name = "cancel_word_selection",
         color = Color(1, 0, 0, 1), -- Red
@@ -358,10 +358,10 @@ function process_vote_click_CLIENT(sender_id, args)
 
     -- Show voting confirmation with warning
     local vote_config = {
-        title = "Confirm Vote",
-        text = "Are you sure [b]" ..
+        title ="{confirm_vote}",
+        text ="{are_you_sure}" ..
             target_name ..
-            "[/b] is the liar?\n\n[color=#ff6666][b]WARNING:[/b][/color] If you vote out an innocent player, the liars win!\n\nDo you want to start a vote?",
+            "{is_the_liar_warning}",
         resizable = false,
         no_multiple_tag = "vote_confirm"
     }
@@ -370,7 +370,7 @@ function process_vote_click_CLIENT(sender_id, args)
 
     -- Add Confirm button
     add_button_to_panel(VOTE_CONFIRM_PANEL_NAME, {
-        text = "Confirm - Start Vote",
+        text ="{confirm_start_vote}",
         entity_name = "-finding_liar_ui",
         function_name = "confirm_vote_initiation",
         extra_args = { target_steam_id = target_steam_id, target_name = target_name },
@@ -380,7 +380,7 @@ function process_vote_click_CLIENT(sender_id, args)
 
     -- Add Cancel button
     add_button_to_panel(VOTE_CONFIRM_PANEL_NAME, {
-        text = "Cancel",
+        text ="{cancel}",
         entity_name = "-finding_liar_ui",
         function_name = "cancel_vote_initiation",
         color = Color(0.5, 0.5, 0.5, 1), -- Gray
@@ -438,17 +438,17 @@ function show_vote_panel(initiator_name, target_name, target_id, votes_needed, v
     -- Create vote panel with countdown at center screen
     local vote_status_text = ""
     if is_initiator then
-        vote_status_text = "[b]Your vote:[/b] YES (initiator)"
+        vote_status_text ="{your_vote_yes_initiator}"
     else
-        vote_status_text = "[b]Your vote:[/b] You haven't voted yet"
+        vote_status_text = "{your_vote_not_voted_yet}"
     end
 
     local vote_config = {
-        title = "VOTE IN PROGRESS",
+        title ="{vote_in_progress}",
         text = "[center][b][font_size=20]" .. initiator_name .. " → " .. target_name .. "[/font_size][/b]\n\n" ..
-            "YES: [color=#66ff66]1[/color] / NO: [color=#ff4444]0[/color] (Needed: " ..
+            "{vote_tally_initial}" ..
             math.floor(votes_needed or 0) .. ")\n\n" ..
-            "[color=#ffff00][b]Is " .. target_name .. " the liar?[/b][/color]\n\n" ..
+            "{is_name_prefix}" .. target_name .. "{the_liar}" ..
             vote_status_text .. "[/center]",
         resizable = false,
         close = false,                   -- Disable close button during vote
@@ -464,7 +464,7 @@ function show_vote_panel(initiator_name, target_name, target_id, votes_needed, v
     if not is_initiator then
         -- Add Yes button
         add_button_to_panel(VOTE_PANEL_NAME, {
-            text = "YES - Eliminate " .. target_name,
+            text ="{yes_eliminate}" .. target_name,
             entity_name = "-finding_liar_ui",
             function_name = "submit_vote",
             extra_args = { target_id = target_id, vote_yes = true },
@@ -474,7 +474,7 @@ function show_vote_panel(initiator_name, target_name, target_id, votes_needed, v
 
         -- Add No button
         add_button_to_panel(VOTE_PANEL_NAME, {
-            text = "NO - Keep " .. target_name,
+            text ="{no_keep}" .. target_name,
             entity_name = "-finding_liar_ui",
             function_name = "submit_vote",
             extra_args = { target_id = target_id, vote_yes = false },
@@ -490,8 +490,8 @@ function submit_vote(args)
     if not is_panel_exists(VOTE_PANEL_NAME) then
         -- Vote has ended, show message and return
         local message_config = {
-            title = "Vote Ended",
-            text = "The vote has already ended or timed out.",
+            title ="{vote_ended}",
+            text ="{the_vote_has_already_ended_or_timed_out}",
             resizable = false,
             countdown = 3
         }
@@ -535,22 +535,21 @@ function update_vote_progress_CLIENT(sender_id, votes_yes, votes_no, votes_neede
     -- Generate user vote status text
     local vote_status_text = ""
     if current_vote_info.user_voted then
-        vote_status_text = "[b]Your vote:[/b] " .. current_vote_info.user_vote_choice
+        vote_status_text ="{your_vote}" .. current_vote_info.user_vote_choice
     else
-        vote_status_text = "[b]Your vote:[/b] You haven't voted yet"
+        vote_status_text = "{your_vote_not_voted_yet}"
     end
 
     -- Use stored vote info for complete update
-    local updated_text = string.format(
-        "[center][b][font_size=20]%s → %s[/font_size][/b]\n\n" ..
-        "YES: [color=#66ff66]%d[/color] / NO: [color=#ff4444]%d[/color] (Needed: %d)\n\n" ..
-        "[color=#ffff00][b]Is %s the liar?[/b][/color]\n\n" ..
-        "%s[/center]",
+    -- The placeholders live INSIDE the translated string (word order differs per
+    -- language), so translate first and format after. Counts arrive as floats
+    -- across the Lua<->GDScript boundary, hence math.floor + %s rather than %d.
+    local updated_text = string.format(translate("{vote_progress_full}"),
         current_vote_info.initiator_name,
         current_vote_info.target_name,
-        votes_yes,
-        votes_no,
-        votes_needed,
+        math.floor(votes_yes or 0),
+        math.floor(votes_no or 0),
+        math.floor(votes_needed or 0),
         current_vote_info.target_name,
         vote_status_text
     )
@@ -568,14 +567,10 @@ function update_vote_panel_with_user_status()
     end
 
     -- Generate user vote status text
-    local vote_status_text = "[b]Your vote:[/b] " .. current_vote_info.user_vote_choice
+    local vote_status_text ="{your_vote}" .. current_vote_info.user_vote_choice
 
     -- Basic update without vote counts (will be updated by server)
-    local updated_text = string.format(
-        "[center][b][font_size=20]%s → %s[/font_size][/b]\n\n" ..
-        "YES: [color=#66ff66]?[/color] / NO: [color=#ff4444]?[/color] (Needed: ?)\n\n" ..
-        "[color=#ffff00][b]Is %s the liar?[/b][/color]\n\n" ..
-        "%s[/center]",
+    local updated_text = string.format(translate("{vote_progress_unknown}"),
         current_vote_info.initiator_name,
         current_vote_info.target_name,
         current_vote_info.target_name,
@@ -609,13 +604,13 @@ function show_vote_target_panel(initiator_name, target_name, target_id, votes_ne
 
     -- Create vote panel for target with warning message
     local vote_config = {
-        title = "⚠️ YOU ARE BEING VOTED",
-        text = "[center][b][font_size=20][color=#ff4444]⚠️ YOU ARE BEING VOTED[/color][/font_size][/b]\n\n" ..
-            "[font_size=18]" .. initiator_name .. " → YOU[/font_size]\n\n" ..
-            "YES: [color=#66ff66]1[/color] / NO: [color=#ff4444]0[/color] (Needed: " ..
+        title ="{you_are_being_voted}",
+        text ="{you_are_being_voted_2}" ..
+            "[font_size=18]" .. initiator_name .. "{you_2}" ..
+            "{vote_tally_initial}" ..
             math.floor(votes_needed or 0) .. ")\n\n" ..
-            "[color=#ffff00][b]Is " .. target_name .. " the liar?[/b][/color]\n\n" ..
-            "Defend yourself in chat![/center]",
+            "{is_name_prefix}" .. target_name .. "{the_liar}" ..
+            "{defend_yourself_in_chat}",
         resizable = false,
         close = false,                    -- Disable close button during vote
         no_multiple_tag = "active_vote_target",
@@ -636,16 +631,11 @@ function update_vote_target_progress_CLIENT(sender_id, votes_yes, votes_no, vote
     end
 
     -- Update with target-specific text
-    local updated_text = string.format(
-        "[center][b][font_size=20][color=#ff4444]⚠️ YOU ARE BEING VOTED[/color][/font_size][/b]\n\n" ..
-        "[font_size=18]%s → YOU[/font_size]\n\n" ..
-        "YES: [color=#66ff66]%d[/color] / NO: [color=#ff4444]%d[/color] (Needed: %d)\n\n" ..
-        "[color=#ffff00][b]Is %s the liar?[/b][/color]\n\n" ..
-        "Defend yourself in chat![/center]",
+    local updated_text = string.format(translate("{vote_target_progress}"),
         current_vote_info.initiator_name,
-        votes_yes,
-        votes_no,
-        votes_needed,
+        math.floor(votes_yes or 0),
+        math.floor(votes_no or 0),
+        math.floor(votes_needed or 0),
         current_vote_info.target_name
     )
 
@@ -664,11 +654,11 @@ function update_timer_display(time_remaining)
     -- Add objective text based on user role
     local objective_text = ""
     if local_user_role == "liar" then
-        objective_text = " - Find the word"
+        objective_text ="{find_the_word}"
     elseif local_user_role == "innocent" then
-        objective_text = " - Find the liar"
+        objective_text ="{find_the_liar}"
     else
-        objective_text = " - Spectating"
+        objective_text ="{spectating}"
     end
 
     local full_text = time_text .. objective_text
@@ -696,13 +686,13 @@ function show_game_over(winner, reason, liars_names, correct_word)
     end
 
     local winner_color = Color(0.5, 0.5, 0.5, 1) -- Gray default
-    local winner_title = "GAME OVER"
+    local winner_title ="{game_over}"
     if winner == "innocent" then
         winner_color = Color(0, 1, 0, 1) -- Green for innocent win
-        winner_title = "INNOCENT WINS!"
+        winner_title ="{innocent_wins}"
     elseif winner == "liar" then
         winner_color = Color(1, 0, 0, 1) -- Red for liar win
-        winner_title = "LIAR WINS!"
+        winner_title ="{liar_wins}"
     end
 
     local hex_color = string.format("#%02x%02x%02x",
@@ -710,15 +700,15 @@ function show_game_over(winner, reason, liars_names, correct_word)
         math.floor(winner_color.g * 255),
         math.floor(winner_color.b * 255))
 
-    local display_text = "[center][b][font_size=24][color=" ..
+    local display_text ="[color=" ..
         hex_color .. "]" .. winner_title .. "[/color][/font_size][/b]\n\n" ..
         "[font_size=18]" .. reason .. "[/font_size]\n\n" ..
         "----------------------------------\n" ..
-        "[b]Correct Word:[/b] [b][color=#ffff00]" .. (correct_word or "???") .. "[/color][/b]\n" ..
-        "[b]The Liars:[/b] [color=#ff6666]" .. (liars_names or "???") .. "[/color][/center]"
+        "{correct_word}" .. (correct_word or "???") .. "[/color][/b]\n" ..
+        "{the_liars}" .. (liars_names or "???") .. "[/color][/center]"
 
     local game_over_config = {
-        title = "FINAL RESULTS",
+        title ="{final_results}",
         text = display_text,
         resizable = false,
         countdown = 15, -- Increased to 15 seconds
@@ -772,7 +762,7 @@ end
 function show_next_game_countdown(countdown_time)
     set_label({
         name = "_finding_liar_timer",
-        text = string.format("%d - Next game", countdown_time),
+        text = math.floor(countdown_time or 0) .. "{dash_next_game}",
         font_color = Color(1, 0.8, 0, 1) -- Yellow color for countdown
     })
 end
@@ -786,7 +776,7 @@ end
 function show_initial_countdown(countdown_time)
     set_label({
         name = "_finding_liar_timer",
-        text = string.format("%d - Game starting", countdown_time),
+        text = math.floor(countdown_time or 0) .. "{dash_game_starting}",
         font_color = Color(1, 0.8, 0, 1) -- Yellow color for initial countdown
     })
 end
@@ -808,10 +798,10 @@ end
 -- Show voting info for above players (network function)
 function show_voting_info_for_above_CLIENT(sender_id, vote_duration)
     local info_config = {
-        title = "📊 Voting in Progress",
-        text = "[b]Players below the red line are voting to join the game.[/b]\n\n" ..
-            "[color=#66ff66]You are above the line and will automatically join.[/color]\n\n" ..
-            "[color=#ffaa44]Waiting for below players to decide...[/color]\n\n",
+        title ="{voting_in_progress}",
+        text ="{players_below_the_red_line_are_voting_to}" ..
+            "{you_are_above_the_line}" ..
+            "{waiting_for_below_players}",
         resizable = false,
         close = true,
         no_multiple_tag = "voting_info_above",

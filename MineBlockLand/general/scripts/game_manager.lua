@@ -12,6 +12,9 @@ network_mode = 1
 
 -- Tile kind ids (each entity has its own Lua env; must match worldgen.lua).
 local K_GRASS, K_SAND, K_TREE, K_FARM, K_FARM_SEEDED, K_FARM_GROWN, K_STONE = 1, 2, 3, 4, 5, 6, 9
+local K_SAPLING = 11
+local K_CACTUS, K_PALM, K_FLOWER = 12, 13, 14
+local K_WOOD_BLOCK = 15
 
 -- Day/night: 5 real minutes of day + 2.5 of night; clock shows 06:00 -> 06:00.
 local DAY_SECONDS = 300
@@ -24,7 +27,8 @@ local DEFAULT_SEED = 784242144
 local SEED_PANEL = "_mbl_seed_setup"
 local AUTOSAVE_SECONDS = 60
 local GROW_SECONDS = 150          -- seeded farmland -> harvestable crop
-local ZOMBIE_WAVE_SECONDS = 25
+local TREE_GROW_SECONDS = 300     -- planted sapling -> full tree
+local TILL_SEED_CHANCE = 0.75     -- shovel-tilling grass has this chance to turn up a wheat seed
 local ZOMBIE_SPAWN_DIST_MIN = 260 -- just outside the player's view
 local ZOMBIE_SPAWN_DIST_MAX = 340
 local SUN_START_ANGLE = 100       -- shadow angle sweep across the day
@@ -53,16 +57,57 @@ local ENEMY_TYPES = {
         windup = 0.55, cooldown = 1.4, reach = 26, tint = Color(1, 1, 1, 1) },
     brute = { image = "items/15x15_zombie", size = 24, hp = 110, dmg = 24, speed = 9,
         windup = 0.8, cooldown = 2.0, reach = 30, tint = Color(0.55, 0.9, 0.55, 1) },
+    -- The witch keeps her distance and throws bolts. Her bolt is tinted violet
+    -- (bolt_color) so a witch shot reads differently from a boss shot mid-fight.
     witch = { image = "items/10x10_witch", size = 18, hp = 70, dmg = 16, speed = 8,
-        windup = 0.6, cooldown = 1.6, reach = 24, ranged = true, shoot_cd = 2.8,
+        windup = 0.6, cooldown = 1.6, reach = 24, ranged = true, shoot_cd = 2.2,
+        bolt_color = Color(178 / 255, 92 / 255, 232 / 255, 1),
         tint = Color(1, 1, 1, 1) },
+    -- The ghost ignores every collision layer (see 'phasing' in enemy.lua), so
+    -- walls, trees and the rock you hid behind mean nothing to it. It still
+    -- deals and takes damage exactly like any other enemy.
+    ghost = { image = "items/10x10_ghost", size = 18, hp = 45, dmg = 14, speed = 13,
+        windup = 0.5, cooldown = 1.5, reach = 24, phasing = true,
+        tint = Color(1, 1, 1, 0.6) },
+}
+
+-- Who shows up in a night wave, and from which day on. One entry is picked per
+-- spawn slot, weighted - so the horde stays mostly zombies while the rarer,
+-- nastier things trickle in as the days pile up.
+--
+-- 'weight_per_day' is added once per day survived past min_day, so a type does
+-- not just unlock and then sit at a fixed rarity - it keeps growing until the
+-- ramp freezes (see DIFFICULTY_MAX_DAY). The witch used to be weight 10 from
+-- day 4, i.e. under 1 spawn in 10 and never before day 4, which is why she was
+-- effectively never seen; she now opens on day 3 and climbs to roughly a
+-- quarter of the horde by the boss day.
+local NIGHT_SPAWN_TABLE = {
+    { etype = "zombie", weight = 70, weight_per_day = 0, min_day = 1 },
+    { etype = "ghost", weight = 20, weight_per_day = 2, min_day = 2 },
+    { etype = "witch", weight = 20, weight_per_day = 4, min_day = 3 },
+    { etype = "brute", weight = 4, weight_per_day = 5, min_day = 6 },
 }
 local HP_SCALE_PER_DAY = 0.25
 local DMG_SCALE_PER_DAY = 0.15
 local ZOMBIES_PER_PLAYER_BASE = 2
-local ZOMBIES_PER_PLAYER_MAX = 8
+local ZOMBIES_PER_PLAYER_MAX = 9
+
+-- Difficulty ramp. Every night is a little worse than the last - more enemies
+-- alive at once, waves closer together, tougher bodies - but ONLY up to
+-- DIFFICULTY_MAX_DAY. That is the boss day: once the run reaches its endgame
+-- the pressure stops climbing and holds flat, so a long-lived world never turns
+-- into an unplayable spawn storm.
+local DIFFICULTY_MAX_DAY = BOSS_DAY
+local WAVE_SECONDS_BASE = 25      -- seconds between night waves on day 1
+local WAVE_SECONDS_MIN = 16       -- ...and at DIFFICULTY_MAX_DAY onwards
+local WAVE_SECONDS_PER_DAY = 1.5
+local SPAWNS_PER_WAVE = 2         -- attempts per player per wave...
+local SPAWNS_PER_WAVE_LATE = 3    -- ...raised from this day on (the cap still rules)
+local SPAWNS_PER_WAVE_LATE_DAY = 5
 local BOSS_HP_BASE = 1500
-local BOSS_HP_PER_EXTRA_PLAYER = 0.5
+local BOSS_MAX_LIVES = 3 -- per-player spawn rights during the boss fight, see boss_lives below
+local RESET_PANEL = "_mbl_boss_reset"
+local TEST_ITEM_COUNT = 99 -- how many of each item /testitems hands out
 
 -- Synced game state (also snapshotted to late joiners via network_mode = 1).
 seed_value = 0
@@ -81,10 +126,69 @@ local dungeon_done = {}   -- poi id -> true (chest looted / guard slain)
 local saved_positions = {}
 local boss_entity = ""
 local typed_seed = tostring(DEFAULT_SEED) -- host-only seed-setup panel state
+-- steam_id -> spawn rights left in the current boss fight (outside of a boss
+-- fight, dying is free - unlimited respawns - so this only exists while
+-- boss_active is true and is wiped clean between fights).
+local boss_lives = {}
+
+-- Portals. Up to PORTALS_PER_PLAYER each, placed where the owner stands, named
+-- by them and travelled between by walking into any of them. The host owns the
+-- ledger and persists it; the full list is small (a handful per player), so any
+-- change is simply rebroadcast whole instead of diffed.
+--
+-- Keyed by PORTAL ID, not by steam id: "<steam_id>_<slot>", where slot is the
+-- lowest free number 1..PORTALS_PER_PLAYER. Taking a portal back frees its slot
+-- again, so the ids stay bounded and stable instead of climbing forever. The id
+-- is a STRING on purpose - a numeric one would come back from GDScript as a
+-- float and stop matching its own key.
+local PORTALS_PER_PLAYER = 5
+local portals = {}          -- HOST: pid -> { owner, x, y, label } (x/y are TILE coords)
+local portal_entities = {}  -- HOST: pid -> spawned entity name
+-- Forward-declared: finish_boot() (further up the file) restores portals, but
+-- the implementations live down in the portal section with the rest of them.
+local sync_portals, spawn_portal, despawn_portal
+local PORTAL_ARRIVE_OFFSET = 22 -- land just outside the destination's trigger ring
+local PORTAL_NAME_PANEL = "_mbl_portal_name"
+local PORTAL_ITEM = "portal_stone" -- spent on placing, handed back on removal
+
+-- Worlds saved before the five-portal change keyed the ledger by steam id with
+-- no 'owner' field; those entries become that player's slot 1.
+local function migrate_portals(saved)
+    local out = {}
+    for key, entry in pairs(saved or {}) do
+        local owner = entry.owner or key
+        local pid = entry.owner and key or (key .. "_1")
+        out[pid] = { owner = owner, x = math.floor(entry.x), y = math.floor(entry.y),
+            label = entry.label or "Portal" }
+    end
+    return out
+end
+
+local function portal_count(steam_id)
+    local count = 0
+    for _, entry in pairs(portals) do
+        if entry.owner == steam_id then count = count + 1 end
+    end
+    return count
+end
+
+-- The lowest unused slot for this player as (pid, slot), or ("", 0) when all
+-- PORTALS_PER_PLAYER of them are already standing.
+local function free_portal_id(steam_id)
+    for slot = 1, PORTALS_PER_PLAYER do
+        local pid = steam_id .. "_" .. slot
+        if not portals[pid] then return pid, slot end
+    end
+    return "", 0
+end
 
 -- Local (every peer).
 local nav_icon_name = ""
 local synced = IS_HOST
+local dungeon_marked = false -- the G map already shows the dungeon (see check_dungeon_marker)
+local typed_portal_name = ""  -- owner-side state of the "name your portal" panel
+local typed_portal_pid = ""   -- ...and WHICH of the owner's portals it is naming
+portal_list = {}            -- every peer: pid -> { owner, x, y, label }; read by portal.lua
 
 local STAT_KEYS = { "trees", "stones", "kills", "dmg_dealt", "dmg_taken", "deaths", "crafts" }
 
@@ -101,6 +205,21 @@ end
 -- 0 right at dawn, 1 at the last second before dusk.
 local function day_progress()
     return math.min(math.max(t / DAY_SECONDS, 0), 1)
+end
+
+-- The day the difficulty ramp should be read at: the real day until the
+-- endgame, then frozen. Every ramped number (wave size, wave interval, enemy
+-- hp/damage, spawn weights) goes through this ONE function, so the whole curve
+-- is retuned from the constants above and can never diverge between systems.
+local function ramp_day()
+    return math.min(day, DIFFICULTY_MAX_DAY)
+end
+
+-- Seconds between night waves, shrinking as the days pile up. Kept a whole
+-- number because tick() matches it with 't % wave_seconds() == 0'.
+local function wave_seconds()
+    local seconds = WAVE_SECONDS_BASE - WAVE_SECONDS_PER_DAY * (ramp_day() - 1)
+    return math.max(WAVE_SECONDS_MIN, math.floor(seconds))
 end
 
 -- 0 right at dusk, 1 at the last second before dawn.
@@ -147,10 +266,11 @@ function host_boot()
         stats = data.stats or {}
         dungeon_done = data.dungeon_done or {}
         saved_positions = data.positions or {}
+        portals = migrate_portals(data.portals)
         run_function("-gen", "set_seed", { seed_value })
         run_function("-gen", "set_all_muts", { data.muts or {} })
         run_function("-inv", "load_save_data", { data.inv or {} })
-        announce("World restored - day " .. day .. ". Welcome back!")
+        announce("{world_restored_day}" .. day .. "{welcome_back}")
         finish_boot()
     else
         -- No save yet: let the host pick the seed (default/random/typed)
@@ -162,9 +282,23 @@ end
 -- Finishes booting once a seed is known (either restored from disk or just
 -- chosen by the host in the seed-setup panel).
 function finish_boot()
+    -- Everyone ALREADY in the lobby needs the world state now, not just future
+    -- joiners: a peer that connected while the host was still sitting on the
+    -- seed panel was skipped by _on_user_initialized (seed_value was still 0),
+    -- so without this it never learned the seed - no island ever generated for
+    -- it - and its 'synced' flag stayed false, which also froze its clock at
+    -- day 1 / 06:00 forever. Late joiners were fine because they get the very
+    -- same pair of messages from _on_user_initialized.
+    run_network_function(name, "state_ALL",
+        { seed_value, day, t, is_night, friendly_fire, boss_defeated })
+    run_network_function(name, "muts_ALL", { run_function("-gen", "get_all_muts") })
     spawn_dungeon_population()
     apply_phase_visuals()
     refresh_clock()
+    -- Portals restored from the save become real entities again, and every peer
+    -- gets the ledger so the map markers and travel panels line up.
+    for pid in pairs(portals) do spawn_portal(pid) end
+    sync_portals()
     -- Anyone already in (normally just the host player): restore their spot
     -- and push them their saved inventory.
     for _, user_name in ipairs(get_entity_names_by_tag("user")) do
@@ -186,14 +320,15 @@ local function begin_world(new_seed)
     if is_panel_exists(SEED_PANEL) then close_panel(SEED_PANEL) end
     seed_value = math.floor(new_seed)
     run_function("-gen", "set_seed", { seed_value })
-    announce("A fresh world awakens (seed " .. seed_value
-        .. "). Chop, mine, survive the nights - the 7th night brings a monster.")
+    announce("{a_fresh_world_awakens_seed}" .. seed_value .. "{chop_mine_and_craft_by_day}"
+        .. "{every_night_monsters_come_for_you_and_on}" .. BOSS_DAY
+        .. "{the_guardian_of_the_isle_rises_kill_it_t}")
     finish_boot()
 end
 
 function on_seed_input(args)
-    -- The input's value is delivered keyed by its label ("Seed").
-    typed_seed = tostring(args["Seed"] or "")
+    -- The input's value is delivered keyed by its RAW label, i.e. the token.
+    typed_seed = tostring(args["{seed}"] or "")
 end
 
 function on_use_seed(args)
@@ -208,16 +343,16 @@ end
 
 function show_seed_setup()
     if is_panel_exists(SEED_PANEL) then return end
-    create_panel({ name = SEED_PANEL, title = "MineBlockLand - Host",
-        text = "Pick the world seed (same seed always builds the same island).\nDefault: "
+    create_panel({ name = SEED_PANEL, title ="{mineblockland_host}",
+        text ="{pick_the_world_seed_same_seed_always_bui}"
             .. DEFAULT_SEED,
-        set_time = false, close = false, resizable = false, minimum_size = Vector2(400, 220) })
+        set_time = false, close = false, resizable = false, minimum_size = Vector2(400, 250) })
     add_input_to_panel(SEED_PANEL, { entity_name = name, function_name = "on_seed_input",
-        text = "Seed", default_value = typed_seed })
+        text ="{seed}", default_value = typed_seed })
     add_button_to_panel(SEED_PANEL, { entity_name = name, function_name = "on_use_seed",
-        text = "Use This Seed", color = Color(0.3, 0.55, 0.35) })
+        text ="{use_this_seed}", color = Color(0.3, 0.55, 0.35) })
     add_button_to_panel(SEED_PANEL, { entity_name = name, function_name = "on_random_seed",
-        text = "Random Seed", color = Color(0.35, 0.45, 0.6) })
+        text ="{random_seed}", color = Color(0.35, 0.45, 0.6) })
 end
 
 function save_world()
@@ -234,6 +369,7 @@ function save_world()
         growth = pending_growth, stats = stats, dungeon_done = dungeon_done,
         inv = run_function("-inv", "get_save_data"),
         positions = saved_positions,
+        portals = portals,
     })
 end
 
@@ -246,7 +382,28 @@ start_timer({ timer_id = "gm_tick", entity_name = name, function_name = "tick", 
 -- Spawn always shows on the minimap (a fixed spot, not an entity - every peer
 -- sets this up locally, same as the player dots in user.lua).
 set_minimap_target({ name = "spawn", world_position = map_to_local(Vector2(0, 0)),
-    text = "Spawn", icon_size = Vector2(8, 8), color = Color(1, 1, 1, 1) })
+    text ="{spawn}", icon_size = Vector2(8, 8), color = Color(1, 1, 1, 1) })
+
+-- The dungeon marks itself on the G map the moment THIS peer has generated the
+-- chunk its door sits in - i.e. the moment you have been close enough to see
+-- it. Purely local (like every other marker): finding it is each player's own
+-- discovery, and nothing about it needs to travel over the network. Checked
+-- once a second from tick() and then never again, so it costs one table lookup
+-- per second until it fires.
+local DUNGEON_MARKER = "dungeon"
+
+local function check_dungeon_marker()
+    local entrance = run_function("-gen", "get_dungeon_entrance")
+    if not entrance then return end
+    -- Crossed the Lua<->GDScript boundary: tile coords are floats now.
+    local tx, ty = math.floor(entrance.x), math.floor(entrance.y)
+    if not run_function("-gen", "is_tile_generated", { tx, ty }) then return end
+    dungeon_marked = true
+    set_minimap_target({ name = DUNGEON_MARKER,
+        world_position = map_to_local(Vector2(tx, ty)),
+        text ="{dungeon}", icon_size = Vector2(8, 8),
+        color = Color(0.85, 0.35, 0.35, 1) })
+end
 
 if IS_HOST then
     start_timer({ timer_id = "gm_autosave", entity_name = name, function_name = "save_world",
@@ -259,12 +416,24 @@ end
 
 function _on_user_initialized(steam_id, nickname)
     if not IS_HOST then return end
-    if seed_value == 0 then return end -- host boot pending; host_boot syncs itself
+    -- Voice chat: one island, one channel. Nothing here splits players into
+    -- teams or rooms, so everybody goes straight into "general" with no
+    -- proximity falloff - you can always hear each other, wherever you are.
+    -- Done here rather than in user.lua because a peer only becomes a valid
+    -- RPC target once it is initialized, which is exactly this moment (and
+    -- this fires for the host's own player too).
+    set_voice_channel({ steam_id = steam_id, channel_name = "general",
+        parent_name = steam_id, icon_offset = Vector2(0, -26) })
+    if seed_value == 0 then return end -- host boot pending; finish_boot syncs everyone
     run_network_function(name, "state_ALL",
         { seed_value, day, t, is_night, friendly_fire, boss_defeated }, steam_id)
     run_network_function(name, "muts_ALL",
         { run_function("-gen", "get_all_muts") }, steam_id)
     run_function("-inv", "host_sync_all_to", { steam_id })
+    -- The portal ENTITIES arrive on their own (network_mode = 1 syncs them on
+    -- join); this is the ledger behind them, needed for the map markers and the
+    -- travel list.
+    run_network_function(name, "portals_ALL", { portals }, steam_id)
     if boss_active and boss_entity ~= "" then
         run_network_function(name, "boss_nav_ALL", { boss_entity }, steam_id)
     end
@@ -302,6 +471,7 @@ end
 function tick()
     if not synced then return end
     t = t + 1
+    if not dungeon_marked then check_dungeon_marker() end
     if IS_HOST then
         if not is_night and t >= DAY_SECONDS then
             begin_night()
@@ -309,7 +479,7 @@ function tick()
             begin_day()
         end
         check_growth()
-        if is_night and t % ZOMBIE_WAVE_SECONDS == 0 then
+        if is_night and t % wave_seconds() == 0 then
             spawn_zombie_wave()
         end
     else
@@ -332,9 +502,10 @@ function refresh_clock()
     local hour_f = (DAWN_HOUR + t * (24.0 / CYCLE_SECONDS)) % 24
     local hour = math.floor(hour_f)
     local minute = math.floor((hour_f - hour) * 60)
-    local suffix = is_night and "  NIGHT" or ""
+    local suffix = is_night and "{night_suffix}" or ""
     set_label({ name = "_mbl_clock",
-        text = string.format("Day %d   %02d:%02d%s", day, hour, minute, suffix) })
+        text = string.format(translate("{clock_label}"), math.floor(day),
+            string.format("%02d", hour), string.format("%02d", minute), suffix) })
 end
 
 function begin_night()
@@ -354,6 +525,8 @@ function begin_day()
     run_network_function(name, "phase_ALL", { day, t, false })
     -- Sunrise burns the horde away (dungeon guards live underground rules).
     run_function_by_tag("night_npc", "host_burn")
+    -- ...and lets fresh wildlife wander into the chunks nobody is watching.
+    run_function("-wild", "host_restock")
     save_world()
 end
 
@@ -367,9 +540,9 @@ function phase_ALL(sender_id, new_day, new_t, night)
     apply_phase_visuals(true)
     refresh_clock()
     if night then
-        announce_local("Night falls... the dead are walking.")
+        announce_local("{night_falls}")
     else
-        announce_local("Day " .. day .. " - the sun is up.")
+        announce_local("{day}" .. day .. "{the_sun_is_up}")
     end
 end
 
@@ -528,9 +701,14 @@ function host_gather_hit(args)
     local kind = run_function("-gen", "kind_at", { x, y })
 
     -- Shovel on grass tills it into farmland (farm plots are made, not generated).
-    if tool == "shovel" and kind == K_GRASS then
+    -- A good chance of turning up a wheat seed while at it. A flower is just
+    -- decorated grass, so it tills the same way.
+    if tool == "shovel" and (kind == K_GRASS or kind == K_FLOWER) then
         host_mutate(x, y, K_FARM)
         run_network_function(name, "gather_fx_ALL", { x, y, kind })
+        if math.random() < TILL_SEED_CHANCE then
+            roll_drops({ { id = "wheat_seed", min = 1, max = 1, chance = 1.0 } }, 0, x, y)
+        end
         return true
     end
 
@@ -541,11 +719,33 @@ function host_gather_hit(args)
         break_hp = run_function("-items", "get_tree_hp")
         drops = run_function("-items", "get_tree_drops")
         stat_key = "trees"
+    elseif kind == K_CACTUS or kind == K_PALM then
+        -- Desert flora chops on the same rules as a tree (and counts as one).
+        hit_damage = (tool == "pickaxe") and power or 1
+        if kind == K_CACTUS then
+            break_hp = run_function("-items", "get_cactus_hp")
+            drops = run_function("-items", "get_cactus_drops")
+        else
+            break_hp = run_function("-items", "get_palm_hp")
+            drops = run_function("-items", "get_palm_drops")
+        end
+        stat_key = "trees"
     elseif kind == K_STONE then
         hit_damage = (tool == "pickaxe") and power or 0 -- wrong tool: shows a 0
         break_hp = run_function("-items", "get_stone_hp")
         drops = run_function("-items", "get_stone_drops")
         stat_key = "stones"
+    elseif kind == K_WOOD_BLOCK then
+        -- Player-placed wood block: chops like a tree, any tool works.
+        hit_damage = (tool == "pickaxe") and power or 1
+        break_hp = run_function("-items", "get_wood_block_hp")
+        drops = run_function("-items", "get_wood_block_drops")
+        stat_key = "trees"
+    elseif kind == K_SAPLING then
+        -- Fragile: any tool (even fists) hurts it, and breaking one drops nothing.
+        hit_damage = power
+        break_hp = run_function("-items", "get_sapling_hp")
+        drops = {}
     else
         return false
     end
@@ -563,37 +763,133 @@ function host_gather_hit(args)
         return true
     end
     breaks[break_key] = nil
-    host_mutate(x, y, run_function("-gen", "ground_kind", { x, y }))
+    -- A broken sapling reverts to the tilled farmland it was planted on (so the
+    -- player doesn't lose the plot); trees/rock revert to bare pure-terrain ground.
+    local revert_kind = (kind == K_SAPLING) and K_FARM or run_function("-gen", "ground_kind", { x, y })
+    host_mutate(x, y, revert_kind)
     roll_drops(drops, power, x, y)
-    add_stat(steam_id, stat_key, 1)
+    if stat_key then add_stat(steam_id, stat_key, 1) end
     return true
 end
 
--- Small local chip/leaf puff so hits feel real (one message per swing).
-function gather_fx_ALL(sender_id, x, y, kind)
+-- Flat-damage tile hit (no tool/steam_id involved) - used by hostile
+-- projectiles that smack into a tree or a placed wood/stone "wall" in
+-- flight. Mirrors host_gather_hit's break logic minus the tool gating and
+-- player stat credit (nobody chopped this, a bullet did).
+function host_damage_tile(args)
+    if not IS_HOST then return end
+    local x, y = math.floor(args.x), math.floor(args.y)
+    local dmg = args.dmg or 1
+    local kind = run_function("-gen", "kind_at", { x, y })
+    local break_hp, drops
+    if kind == K_TREE then
+        break_hp = run_function("-items", "get_tree_hp")
+        drops = run_function("-items", "get_tree_drops")
+    elseif kind == K_CACTUS then
+        break_hp = run_function("-items", "get_cactus_hp")
+        drops = run_function("-items", "get_cactus_drops")
+    elseif kind == K_PALM then
+        break_hp = run_function("-items", "get_palm_hp")
+        drops = run_function("-items", "get_palm_drops")
+    elseif kind == K_STONE then
+        break_hp = run_function("-items", "get_stone_hp")
+        drops = run_function("-items", "get_stone_drops")
+    elseif kind == K_WOOD_BLOCK then
+        break_hp = run_function("-items", "get_wood_block_hp")
+        drops = run_function("-items", "get_wood_block_drops")
+    else
+        return
+    end
+    -- Same floating number a player swing gets, so a boss bolt chewing through a
+    -- tree/rock reads the same as anything else that takes damage.
     local world = map_to_local(Vector2(x, y))
-    local color = (kind == K_TREE) and Color(99 / 255, 199 / 255, 77 / 255, 1)
-        or Color(139 / 255, 155 / 255, 180 / 255, 1)
-    create_particle({ particle_id = "mbl_chip", texture_path = "white",
-        lifetime = 0.4, amount = 6, explosiveness = 1.0, one_shot = true,
-        spread = 180, initial_velocity_min = 30, initial_velocity_max = 70,
-        scale_amount_min = 0.1, scale_amount_max = 0.2, color = color })
-    start_particle({ particle_id = "mbl_chip", position = world })
+    run_function("-combat", "show_damage", { world.x, world.y, dmg, "npc" })
+    run_network_function(name, "gather_fx_ALL", { x, y, kind })
+    local break_key = key_of(x, y)
+    local hp = (breaks[break_key] or break_hp) - dmg
+    if hp > 0 then
+        breaks[break_key] = hp
+        return
+    end
+    breaks[break_key] = nil
+    host_mutate(x, y, run_function("-gen", "ground_kind", { x, y }))
+    roll_drops(drops, 1, x, y)
+end
+
+-- Small local chip/leaf puff so hits feel real (one message per swing).
+-- The two puffs (leaf green / stone grey) are built once and then only
+-- re-emitted; create_particle rebuilds the cached node every call, so calling
+-- it per swing would churn a GPUParticles2D on every hit.
+local chip_fx_ready = false
+
+local function ensure_chip_fx()
+    if chip_fx_ready then return end
+    chip_fx_ready = true
+    local base = { texture_path = "white", lifetime = 0.4, amount = 6,
+        explosiveness = 1.0, one_shot = true, spread = 180,
+        initial_velocity_min = 30, initial_velocity_max = 70,
+        scale_amount_min = 0.1, scale_amount_max = 0.2 }
+    for id, color in pairs({
+        mbl_chip_leaf = Color(99 / 255, 199 / 255, 77 / 255, 1),
+        mbl_chip_stone = Color(139 / 255, 155 / 255, 180 / 255, 1),
+    }) do
+        local cfg = { particle_id = id, color = color }
+        for k, v in pairs(base) do cfg[k] = v end
+        create_particle(cfg)
+    end
+    -- Bomb blast: same one-shot puff, just bigger, faster and orange.
+    create_particle({ particle_id = "mbl_boom", texture_path = "white",
+        lifetime = 0.5, amount = 26, explosiveness = 1.0, one_shot = true,
+        spread = 180, initial_velocity_min = 60, initial_velocity_max = 190,
+        scale_amount_min = 0.15, scale_amount_max = 0.4,
+        color = Color(247 / 255, 118 / 255, 34 / 255, 1) })
+end
+
+function gather_fx_ALL(sender_id, x, y, kind)
+    ensure_chip_fx()
+    local world = map_to_local(Vector2(x, y))
+    local leafy = kind == K_TREE or kind == K_SAPLING or kind == K_CACTUS or kind == K_PALM
+    local id = leafy and "mbl_chip_leaf" or "mbl_chip_stone"
+    start_particle({ particle_id = id, position = world })
+end
+
+-- Bomb blast felt by every peer: the puff always plays, the shake fades out
+-- with distance so a bomb across the island is a thump, not a head-rattle.
+local BOOM_SHAKE_RANGE = 260
+local BOOM_SHAKE_SECONDS = 0.35
+local BOOM_SHAKE_MAX = 14
+
+function boom_fx_ALL(sender_id, x, y)
+    ensure_chip_fx()
+    local at = Vector2(x, y)
+    start_particle({ particle_id = "mbl_boom", position = at })
+    local me = get_value("", LOCAL_STEAM_ID, "position")
+    if not me then return end
+    local dist = distance_to(me, at)
+    if dist >= BOOM_SHAKE_RANGE then return end
+    screenshake(BOOM_SHAKE_SECONDS, BOOM_SHAKE_MAX * (1 - dist / BOOM_SHAKE_RANGE))
 end
 
 -- Interact intents: plant / harvest. Seeds only take on tilled farmland
--- (make a plot by hitting grass with a shovel first).
+-- (make a plot by hitting grass with a shovel first). A wheat seed becomes a
+-- growing crop; a tree seed becomes a sapling straight away (no "seeded"
+-- in-between step) which then grows into a full tree the same way.
 function host_plant(args)
-    local steam_id = args.steam_id
+    local steam_id, item_id = args.steam_id, args.item_id
     local x, y = math.floor(args.x), math.floor(args.y)
     local kind = run_function("-gen", "kind_at", { x, y })
     if kind ~= K_FARM then return false end
     if not run_function("-inv", "host_consume",
-            { { steam_id = steam_id, item_id = "seed", count = 1 } }) then
+            { { steam_id = steam_id, item_id = item_id, count = 1 } }) then
         return false
     end
-    host_mutate(x, y, K_FARM_SEEDED)
-    pending_growth[key_of(x, y)] = game_time() + GROW_SECONDS
+    if item_id == "tree_seed" then
+        host_mutate(x, y, K_SAPLING)
+        pending_growth[key_of(x, y)] = { when = game_time() + TREE_GROW_SECONDS, into = K_TREE }
+    else
+        host_mutate(x, y, K_FARM_SEEDED)
+        pending_growth[key_of(x, y)] = { when = game_time() + GROW_SECONDS, into = K_FARM_GROWN }
+    end
     return true
 end
 
@@ -633,7 +929,8 @@ function host_place_block(args)
     local place_kind = run_function("-items", "get_place_kind", { item_id })
     if not place_kind then return false end
     local kind = run_function("-gen", "kind_at", { x, y })
-    if kind ~= K_GRASS and kind ~= K_SAND then return false end
+    -- Flowers are decoration on otherwise bare grass; a block simply covers one.
+    if kind ~= K_GRASS and kind ~= K_SAND and kind ~= K_FLOWER then return false end
     if tile_occupied(x, y) then return false end
     if not run_function("-inv", "host_consume",
             { { steam_id = steam_id, item_id = item_id, count = 1 } }) then
@@ -645,25 +942,197 @@ end
 
 function check_growth()
     local now = game_time()
-    for grow_key, when in pairs(pending_growth) do
+    for grow_key, entry in pairs(pending_growth) do
+        -- Older saves stored a bare timestamp for the one growth path that
+        -- used to exist (seeded farmland -> grown crop); tolerate that shape.
+        local when = (type(entry) == "table") and entry.when or entry
+        local into = (type(entry) == "table") and entry.into or K_FARM_GROWN
         if now >= when then
             pending_growth[grow_key] = nil
             -- Tolerate float-form keys ("3.0,5.0") left behind by older saves.
             local x, y = string.match(grow_key, "^(-?[%d%.]+),(-?[%d%.]+)$")
             x, y = tonumber(x), tonumber(y)
-            if x and y and run_function("-gen", "kind_at", { x, y }) == K_FARM_SEEDED then
-                host_mutate(x, y, K_FARM_GROWN)
+            local from = (into == K_TREE) and K_SAPLING or K_FARM_SEEDED
+            if x and y and run_function("-gen", "kind_at", { x, y }) == from then
+                host_mutate(x, y, into)
             end
         end
     end
 end
 
 -- =============================================================================
+-- Portals: up to five per player, named, persisted, shown on everyone's G map.
+-- =============================================================================
+
+-- Every peer keeps its own copy of the (tiny) portal ledger so portal.lua can
+-- build its travel panel without a round trip, and so the map markers are drawn
+-- locally. Called on any change - there are at most PORTALS_PER_PLAYER entries
+-- per player.
+sync_portals = function()
+    if not IS_HOST then return end
+    run_network_function(name, "portals_ALL", { portals })
+end
+
+function portals_ALL(sender_id, list)
+    -- Drop markers for portals that are gone before drawing the current set.
+    for pid in pairs(portal_list) do
+        delete_minimap_target("portal_" .. pid)
+    end
+    portal_list = {}
+    for pid, entry in pairs(list or {}) do
+        -- Tile coords crossed the Lua<->GDScript boundary as floats.
+        local tx, ty = math.floor(entry.x), math.floor(entry.y)
+        portal_list[pid] = { owner = entry.owner, x = tx, y = ty,
+            label = entry.label or "Portal" }
+        set_minimap_target({ name = "portal_" .. pid,
+            world_position = map_to_local(Vector2(tx, ty)),
+            text = portal_list[pid].label, icon_size = Vector2(7, 7),
+            color = Color(0.55, 0.4, 0.95, 1) })
+    end
+end
+
+function get_portal_list()
+    return portal_list
+end
+
+spawn_portal = function(pid)
+    local entry = portals[pid]
+    if not entry then return end
+    local world = map_to_local(Vector2(math.floor(entry.x), math.floor(entry.y)))
+    portal_entities[pid] = spawn_entity_host({ t = "portal", p = world,
+        owner = entry.owner, pid = pid, label = entry.label })
+end
+
+despawn_portal = function(pid)
+    local entity = portal_entities[pid]
+    if entity and entity ~= "" then destroy("", entity) end
+    portal_entities[pid] = nil
+end
+
+-- HOST: called from user.lua when someone Interacts with a portal stone. This
+-- owns the whole transaction - validation AND spending the stone - so there is
+-- exactly one place where "has a slot free" and "still holds the stone" agree.
+function host_place_portal(args)
+    if not IS_HOST then return end
+    local steam_id = args.steam_id
+    local pid, slot = free_portal_id(steam_id)
+    if pid == "" then
+        run_network_function(steam_id, "toast_ALL",
+            { "{all}" .. PORTALS_PER_PLAYER .. "{of_your_portals_are_standing}"
+                .. "{walk_into_one_and_take_it_back_first}" }, steam_id)
+        return
+    end
+    local x, y = math.floor(args.x), math.floor(args.y)
+    if not run_function("-gen", "is_walkable", { x, y }) then return end
+    if not run_function("-inv", "host_consume",
+            { { steam_id = steam_id, item_id = PORTAL_ITEM, count = 1 } }) then
+        return
+    end
+    -- Numbered by slot: five portals all called "Nick's Camp" would be five
+    -- identical rows in everyone's travel panel and five identical map markers.
+    local nickname = get_value("", steam_id, "nickname") or "Someone"
+    portals[pid] = { owner = steam_id, x = x, y = y,
+        label = nickname .. "{s_camp}" .. slot }
+    spawn_portal(pid)
+    sync_portals()
+    save_world()
+    local left = PORTALS_PER_PLAYER - portal_count(steam_id)
+    run_network_function(steam_id, "toast_ALL",
+        { "{portal_planted}" .. left .. "{placement}" .. (left == 1 and "" or "s")
+            .. "{left}" }, steam_id)
+    -- Let the owner name it right away (their peer only).
+    run_network_function(name, "portal_name_prompt_ALL",
+        { pid, portals[pid].label }, steam_id)
+end
+
+-- Owner's peer: a small panel to name the portal just planted.
+function portal_name_prompt_ALL(sender_id, pid, default_label)
+    if is_panel_exists(PORTAL_NAME_PANEL) then close_panel(PORTAL_NAME_PANEL) end
+    typed_portal_pid = pid
+    typed_portal_name = default_label
+    create_panel({ name = PORTAL_NAME_PANEL, title ="{name_your_portal}",
+        text ="{everyone_can_see_this_name_on_the_map_an}",
+        set_time = false, close = true, resizable = false,
+        minimum_size = Vector2(400, 220) })
+    add_input_to_panel(PORTAL_NAME_PANEL, { entity_name = name,
+        function_name = "on_portal_name_input", text ="{name}", default_value = default_label })
+    add_button_to_panel(PORTAL_NAME_PANEL, { entity_name = name,
+        function_name = "on_portal_name_confirm", text ="{save_name}",
+        color = Color(0.3, 0.55, 0.35) })
+end
+
+function on_portal_name_input(args)
+    typed_portal_name = tostring(args["{name}"] or "")
+end
+
+function on_portal_name_confirm(args)
+    close_panel(PORTAL_NAME_PANEL)
+    run_network_function(name, "portal_rename_HOST", { typed_portal_pid, typed_portal_name })
+end
+
+-- Client intent: rename ONE OF MY portals. The host is the one that checks the
+-- portal is really the sender's, then trims and applies.
+function portal_rename_HOST(sender_id, pid, label)
+    if not IS_HOST then return end
+    local entry = portals[tostring(pid or "")]
+    if not entry or entry.owner ~= sender_id then return end
+    label = tostring(label or ""):sub(1, 24)
+    if label:match("^%s*$") then return end
+    entry.label = label
+    local entity = portal_entities[tostring(pid)]
+    if entity and entity ~= "" then
+        run_network_function(entity, "portal_label_ALL", { label })
+    end
+    sync_portals()
+    save_world()
+end
+
+-- Client intent: take ONE OF MY portals back (the stone is returned, and the
+-- slot it held is free for the next one).
+function portal_remove_HOST(sender_id, pid)
+    if not IS_HOST then return end
+    pid = tostring(pid or "")
+    local entry = portals[pid]
+    if not entry or entry.owner ~= sender_id then return end
+    despawn_portal(pid)
+    portals[pid] = nil
+    run_function("-inv", "host_add", { sender_id, PORTAL_ITEM, 1 })
+    run_function("-inv", "host_sync", { sender_id })
+    sync_portals()
+    save_world()
+end
+
+-- Client intent: travel from wherever I am to some portal. The host owns the
+-- destination table, so a client can only ever ask for a portal that really
+-- exists - it cannot name its own coordinates.
+function portal_travel_HOST(sender_id, target_pid)
+    if not IS_HOST then return end
+    local entry = portals[tostring(target_pid or "")]
+    if not entry then return end
+    if get_value("", sender_id, "is_dead") then return end
+    local world = map_to_local(Vector2(math.floor(entry.x), math.floor(entry.y)))
+    change_instantly({ entity_name = sender_id,
+        position = Vector2(world.x, world.y + PORTAL_ARRIVE_OFFSET),
+        linear_velocity = Vector2(0, 0) })
+    run_network_function(sender_id, "toast_ALL", { "{arrived_at}" .. entry.label .. "." }, sender_id)
+end
+
+-- A player left for good / the world was wiped: their portals go with them.
+local function clear_all_portals()
+    for pid in pairs(portals) do despawn_portal(pid) end
+    portals = {}
+    sync_portals()
+end
+
+-- =============================================================================
 -- Enemies.
 -- =============================================================================
 
+-- Enemy hp/damage grow with the day and then hold, exactly like every other
+-- ramped number (the old hard 3.0 ceiling is gone: ramp_day() already freezes
+-- the curve, and it froze at the boss day instead of two days after it).
 local function scaled(base, per_day)
-    return math.floor(base * math.min(1 + per_day * (day - 1), 3.0))
+    return math.floor(base * (1 + per_day * (ramp_day() - 1)))
 end
 
 function spawn_enemy(etype, pos, opts)
@@ -671,26 +1140,55 @@ function spawn_enemy(etype, pos, opts)
     opts = opts or {}
     local hp = opts.fixed and math.floor(def.hp * 1.5) or scaled(def.hp, HP_SCALE_PER_DAY)
     local dmg = opts.fixed and math.floor(def.dmg * 1.2) or scaled(def.dmg, DMG_SCALE_PER_DAY)
-    spawn_entity_host({ t = "enemy", p = pos,
+    spawn_entity_host({ t = "enemy", p = pos, etype = etype,
         image = def.image, size = def.size, hp = hp, dmg = dmg, speed = def.speed,
         windup = def.windup, cooldown = def.cooldown, reach = def.reach,
         ranged = def.ranged or false, shoot_cd = def.shoot_cd or 0,
+        bolt_color = def.bolt_color or Color(0, 0, 0, 0), -- transparent = "use the default"
+        phasing = def.phasing or false,
         tint = def.tint, is_night_npc = not opts.fixed, dungeon_id = opts.dungeon_id or "" })
+end
+
+-- Today's weight for one spawn-table entry: its base plus one 'weight_per_day'
+-- for every day survived since it unlocked, frozen once the ramp freezes.
+local function spawn_weight(entry)
+    if day < entry.min_day then return 0 end
+    local days_unlocked = math.max(ramp_day() - entry.min_day, 0)
+    return entry.weight + (entry.weight_per_day or 0) * days_unlocked
+end
+
+-- Weighted pick out of NIGHT_SPAWN_TABLE, restricted to what the current day
+-- has unlocked.
+local function roll_night_enemy()
+    local total = 0
+    for _, entry in ipairs(NIGHT_SPAWN_TABLE) do
+        total = total + spawn_weight(entry)
+    end
+    if total <= 0 then return "zombie" end
+    local pick = math.random() * total
+    for _, entry in ipairs(NIGHT_SPAWN_TABLE) do
+        pick = pick - spawn_weight(entry)
+        if pick <= 0 then return entry.etype end
+    end
+    return "zombie"
 end
 
 function spawn_zombie_wave()
     local users = get_entity_names_by_tag("alive")
     if #users == 0 then return end
-    local cap = math.min(ZOMBIES_PER_PLAYER_BASE + day, ZOMBIES_PER_PLAYER_MAX) * #users
+    local cap = math.min(ZOMBIES_PER_PLAYER_BASE + ramp_day(), ZOMBIES_PER_PLAYER_MAX) * #users
     local current = #get_entity_names_by_tag("night_npc")
+    -- Later days also try harder per wave, so the cap is actually reached
+    -- instead of only being approached two enemies at a time.
+    local attempts = (day >= SPAWNS_PER_WAVE_LATE_DAY) and SPAWNS_PER_WAVE_LATE or SPAWNS_PER_WAVE
     for _, user_name in ipairs(users) do
         if current >= cap then break end
         local pos = get_value("", user_name, "position")
         if pos then
-            for _ = 1, 2 do
+            for _ = 1, attempts do
                 local spot = find_walkable_near(pos)
                 if spot and current < cap then
-                    spawn_enemy("zombie", spot)
+                    spawn_enemy(roll_night_enemy(), spot)
                     current = current + 1
                 end
             end
@@ -720,6 +1218,9 @@ function spawn_dungeon_population()
             if poi.type == "chest" then
                 spawn_entity_host({ t = "ground_item", p = world,
                     item_id = "chest", count = 1, dungeon_id = poi.id })
+            elseif poi.type == "jug" then
+                spawn_entity_host({ t = "breakable", p = world,
+                    image = "items/10x10_jug", size = 12, dungeon_id = poi.id })
             else
                 spawn_enemy(poi.type, world, { fixed = true, dungeon_id = poi.id })
             end
@@ -734,7 +1235,7 @@ end
 -- Called by enemy.lua when something dies.
 function on_enemy_killed(args)
     local killer, dungeon_id = args.killer, args.dungeon_id
-    if killer and has_tag(killer, "user") then
+    if killer and killer ~= "" and has_tag(killer, "user") then
         add_stat(killer, "kills", 1)
     end
     mark_dungeon_done(dungeon_id)
@@ -746,19 +1247,26 @@ end
 
 function spawn_boss()
     boss_active = true
+    boss_lives = {}
+    for _, user_name in ipairs(get_entity_names_by_tag("user")) do
+        boss_lives[user_name] = BOSS_MAX_LIVES
+    end
     local arena_x = get_value("", "-gen", "BOSS_ARENA_X") or 0
     local arena_y = get_value("", "-gen", "BOSS_ARENA_Y") or -26
+    -- HP scales directly with the party size (2 players = 2x, 3 = 3x, ...) so
+    -- the fight stays proportionally as tough; boss damage never scales.
     local players = math.max(#get_entity_names_by_tag("user"), 1)
-    local hp = math.floor(BOSS_HP_BASE * (1 + BOSS_HP_PER_EXTRA_PLAYER * (players - 1)))
+    local hp = math.floor(BOSS_HP_BASE * players)
     local world = map_to_local(Vector2(arena_x, arena_y))
     boss_entity = spawn_entity_host({ t = "boss", p = world, hp = hp })
-    announce({ "The GUARDIAN OF THE ISLE has risen! Slay it or survive it." })
+    announce("{guardian_has_risen}"
+        .. BOSS_MAX_LIVES .. "{spawn_rights_each_before_the_fight_is_lo}")
     run_network_function(name, "boss_nav_ALL", { boss_entity })
 end
 
 function boss_nav_ALL(sender_id, boss_name)
     nav_icon_name = set_navigation_icon({ target_name = boss_name, name = "nav_mbl_boss",
-        text = "BOSS", color = Color(228 / 255, 59 / 255, 68 / 255, 1),
+        text ="{boss}", color = Color(228 / 255, 59 / 255, 68 / 255, 1),
         is_show_distance = true })
 end
 
@@ -792,18 +1300,18 @@ function victory_ALL(sender_id, payload)
 end
 
 function show_stats_panel(payload, victory)
-    local title = victory and "VICTORY - The Guardian has fallen!" or "Statistics"
+    local title = victory and "{victory_guardian_fallen}" or "Statistics"
     local body = victory
-        and "Congratulations! You survived seven days and slew the Guardian.\nThe island is yours now - keep playing as long as you like."
-        or "The story so far:"
+        and "{congratulations_survived}"
+        or "{the_story_so_far}"
     local panel_name = create_panel({ name = "_mbl_stats", title = title, text = body,
         minimum_size = Vector2(640, 420), is_scrollable = true, resizable = true,
         close = true, set_time = false })
     local header_color = Color(38 / 255, 92 / 255, 66 / 255, 0.95)  -- Moss
     local cell_color = Color(58 / 255, 68 / 255, 102 / 255, 0.9)    -- Steel
     local table_data = {}
-    local columns = { "Player", "Trees", "Rocks", "Kills", "Damage Dealt",
-        "Damage Taken", "Deaths", "Crafts" }
+    local columns = { "Player", "Trees", "Rocks", "Kills", "{damage_dealt}",
+        "{damage_taken}", "Deaths", "Crafts" }
     for col, caption in ipairs(columns) do
         table_data[vector2_to_string(Vector2(col - 1, 0))] = { text = caption, color = header_color }
     end
@@ -838,13 +1346,100 @@ end
 -- Player death bookkeeping (user.lua calls this on the host).
 -- =============================================================================
 
+-- The fight is only lost once EVERY player still in the party has burned
+-- through all of their own BOSS_MAX_LIVES spawn rights - each player's lives
+-- are tracked separately in boss_lives, so one person running out first must
+-- not end the run for teammates who still have rights left.
+local function all_boss_lives_spent()
+    for _, user_name in ipairs(get_entity_names_by_tag("user")) do
+        if (boss_lives[user_name] or BOSS_MAX_LIVES) > 0 then return false end
+    end
+    return true
+end
+
+-- Returns { boss_death, lives_left } so the dying player's own client can
+-- append "spawn rights left" to the death message it already shows (user.lua
+-- died_ALL). A death outside the boss fight never touches boss_lives - only
+-- the fight itself is limited, ordinary respawns stay unlimited.
 function on_player_died(args)
     if not IS_HOST then return end
     local steam_id = args.steam_id
     add_stat(steam_id, "deaths", 1)
     run_function("-inv", "host_scatter", { steam_id })
     announce((get_value("", steam_id, "nickname") or "Someone")
-        .. " died! Their pack scattered where they fell.")
+        .. "{died_their_pack_scattered_where_they_fel}")
+
+    local boss_death = boss_active
+    local lives_left = -1
+    if boss_death then
+        local remaining = (boss_lives[steam_id] or BOSS_MAX_LIVES) - 1
+        remaining = math.max(remaining, 0)
+        boss_lives[steam_id] = remaining
+        lives_left = remaining
+        if remaining <= 0 and all_boss_lives_spent() then
+            -- Give the "last spawn right" death message a moment on screen
+            -- before the reset panel takes over.
+            start_timer({ timer_id = "boss_wipe", entity_name = name,
+                function_name = "trigger_boss_wipe", wait_time = 1.5, duration = 1.5 })
+        end
+    end
+    return { boss_death = boss_death, lives_left = lives_left }
+end
+
+-- A player burned through all their boss-fight spawn rights: the whole run
+-- is over. Wipe the map/NPCs/inventory/save back to a blank slate and let
+-- the host pick a new seed, same as a brand-new install.
+function trigger_boss_wipe()
+    if not IS_HOST then return end
+    boss_active = false
+    boss_defeated = false
+    boss_entity = ""
+    boss_lives = {}
+    destroy_entities_by_tag("npc")
+    destroy_entities_by_tag("ground_item")
+    run_function("-wild", "host_reset") -- the entities are gone; drop the ledger too
+    stats = {}
+    pending_growth = {}
+    breaks = {}
+    dungeon_done = {}
+    saved_positions = {}
+    clear_all_portals()
+    day = 1
+    t = 0
+    is_night = false
+    seed_value = 0 -- host_boot's "no world yet" sentinel; also gates late-joiner sync
+    save_json(SAVE_PATH, {})
+    run_function("-inv", "load_save_data", { { inv = {}, held = {} } })
+    for _, user_name in ipairs(get_entity_names_by_tag("user")) do
+        run_function("-inv", "host_sync_all_to", { user_name })
+        local spawn = map_to_local(Vector2(0, 0))
+        run_function(user_name, "host_respawn_at", { spawn.x, spawn.y })
+    end
+    run_network_function(name, "boss_wipe_ALL", {})
+end
+
+-- Every peer sees the "you lost the run" panel; only the host then gets the
+-- seed-setup panel on top of it once they dismiss this one.
+function boss_wipe_ALL(sender_id)
+    -- Force the world to actually regenerate even if the host ends up
+    -- re-picking the same seed - see force_wipe()'s comment in worldgen.lua.
+    run_function("-gen", "force_wipe")
+    if nav_icon_name ~= "" then
+        destroy("", nav_icon_name)
+        nav_icon_name = ""
+    end
+    if is_panel_exists(RESET_PANEL) then return end
+    create_panel({ name = RESET_PANEL, title ="{the_guardian_was_too_strong}",
+        text ="{every_one_of_your_spawn_rights_against_t}"
+            .. "{the_world_resets_a_new_journey_begins}",
+        set_time = false, close = false, resizable = false, minimum_size = Vector2(420, 200) })
+    add_button_to_panel(RESET_PANEL, { entity_name = name, function_name = "on_wipe_ack",
+        text ="{continue}", color = Color(0.6, 0.3, 0.3) })
+end
+
+function on_wipe_ack(args)
+    close_panel(RESET_PANEL)
+    if IS_HOST then show_seed_setup() end
 end
 
 -- =============================================================================
@@ -853,7 +1448,7 @@ end
 
 function cmd_friendlyfire()
     if not IS_HOST then
-        add_to_chat("Only the host can toggle friendly fire.", false)
+        add_to_chat("{only_the_host_can_toggle_friendly_fire}", false)
         return
     end
     friendly_fire = not friendly_fire
@@ -862,12 +1457,12 @@ end
 
 function ff_ALL(sender_id, on)
     friendly_fire = on
-    announce_local(on and "Friendly fire is now ON - mind your swings!"
-        or "Friendly fire is now OFF.")
+    announce_local(on and "{friendly_fire_on}"
+        or "{friendly_fire_off}")
 end
 
 function cmd_seed()
-    add_to_chat("World seed: " .. tostring(seed_value), false)
+    add_to_chat("{world_seed}" .. tostring(seed_value), false)
 end
 
 function cmd_stats()
@@ -876,17 +1471,20 @@ end
 
 function cmd_newworld()
     if not IS_HOST then
-        add_to_chat("Only the host can start a new world.", false)
+        add_to_chat("{only_the_host_can_start_a_new_world}", false)
         return
     end
     local new_seed = get_os_time_unix() % 1000000007
     destroy_entities_by_tag("npc")
     destroy_entities_by_tag("ground_item")
+    run_function("-wild", "host_reset") -- the entities are gone; drop the ledger too
     stats = {}
     pending_growth = {}
     breaks = {}
     dungeon_done = {}
     saved_positions = {}
+    boss_lives = {} -- next fight's spawn_boss() rebuilds this fresh, per player
+    clear_all_portals()
     run_network_function(name, "newworld_ALL", { new_seed })
     spawn_dungeon_population()
     run_function("-inv", "load_save_data", { { inv = {}, held = {} } })
@@ -906,14 +1504,88 @@ function newworld_ALL(sender_id, new_seed)
     boss_defeated = false
     boss_active = false
     run_function("-gen", "set_seed", { new_seed })
+    -- A new seed moves the dungeon's door and wipes every generated chunk, so
+    -- the old marker is both stale and un-earned: drop it and start looking again.
+    dungeon_marked = false
+    delete_minimap_target(DUNGEON_MARKER)
     apply_phase_visuals()
     refresh_clock()
-    announce_local("A brand new world! Everything starts over - good luck.")
+    announce_local("{brand_new_world}")
+end
+
+-- Testing shortcut: skip straight to day 7 nightfall (reuses begin_night(),
+-- so the sync/visuals/spawn path is identical to the real thing).
+function cmd_testboss()
+    if not IS_HOST then
+        add_to_chat("{only_the_host_can_trigger_the_boss_test}", false)
+        return
+    end
+    if boss_active then
+        add_to_chat("{the_boss_is_already_active}", false)
+        return
+    end
+    day = BOSS_DAY
+    boss_defeated = false
+    begin_night()
+    -- Gear everyone up for the fight (user entities are named by steam_id).
+    for _, steam_id in ipairs(get_entity_names_by_tag("user")) do
+        run_function("-inv", "host_add", { steam_id, "bow", 1 })
+        run_function("-inv", "host_add", { steam_id, "arrow", 2000 })
+        run_function("-inv", "host_sync", { steam_id })
+    end
+end
+
+-- Testing shortcut: a full set of everything in the registry, for whoever is
+-- playing. Host only and host-applied, like every other inventory change - the
+-- point is to skip the grind while testing recipes and gadgets, not to open a
+-- way for a client to ask the host for free items.
+function cmd_testitems()
+    if not IS_HOST then
+        add_to_chat("{only_the_host_can_hand_out_the_test_item}", false)
+        return
+    end
+    local item_ids = run_function("-items", "get_all_item_ids")
+    for _, steam_id in ipairs(get_entity_names_by_tag("user")) do
+        for _, item_id in ipairs(item_ids) do
+            run_function("-inv", "host_add", { steam_id, item_id, TEST_ITEM_COUNT })
+        end
+        run_function("-inv", "host_sync", { steam_id })
+    end
+    announce("{test_items_handed_out}" .. #item_ids .. "{kinds_x}" .. TEST_ITEM_COUNT .. "{each}")
+end
+
+-- Every peer reveals its OWN map: the island is a pure function of the seed, so
+-- each machine can paint the tiles itself and nothing has to be sent anywhere.
+-- The tiles ARE the map (the engine builds the minimap image straight off this
+-- peer's TileMapLayer), so revealing means painting them - just in the
+-- background, behind whatever land players are actually walking into.
+function cmd_openallmap()
+    if not run_function("-gen", "is_seed_ready") then
+        add_to_chat("{the_island_has_not_been_generated_yet}", false)
+        return
+    end
+    if run_function("-gen", "is_revealing") then
+        add_to_chat("{already_drawing_the_rest_of_the_island_g}", false)
+        return
+    end
+    local pending = run_function("-gen", "reveal_all")
+    if pending == 0 then
+        add_to_chat("{your_map_already_covers_the_whole_island}", false)
+        return
+    end
+    add_to_chat("{charting_the_island}" .. math.floor(pending)
+        .. "{chunks_to_go_open_the_map_g_and_watch_it}", false)
 end
 
 add_command(name, "cmd_friendlyfire", "friendlyfire",
-    "Host only: toggle player-vs-player damage (default off).", true)
+    "{cmd_friendly_fire_desc}", true)
 add_command(name, "cmd_newworld", "newworld",
-    "Host only: abandon this world and generate a fresh one.", true)
-add_command(name, "cmd_seed", "seed", "Show the current world seed.", true)
-add_command(name, "cmd_stats", "stats", "Show the scoreboard so far.", true)
+    "{cmd_new_world_desc}", true)
+add_command(name, "cmd_seed", "seed", "{show_the_current_world_seed}", true)
+add_command(name, "cmd_stats", "stats", "{show_the_scoreboard_so_far}", true)
+add_command(name, "cmd_testboss", "testboss",
+    "{cmd_boss_desc}", true)
+add_command(name, "cmd_testitems", "testitems",
+    "{cmd_giveall_desc}", true)
+add_command(name, "cmd_openallmap", "openallmap",
+    "{cmd_reveal_desc}", true)

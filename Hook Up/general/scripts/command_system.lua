@@ -1,38 +1,38 @@
 singleton_name = "cmd"
 
 -- Register commands to the centralized system
-add_command("-cmd", "show_fishing_help", "fishing", "Shows fishing game controls and tips", true)
-add_command("-cmd", "teleport_to_spawn_point", "spawn_point", "Teleport to spawn point and reset position/velocity",
+add_command("-cmd", "show_fishing_help", "fishing", "{shows_fishing_game_controls_and_tips}", true)
+add_command("-cmd", "teleport_to_spawn_point", "spawn_point", "{teleport_to_spawn_point_and_reset_positi}",
     true)
 add_command("-cmd", "change_spawn_point", "change_spawn_point",
-    "[x:number] [y:number] (Host only) Change spawn point position ", true)
+    "{cmd_change_spawn_point_desc}", true)
 
 
 
 -- Function to show fishing game help
 function show_fishing_help()
-    local fishing_text = "FISHING GAME CONTROLS:\n\n"
+    local fishing_text ="{fishing_game_controls}"
 
-    fishing_text = fishing_text .. "HOOK CONTROLS:\n"
-    fishing_text = fishing_text .. "• Hold @key_7@ to charge hook power\n"
-    fishing_text = fishing_text .. "• Release @key_7@ to fire hook\n"
-    fishing_text = fishing_text .. "• Press @key_7@ while hooked to launch yourself\n"
-    fishing_text = fishing_text .. "• Press @key_7@ during firing to cancel\n\n"
+    fishing_text = fishing_text .. "{hook_controls}"
+    fishing_text = fishing_text .. "{hold_to_charge_hook_power}"
+    fishing_text = fishing_text .. "{release_to_fire_hook}"
+    fishing_text = fishing_text .. "{press_while_hooked_to_launch_yourself}"
+    fishing_text = fishing_text .. "{press_during_firing_to_cancel}"
 
-    fishing_text = fishing_text .. "FISHING MECHANICS:\n"
-    fishing_text = fishing_text .. "• Hook onto fish to start fishing minigame\n"
-    fishing_text = fishing_text .. "• Follow the traffic light signals\n"
-    fishing_text = fishing_text .. "• Green = Reel in, Red = Stop\n"
-    fishing_text = fishing_text .. "• Manage your health vs fish health\n\n"
+    fishing_text = fishing_text .. "{fishing_mechanics}"
+    fishing_text = fishing_text .. "{hook_onto_fish_to_start_fishing_minigame}"
+    fishing_text = fishing_text .. "{follow_the_traffic_light_signals}"
+    fishing_text = fishing_text .. "{green_reel_in_red_stop}"
+    fishing_text = fishing_text .. "{manage_your_health_vs_fish_health}"
 
     fishing_text = fishing_text .. "TIPS:\n"
-    fishing_text = fishing_text .. "• Different fish have different difficulties\n"
-    fishing_text = fishing_text .. "• Watch your hook power - higher power = further range\n"
-    fishing_text = fishing_text .. "• Use platforms to get better fishing positions\n"
-    fishing_text = fishing_text .. "• Some areas have better fish than others\n"
+    fishing_text = fishing_text .. "{different_fish_have_different_difficulti}"
+    fishing_text = fishing_text .. "{watch_your_hook_power_higher_power_furth}"
+    fishing_text = fishing_text .. "{use_platforms_to_get_better_fishing_posi}"
+    fishing_text = fishing_text .. "{some_areas_have_better_fish_than_others}"
 
     local message_config = {
-        title = "Fishing Game Help",
+        title ="{fishing_game_help}",
         text = fishing_text,
         resizable = true,
 
@@ -71,7 +71,7 @@ end
 function change_spawn_point_ALL(sender_id, x, y)
     -- Validate parameters
     if not x or not y then
-        add_to_chat("[color=#ff8066][b]Error: Missing parameters! Usage: /change_spawn_point x y[/b][/color]", false)
+        add_to_chat("{error_missing_parameters_usage_change_sp}", false)
         return
     end
 
@@ -80,14 +80,13 @@ function change_spawn_point_ALL(sender_id, x, y)
     local pos_y = tonumber(y)
 
     if not pos_x or not pos_y then
-        add_to_chat("[color=#ff8066][b]Error: Invalid parameters! x and y must be numbers[/b][/color]", false)
+        add_to_chat("{error_invalid_parameters_x_and_y_must_be}", false)
         return
     end
 
     -- Check for reasonable bounds (optional safety check)
     if pos_x < -10000 or pos_x > 10000 or pos_y < -10000 or pos_y > 10000 then
-        add_to_chat(
-            "[color=#ff8066][b]Error: Position values too extreme! Use values between -10000 and 10000[/b][/color]",
+        add_to_chat("{error_position_values_too_extreme_use_va}",
             false)
         return
     end
@@ -97,5 +96,5 @@ function change_spawn_point_ALL(sender_id, x, y)
     set_value("", "-spawn_point", "position", new_position)
 
     -- Confirm the change
-    add_to_chat("[color=#66FF99][b]Spawn point updated to position (" .. pos_x .. ", " .. pos_y .. ")[/b][/color]", true)
+    add_to_chat("{spawn_point_updated_to_position}" .. pos_x .. ", " .. pos_y .. ")[/b][/color]", true)
 end

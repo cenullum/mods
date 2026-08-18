@@ -38,10 +38,73 @@ function move_to_spectator(args)
     })
 end
 
-function show_user_actions(steam_id, user_name)
+-- Bot rows in the score table open this panel instead: a bot has no Steam
+-- profile, and its team/removal go through -bot_manager (which owns the roster).
+function move_bot_to_red_team(args)
+    run_function("-bot_manager", "set_bot_team", { args.extra_args.steam_id, 1 })
+end
+
+function move_bot_to_blue_team(args)
+    run_function("-bot_manager", "set_bot_team", { args.extra_args.steam_id, 2 })
+end
+
+function set_bot_type_both(args)
+    run_function("-bot_manager", "set_bot_type", { args.extra_args.steam_id, 0 })
+end
+
+function set_bot_type_keeper(args)
+    run_function("-bot_manager", "set_bot_type", { args.extra_args.steam_id, 1 })
+end
+
+function set_bot_type_field(args)
+    run_function("-bot_manager", "set_bot_type", { args.extra_args.steam_id, 2 })
+end
+
+function kick_bot(args)
+    run_function("-bot_manager", "remove_bot", { args.extra_args.steam_id })
+    close_panel(args.panel_name)
+end
+
+function show_bot_actions(bot_name, bot_label)
+    if not IS_HOST then return end
+    local panel_name = create_panel({
+        text = "{user_actions}" .. bot_label,
+        title = "{bot_management}",
+        resizable = false,
+        name = "football_player_action_id",
+        no_multiple_tag = "football_player_action",
+        minimum_size = Vector2(450, 420)
+    })
+
+    local buttons = {
+        { "{move_to_red_team}", "#CC0000", "move_bot_to_red_team" },
+        { "{move_to_blue_team}", "#0066CC", "move_bot_to_blue_team" },
+        { "{bot_type_both}", "#4B8BF4", "set_bot_type_both" },
+        { "{bot_type_gk}", "#4B8BF4", "set_bot_type_keeper" },
+        { "{bot_type_field}", "#4B8BF4", "set_bot_type_field" },
+        { "{remove_bot}", "#AA2222", "kick_bot" },
+    }
+    for i = 1, #buttons do
+        add_button_to_panel(panel_name, {
+            text = buttons[i][1],
+            is_vertical = true,
+            color = buttons[i][2],
+            entity_name = name,
+            function_name = buttons[i][3],
+            extra_args = { steam_id = bot_name }
+        })
+    end
+end
+
+function show_user_actions(steam_id, user_name, is_bot)
+    if is_bot == true then
+        show_bot_actions(steam_id, user_name)
+        return
+    end
+
     local settings = {
-        text = "User Actions - " .. user_name,
-        title = "User Actions",
+        text ="{user_actions}" .. user_name,
+        title ="{user_actions_2}",
         resizable = false,
         name = "football_player_action_id",
         no_multiple_tag = "football_player_action"
@@ -51,7 +114,7 @@ function show_user_actions(steam_id, user_name)
 
     -- View Steam Profile button for all users
     add_button_to_panel(panel_name, {
-        text = "View Steam Profile",
+        text ="{view_steam_profile}",
         is_vertical = true,
         color = "#4B8BF4",
         entity_name = name,
@@ -63,7 +126,7 @@ function show_user_actions(steam_id, user_name)
     if IS_HOST then
         -- Move to Red Team
         add_button_to_panel(panel_name, {
-            text = "Move to Red Team",
+            text ="{move_to_red_team}",
             is_vertical = true,
             color = "#CC0000",
             entity_name = name,
@@ -73,7 +136,7 @@ function show_user_actions(steam_id, user_name)
 
         -- Move to Blue Team
         add_button_to_panel(panel_name, {
-            text = "Move to Blue Team",
+            text ="{move_to_blue_team}",
             is_vertical = true,
             color = "#0066CC",
             entity_name = name,
@@ -82,7 +145,7 @@ function show_user_actions(steam_id, user_name)
         })
 
         add_button_to_panel(panel_name, {
-            text = "Move to Spectator",
+            text ="{move_to_spectator}",
             is_vertical = true,
             color = "#FFFFFF",
             entity_name = name,

@@ -320,7 +320,7 @@
             "m": "(1, 1, 1, 1)",
             "v": 0,
             "h": 0,
-            "t": "A hook can not be attached to rotating cross",
+            "t": "{map_hook_not_on_rotating_cross}",
             "o": "(1, 1, 1, 1)",
             "z": 0,
             "f": "(1, 1, 1, 1)",

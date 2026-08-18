@@ -15,3 +15,9 @@ with everyone's live mouse cursors until the next round starts - one click on
 
 Built on the engine's card system (the same "cards" JSON the online image
 editor exports), so the deck art is easy to reskin.
+
+Two bots are already sitting at the table, so you can play on your own: the
+host gets Add bot / Remove bot buttons at the table edge and can seat up to
+six of them. They follow the rules exactly (a bot's move goes through the same
+host-side validation a player's does), weigh their hand from best card to
+worst, and take a second or two between plays so you can follow the table.

@@ -12,6 +12,6 @@ set_background_texture("floor")  -- repeating ground under the walkable areas
 set_camera_zoom(Vector2(2.6, 2.6))
 change_view("gameplay")
 
-set_input_display_name("stick_1", "Move")
-set_input_display_name("stick_2", "Aim") -- must be registered or it is never gathered/sent
-set_input_display_name("key_12", "Shoot")
+set_input_display_name("stick_1","{move}")
+set_input_display_name("stick_2","{aim}") -- must be registered or it is never gathered/sent
+set_input_display_name("key_12","{shoot}")

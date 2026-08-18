@@ -42,13 +42,13 @@ end
 -- Panel functions
 function create_test_panel()
     panel_name= create_panel({
-    title = "Network Test Panel",
+    title ="{network_test_panel}",
     size = Vector2(300, 200),
     position = Vector2(500, 300)
     })
 
     add_button_to_panel(panel_name,{
-    text = "Run Network Tests",
+    text ="{run_network_tests}",
 	entity_name=name,
     function_name = "start_test"
     })

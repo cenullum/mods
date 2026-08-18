@@ -1,10 +1,17 @@
 singleton_name = "mg"
 
--- Global variables for the spawning system
-local rectangle_x = -8          -- X coordinate of spawn rectangle
-local rectangle_y = -12          -- Y coordinate of spawn rectangle
-local rectangle_width = 24       -- Width of spawn rectangle
-local rectangle_height = 16    -- Height of spawn rectangle
+-- Arena bounds. BASE_* is the normal arena; rectangle_* is what is painted on
+-- the tilemap right now, which doubles while the boss is alive (see
+-- set_map_scale_ALL) and shrinks back when it dies or the run resets.
+local BASE_RECT_X = -8
+local BASE_RECT_Y = -12
+local BASE_RECT_WIDTH = 24
+local BASE_RECT_HEIGHT = 16
+
+rectangle_x = BASE_RECT_X        -- X coordinate of spawn rectangle
+rectangle_y = BASE_RECT_Y        -- Y coordinate of spawn rectangle
+rectangle_width = BASE_RECT_WIDTH   -- Width of spawn rectangle
+rectangle_height = BASE_RECT_HEIGHT -- Height of spawn rectangle
 local min_monsters = 2           -- Minimum monsters to spawn each wave
 local max_monsters = 5           -- Maximum monsters to spawn each wave
 local min_interval = 1          -- Minimum seconds between spawns
@@ -61,6 +68,122 @@ local monster_definitions = {
     [5] = { type = "cactus", health = 90, damage = 4.5, speed = 25, size = 48 },
     [6] = { type = "snake", health = 35, damage = 2.0, speed = 60, size = 34 }
 }
+
+-- =============================================================================
+-- Arena tilemap.
+--
+-- The tilemap is painted locally by every peer (nothing here is networked by
+-- itself), so a resize has to run on all of them - the host broadcasts
+-- set_map_scale_ALL rather than calling it directly.
+-- =============================================================================
+
+local drawn_rect = nil  -- what is currently painted, so a resize can erase it first
+
+-- Draw a rectangle of tiles.
+-- x, y: top-left position of the rectangle
+-- width, height: dimensions of the rectangle
+-- use_middle_tile: if true, moves the campfire to the exact center of the rectangle
+function draw_rectangle(x, y, width, height, use_middle_tile)
+    -- Validate parameters
+    if width < 2 or height < 2 then
+        print("Error: Width and height must be at least 2")
+        return
+    end
+
+    -- If use_middle_tile is nil, set it to false (default parameter value)
+    if use_middle_tile == nil then
+        use_middle_tile = false
+    end
+
+    -- Draw the four corners
+    -- Top-left corner
+    set_tile(x, y, Vector2(0, 0))
+
+    -- Top-right corner
+    set_tile(x + width - 1, y, Vector2(2, 0))
+
+    -- Bottom-left corner
+    set_tile(x, y + height - 1, Vector2(0, 2))
+
+    -- Bottom-right corner
+    set_tile(x + width - 1, y + height - 1, Vector2(2, 2))
+
+    -- Draw top and bottom edges
+    for i = 1, width - 2 do
+        -- Top edge
+        set_tile(x + i, y, Vector2(1, 0))
+
+        -- Bottom edge
+        set_tile(x + i, y + height - 1, Vector2(1, 2))
+    end
+
+    -- Draw left and right edges
+    for j = 1, height - 2 do
+        -- Left edge
+        set_tile(x, y + j, Vector2(0, 1))
+
+        -- Right edge
+        set_tile(x + width - 1, y + j, Vector2(2, 1))
+    end
+
+    -- Fill the interior with regular tiles (1,1)
+    for i = 1, width - 2 do
+        for j = 1, height - 2 do
+            set_tile(x + i, y + j, Vector2(1, 1))
+        end
+    end
+
+    -- If requested, drop the campfire on the exact center tile
+    if use_middle_tile and width >= 3 and height >= 3 then
+        local pos = map_to_local(Vector2(x + math.floor(width / 2), y + math.floor(height / 2)))
+        set_value("", "-campfire", "position", pos)
+    end
+
+    print("Rectangle drawn at (" .. x .. ", " .. y .. ") with dimensions " .. width .. "x" .. height)
+end
+
+-- Erase every tile of a rectangle (Vector2(-1, -1) clears a cell).
+function clear_rectangle(x, y, width, height)
+    for i = 0, width - 1 do
+        for j = 0, height - 1 do
+            set_tile(math.floor(x + i), math.floor(y + j), Vector2(-1, -1))
+        end
+    end
+end
+
+-- Repaint the arena at the current rectangle_* bounds, wiping whatever was
+-- painted before (a shrink would otherwise leave the old outer walls behind).
+function build_map()
+    if drawn_rect then
+        clear_rectangle(drawn_rect.x, drawn_rect.y, drawn_rect.width, drawn_rect.height)
+    end
+    draw_rectangle(rectangle_x, rectangle_y, rectangle_width, rectangle_height, true)
+    drawn_rect = { x = rectangle_x, y = rectangle_y,
+        width = rectangle_width, height = rectangle_height }
+end
+
+-- Center tile of the BASE arena. Doubling keeps the same center tile (the base
+-- size is even on both axes), so the campfire never moves and this stays the
+-- safe spot to teleport everyone to after a shrink.
+function get_map_center_tile()
+    return Vector2(BASE_RECT_X + math.floor(BASE_RECT_WIDTH / 2),
+        BASE_RECT_Y + math.floor(BASE_RECT_HEIGHT / 2))
+end
+
+function get_map_center()
+    return map_to_local(get_map_center_tile())
+end
+
+-- scale = 1 normal arena, 2 boss arena. Runs on every peer.
+function set_map_scale_ALL(sender_id, scale)
+    local factor = math.max(1, math.floor(scale))
+    local center = get_map_center_tile()
+    rectangle_width = BASE_RECT_WIDTH * factor
+    rectangle_height = BASE_RECT_HEIGHT * factor
+    rectangle_x = center.x - math.floor(rectangle_width / 2)
+    rectangle_y = center.y - math.floor(rectangle_height / 2)
+    build_map()
+end
 
 -- Function to get monster data by ID
 function get_monster_data(monster_id)

@@ -9,3 +9,7 @@ Football is a multiplayer team-based game where two teams compete to score goals
 - Scoreboard tracks individual goals and assists
 - Match can be played with time limits (1-90 minutes or infinite)
 - Players can be moved between teams or made spectators
+- AI bots the host can add to either team from the scoreboard panel
+  (keeper only / outfield only / both) on easy, normal or hard. They pick
+  positions by squad size, pass, dribble, aim for the open side of the goal
+  and drop back to defend - with the same speed and shot power you have

@@ -27,7 +27,7 @@ singleton_name = "od_manager"
 local MIN_PLAYERS = 2
 local MAX_SEATS = 5
 local HAND_SIZE = 5           -- + 1 guaranteed Disarm Kit each
-local TURN_TIME = 45
+local TURN_TIME = 8      -- AFK protection: act within this or the turn auto-plays
 local JAM_TIME = 7.0  -- doubled: give people a fair chance to notice + react with a Jammer
 local FAVOR_TIME = 15
 local BOMB_TIME = 20
@@ -76,6 +76,7 @@ alive = {}           -- steam_id -> true
 phase = "lobby"      -- lobby | starting | playing | roundend
 turn_idx = 1
 turns_owed = 1
+turn_serial = 0      -- bumped whenever a NEW turn step begins (see bot_process)
 pending = nil        -- { kind, by, data, jams, uids } during a jam window
 awaiting_favor = nil -- { giver, receiver }
 awaiting_bomb = nil  -- { id, bomb, disarm }
@@ -92,7 +93,34 @@ cl_wins = {}
 cl_pending = nil     -- { kind, by, jams }
 cl_favor = nil       -- { giver, receiver }
 cl_bomb_holder = ""
+cl_bots = {}         -- bot_id -> true, so every peer can draw a bot face at that seat
 cl_zoom = 0.6        -- local camera zoom; starts fully zoomed out (see world.lua)
+
+-- ---------- HOST: bots ----------
+-- A bot is an ordinary seat with no peer behind it, so its id is a plain "bot1"
+-- string (never a Steam id) and the host owns its cards like a player's. Every
+-- bot decision goes through the SAME *_HOST validator a real client's intent
+-- goes through, so a bot can never make a move the rules would refuse.
+local MAX_BOTS = 4
+local BOT_MIN_DELAY = 1.0   -- a bot "thinks" this long before acting, so a human
+local BOT_MAX_DELAY = 2.0   -- can follow what just happened at the table
+bots = {}            -- bot_id -> true (host only)
+bot_order = {}       -- ordered bot ids: "remove bot" always pops the last one
+bot_delay = -1       -- host-only countdown; < 0 means "arm a fresh pause"
+bot_jam_id = ""      -- the bot that decided to answer the open jam window
+bot_jam_delay = -1
+bot_jam_token = ""   -- identifies the jam window a decision was rolled for
+bot_jam_window = ""  -- the window itself (survives re-opens after each jammer)
+bot_jam_used = {}    -- bots that already answered the current window
+bot_turn_token = ""  -- identifies one bot turn, to count actions played in it
+bot_turn_plays = 0
+bots_seeded = false
+-- bot_id -> ids returned by that bot's own Recon Drone (index 1 = top of deck),
+-- so its NEXT decision this turn can act on what it saw - exactly the same
+-- information a human would have after playing the same card. Cleared on any
+-- event that could move the deck's top card (a draw, a shuffle, a bomb going
+-- back in), so a bot can never act on a stale read.
+bot_recon = {}
 
 -- Local (unsynced, cosmetic) countdown for the jam window, so players can see
 -- exactly how long they still have to react with a Signal Jammer.
@@ -100,12 +128,25 @@ cl_jam_time_left = 0.0
 cl_jam_shown_sec = -1
 cl_jam_last_jams = -1
 
+-- Latest "what just happened" line (was its own bottom-of-screen popup panel;
+-- that covered the hand cards at the bottom edge, so it now folds into the
+-- top-left HUD panel instead - see announce_ALL/refresh_hud).
+local LOG_DURATION = 4.0
+cl_log = ""
+cl_log_time_left = 0.0
+
 local HUD = ""
 local SEATP = ""
 local SCORE = ""
 local PICKER = ""
 local PEEK = ""
 local BOMBP = ""
+
+-- Recon Drone peek visuals: real (localized) card faces shown on screen,
+-- topmost = deck top, so the peeking player actually sees what they drew
+-- instead of reading a plain-text list. Auto-hidden after PEEK_DURATION.
+local PEEK_SLOTS = { "_od_peek_1", "_od_peek_2", "_od_peek_3" }
+local PEEK_DURATION = 8
 
 -- =============================================================================
 -- Helpers
@@ -134,6 +175,17 @@ function _process(delta, inputs)
             cl_jam_shown_sec = shown
             refresh_hud()
         end
+    end
+    if cl_log ~= "" and cl_log_time_left > 0 then
+        cl_log_time_left = math.max(0, cl_log_time_left - delta)
+        if cl_log_time_left <= 0 then
+            cl_log = ""
+            refresh_hud()
+        end
+    end
+    if IS_HOST then
+        bot_process(delta)
+        bot_jam_process(delta)
     end
     return inputs
 end
@@ -186,6 +238,316 @@ local function card_type(card_id)
     return tostring(get_card_keyword(card_id, "type") or "")
 end
 
+-- =============================================================================
+-- HOST: bot agents
+--
+-- Everything below runs on the host only; clients are told which seats are bots
+-- (for the face + the name) and nothing else. The pacing runs off _process
+-- rather than start_timer because a bot often has to act twice in a row - play
+-- an action, then keep playing the same owed turn - and re-arming a timer from
+-- inside its own callback is a trap this codebase has already been bitten by.
+-- =============================================================================
+local function is_bot(id)
+    return id ~= nil and id ~= "" and bots[id] == true
+end
+
+local function human_seated_count()
+    local n = 0
+    for _, id in ipairs(seated) do
+        if not is_bot(id) then n = n + 1 end
+    end
+    return n
+end
+
+-- Weighted random pick over entries carrying a `weight` field.
+local function bot_pick(entries)
+    local total = 0
+    for _, e in ipairs(entries) do total = total + e.weight end
+    if total <= 0 then return nil end
+    local roll = math.random() * total
+    for _, e in ipairs(entries) do
+        roll = roll - e.weight
+        if roll <= 0 then return e end
+    end
+    return entries[#entries]
+end
+
+-- How dearly a bot holds on to a card when it is forced to hand one over. The
+-- Disarm Kit is the only card that keeps you in the mission, so it is the last
+-- thing to go; a lone weapon is nearly worthless, a matching pair is not.
+local function bot_keep_value(card_id, copies)
+    local kind = card_type(card_id)
+    if kind == "disarm" then return 20 end
+    if kind == "nope" then return 9 end
+    if kind == "weapon" then return copies >= 2 and 8 or 3 end
+    if kind == "attack" or kind == "skip" then return 5 end
+    if kind == "favor" then return 4 end
+    if kind == "shuffle" then return 2 end
+    return 1.5 -- recon drone and anything else new
+end
+
+local function bot_hand_counts(hand)
+    local counts = {}
+    for _, entry in ipairs(hand) do
+        if entry.card_id ~= "" then
+            counts[entry.card_id] = (counts[entry.card_id] or 0) + 1
+        end
+    end
+    return counts
+end
+
+-- The living opponent with the fattest hand (ties broken randomly): the most
+-- worthwhile agent to steal from or demand supplies off.
+local function bot_target(id)
+    local best, best_score = "", -1
+    for _, other in ipairs(seated) do
+        if other ~= id and alive[other] then
+            local score = card_hand_count(other) + math.random() * 0.9
+            if score > best_score then
+                best = other
+                best_score = score
+            end
+        end
+    end
+    return best
+end
+
+-- Which bot (if any) owes the table a decision right now, and what kind. A jam
+-- window is answered by bot_jam_process instead - it is not the turn holder's
+-- decision, and anyone at the table may react to it.
+local function bot_actor()
+    if phase ~= "playing" or pending then return "", "" end
+    if awaiting_favor then
+        if is_bot(awaiting_favor.giver) then return awaiting_favor.giver, "favor" end
+        return "", ""
+    end
+    if awaiting_bomb then
+        if is_bot(awaiting_bomb.id) then return awaiting_bomb.id, "bomb" end
+        return "", ""
+    end
+    local id = current_turn_id()
+    if is_bot(id) and alive[id] then return id, "turn" end
+    return "", ""
+end
+
+-- Every legal move of a bot's turn, each with its weight. Illegal ones are
+-- never built, so a bad roll cannot break a rule.
+local function bot_turn_moves(id)
+    local hand = card_get_hand(id)
+    local counts = bot_hand_counts(hand)
+    local target = bot_target(id)
+    local moves = {}
+    local function add(weight, run)
+        table.insert(moves, { weight = weight, run = run })
+    end
+
+    -- Drawing is always legal and is the only free way to end a turn; the more
+    -- a bot has already thrown down this turn, the harder it leans on drawing,
+    -- so it can never dump its whole hand in one go. A Recon Drone that showed
+    -- a Time Bomb on top flips this hard: a bot that peeked avoids drawing into
+    -- it, exactly like a player who saw the same thing would.
+    local draw_weight = 8 + bot_turn_plays * 6
+    local recon = bot_recon[id]
+    if recon and card_type(recon[1] or "") == "bomb" then draw_weight = 0.4 end
+    add(draw_weight, function() draw_card_HOST(id) end)
+
+    for _, entry in ipairs(hand) do
+        local uid = entry.uid
+        local kind = card_type(entry.card_id)
+        -- Holding several copies naturally adds several entries, so a bot with
+        -- three Retreats really does retreat more often.
+        if kind == "attack" then
+            add(5, function() play_action_HOST(id, { uid = uid, target = "" }) end)
+        elseif kind == "skip" then
+            add(5, function() play_action_HOST(id, { uid = uid, target = "" }) end)
+        elseif kind == "shuffle" then
+            add(2.5, function() play_action_HOST(id, { uid = uid, target = "" }) end)
+        elseif kind == "future" then
+            add(1.5, function() play_action_HOST(id, { uid = uid, target = "" }) end)
+        elseif kind == "favor" and target ~= "" then
+            add(4, function() play_action_HOST(id, { uid = uid, target = target }) end)
+        end
+        -- "nope" (Signal Jammer) is reactive and "disarm"/"bomb" are automatic:
+        -- none of them is ever a turn move, exactly as for a player.
+    end
+
+    if target ~= "" then
+        for card_id, copies in pairs(counts) do
+            if list_contains(WEAPONS, card_id) then
+                if copies >= 3 then
+                    -- Naming the Disarm Kit is the strongest ask in the game.
+                    add(6, function()
+                        combo_HOST(id, { weapon = card_id, count = 3,
+                            target = target, named = "disarm_kit" })
+                    end)
+                elseif copies == 2 then
+                    add(4, function()
+                        combo_HOST(id, { weapon = card_id, count = 2,
+                            target = target, named = "" })
+                    end)
+                end
+            end
+        end
+    end
+    return moves
+end
+
+function bot_play(id, mode)
+    if mode == "favor" then
+        -- Forced to hand a card over: give up the one it values least, but keep
+        -- it random enough that it is not perfectly readable.
+        local hand = card_get_hand(id)
+        local counts = bot_hand_counts(hand)
+        local entries = {}
+        for _, entry in ipairs(hand) do
+            table.insert(entries, { uid = entry.uid,
+                weight = 1 / bot_keep_value(entry.card_id, counts[entry.card_id] or 1) })
+        end
+        local pick = bot_pick(entries)
+        if pick then give_card_HOST(id, { uid = pick.uid }) end
+        return
+    end
+
+    if mode == "bomb" then
+        -- Where to re-hide the defused bomb. The top of the deck hands it
+        -- straight to the next agent, so that is the favourite.
+        local pick = bot_pick({
+            { weight = 4, slot = "top" },
+            { weight = 3, slot = "second" },
+            { weight = 3, slot = "middle" },
+            { weight = 1.5, slot = "bottom" },
+            { weight = 2, slot = "random" },
+        })
+        place_bomb_HOST(id, { slot = pick and pick.slot or "random" })
+        return
+    end
+
+    local pick = bot_pick(bot_turn_moves(id))
+    if pick then
+        bot_turn_plays = bot_turn_plays + 1
+        pick.run()
+    end
+end
+
+function bot_process(delta)
+    local id, mode = bot_actor()
+    if id == "" then
+        bot_delay = -1
+        return
+    end
+    -- Count the actions played inside ONE owed turn. turn_serial (not turn_idx)
+    -- is what identifies a turn step: with a single bot at the table the seat
+    -- index comes back around unchanged, and a stale count would make the bot
+    -- draw instantly on every turn it ever took afterwards. It deliberately does
+    -- NOT move during a jam window, so a bot's own turn survives one intact.
+    local token = id .. "#" .. tostring(turn_serial)
+    if token ~= bot_turn_token then
+        bot_turn_token = token
+        bot_turn_plays = 0
+    end
+    if bot_delay < 0 then
+        bot_delay = BOT_MIN_DELAY + math.random() * (BOT_MAX_DELAY - BOT_MIN_DELAY)
+    end
+    bot_delay = bot_delay - delta
+    if bot_delay > 0 then return end
+    bot_delay = -1 -- the next decision (even by the same bot) re-arms a fresh pause
+    bot_play(id, mode)
+end
+
+-- Bots answer an open jam window like a player would: eagerly when the action is
+-- aimed at them, rarely otherwise. A bot only answers a given window once, so
+-- two bots can never ping-pong jammers at each other forever.
+local function bot_jam_roll()
+    local candidates = {}
+    for _, id in ipairs(seated) do
+        if id ~= pending.by and alive[id] and is_bot(id) and not bot_jam_used[id]
+            and #find_in_hand(id, "signal_jammer", 1) > 0 then
+            local aimed = (pending.data and pending.data.target == id)
+            if math.random() < (aimed and 0.6 or 0.18) then
+                table.insert(candidates, id)
+            end
+        end
+    end
+    if #candidates == 0 then return "", -1 end
+    return candidates[math.random(1, #candidates)],
+        BOT_MIN_DELAY + math.random() * (BOT_MAX_DELAY - BOT_MIN_DELAY)
+end
+
+function bot_jam_process(delta)
+    if phase ~= "playing" or not pending then
+        bot_jam_token = ""
+        bot_jam_window = ""
+        bot_jam_id = ""
+        bot_jam_delay = -1
+        return
+    end
+    -- The first card played into the window identifies it; `jams` identifies the
+    -- re-opened window after every jammer, which is a fresh decision for everyone.
+    local window = tostring(pending.uids and pending.uids[1] or "")
+    if window ~= bot_jam_window then
+        bot_jam_window = window
+        bot_jam_used = {}
+    end
+    local token = window .. "#" .. tostring(pending.jams)
+    if token ~= bot_jam_token then
+        bot_jam_token = token
+        bot_jam_id, bot_jam_delay = bot_jam_roll()
+    end
+    if bot_jam_id == "" then return end
+    bot_jam_delay = bot_jam_delay - delta
+    if bot_jam_delay > 0 then return end
+    local who = bot_jam_id
+    bot_jam_id = ""
+    local uids = find_in_hand(who, "signal_jammer", 1)
+    if #uids > 0 and alive[who] then
+        bot_jam_used[who] = true
+        jam_HOST(who, { uid = uids[1] })
+    end
+end
+
+-- ---------- adding / removing bot seats (host only) ----------
+function add_bot()
+    if not IS_HOST then return end
+    if #bot_order >= MAX_BOTS then return end
+    if #seated + #waiting >= MAX_SEATS then return end
+    local index = 1
+    while bots["bot" .. index] do index = index + 1 end
+    local id = "bot" .. index
+    bots[id] = true
+    table.insert(bot_order, id)
+    players[id] = { name = "{bot} " .. index, wins = 0 }
+    table.insert(connected, id)
+    if phase == "lobby" or phase == "starting" then
+        table.insert(seated, id)
+        try_start()
+    else
+        table.insert(waiting, id) -- joins the next mission, like a player would
+    end
+    broadcast_state()
+end
+
+function remove_bot(id)
+    if not IS_HOST or not is_bot(id) then return end
+    bots[id] = nil
+    list_remove(bot_order, id)
+    -- A bot leaving is a player leaving minus the engine's own hand cleanup
+    -- (that only runs for real peers), so its equipment is dropped here first.
+    for _, entry in ipairs(card_get_hand(id)) do
+        card_discard(entry.uid)
+    end
+    _on_user_disconnected(id, "")
+end
+
+function add_bot_HOST(sender_id)
+    if not IS_HOST or sender_id ~= HOST_STEAM_ID then return end -- host-only control
+    add_bot()
+end
+
+function remove_bot_HOST(sender_id)
+    if not IS_HOST or sender_id ~= HOST_STEAM_ID then return end
+    remove_bot(bot_order[#bot_order])
+end
+
 function announce(text)
     run_network_function(name, "announce_ALL", { text })
 end
@@ -229,6 +591,7 @@ function broadcast_state(target)
         names = names,
         wins = wins,
         colors = assign_colors(),
+        bots = bots,
         pending = pending_info,
         favor = favor_info,
         bomb_holder = awaiting_bomb and awaiting_bomb.id or "",
@@ -265,6 +628,9 @@ end
 
 function try_start()
     if not IS_HOST or phase ~= "lobby" or #seated < MIN_PLAYERS then return end
+    -- Bots never deal themselves in: a table of nothing but bots would loop
+    -- missions forever with nobody watching.
+    if human_seated_count() == 0 then return end
     phase = "starting"
     start_timer({
         timer_id = "od_start",
@@ -330,11 +696,13 @@ function start_round(args)
     phase = "playing"
     turn_idx = 1
     turns_owed = 1
+    turn_serial = turn_serial + 1
     pending = nil
     awaiting_favor = nil
     awaiting_bomb = nil
+    bot_recon = {}
     restart_turn_timer()
-    announce("Mission start! " .. tostring(#seated - 1) .. " Time Bomb(s) are hidden in the deck.")
+    announce("{mission_start}" .. tostring(#seated - 1) .. "{time_bomb_s_are_hidden_in_the_deck}")
     broadcast_state()
 end
 
@@ -350,10 +718,15 @@ function restart_turn_timer()
     })
 end
 
+-- Too slow (or just AFK): the SAME weighted decision a bot would make on its
+-- turn - play an action card if a good one is in hand, otherwise draw. Reactive
+-- windows (jam/favor/bomb) already auto-resolve on their own timers.
 function turn_timeout(args)
     if not IS_HOST or phase ~= "playing" then return end
     if pending or awaiting_favor or awaiting_bomb then return end -- their own timers run
-    draw_card_HOST(current_turn_id())
+    local id = current_turn_id()
+    if id == "" then return end
+    bot_play(id, "turn")
 end
 
 -- Move to the next living agent (owing one normal turn).
@@ -363,6 +736,7 @@ function advance_turn()
         turn_idx = (turn_idx % #seated) + 1
     until alive[seated[turn_idx]]
     turns_owed = 1
+    turn_serial = turn_serial + 1
     restart_turn_timer()
 end
 
@@ -370,6 +744,7 @@ end
 function finish_turn_step()
     turns_owed = turns_owed - 1
     if turns_owed > 0 then
+        turn_serial = turn_serial + 1
         restart_turn_timer() -- same player keeps playing (Ambush debt)
     else
         advance_turn()
@@ -405,28 +780,31 @@ end
 function combo_HOST(sender_id, data)
     if not IS_HOST then return end
     local function reject(reason)
+        -- A bot has no peer to send the hint to (and bot_turn_moves only ever
+        -- builds legal combos anyway), so it just drops the move silently.
+        if is_bot(sender_id) then return end
         run_network_function(name, "combo_rejected_ALL", { reason }, sender_id)
     end
-    if phase ~= "playing" then reject("The mission isn't in play right now.") return end
-    if pending then reject("Wait for the current jam window to resolve first.") return end
-    if awaiting_favor then reject("Wait for the pending Supply Request to resolve first.") return end
-    if awaiting_bomb then reject("Wait for the pending Time Bomb to resolve first.") return end
-    if sender_id ~= current_turn_id() then reject("It's not your turn.") return end
-    if not alive[sender_id] then reject("You're out of the mission.") return end
+    if phase ~= "playing" then reject("{mission_not_in_play}") return end
+    if pending then reject("{wait_for_jam_window}") return end
+    if awaiting_favor then reject("{wait_for_supply_request}") return end
+    if awaiting_bomb then reject("{wait_for_time_bomb}") return end
+    if sender_id ~= current_turn_id() then reject("{its_not_your_turn}") return end
+    if not alive[sender_id] then reject("{youre_out_of_the_mission}") return end
     local weapon = tostring(data and data.weapon or "")
     local count = tonumber(data and data.count or 0) or 0
     local target = tostring(data and data.target or "")
     local named = tostring(data and data.named or "")
-    if not list_contains(WEAPONS, weapon) then reject("That's not a weapon card.") return end
-    if count ~= 2 and count ~= 3 then reject("Invalid combo size.") return end
+    if not list_contains(WEAPONS, weapon) then reject("{thats_not_a_weapon_card}") return end
+    if count ~= 2 and count ~= 3 then reject("{invalid_combo_size}") return end
     if target == "" or target == sender_id or not alive[target] then
-        reject("Pick a valid, living target.") return
+        reject("{pick_a_valid_living_target}") return
     end
-    if count == 3 and not list_contains(NAMEABLE, named) then reject("Pick a valid card to name.") return end
+    if count == 3 and not list_contains(NAMEABLE, named) then reject("{pick_a_valid_card_to_name}") return end
     local uids = find_in_hand(sender_id, weapon, count)
     if #uids < count then
-        reject("You no longer have " .. count .. " identical " ..
-            (get_card_info(weapon).name or "weapons") .. " - someone may have taken one.")
+        reject("{you_no_longer_have}" .. count .. "{identical}" ..
+            (get_card_info(weapon).name or "{weapons_fallback}") .. "{someone_may_have_taken_one}")
         return
     end
     for i, uid in ipairs(uids) do
@@ -441,7 +819,7 @@ function combo_HOST(sender_id, data)
 end
 
 function combo_rejected_ALL(sender_id, reason)
-    announce_local(tostring(reason or "That combo can't be played right now."))
+    announce_local(tostring(reason or "{combo_cant_be_played_now}"))
 end
 
 function open_jam_window(new_pending)
@@ -469,8 +847,8 @@ function jam_HOST(sender_id, data)
     table.insert(pending.uids, uid)
     pending.jams = pending.jams + 1
     local jammer = players[sender_id] and players[sender_id].name or "?"
-    announce(jammer .. " played a SIGNAL JAMMER!" ..
-        (pending.jams % 2 == 1 and " Action canceled..." or " Jam neutralized - action is back on!"))
+    announce(jammer .. "{played_a_signal_jammer}" ..
+        (pending.jams % 2 == 1 and "{action_canceled}" or "{jam_neutralized_action_is_back_on}"))
     open_jam_window(pending) -- restart the window: jammers can jam jammers
 end
 
@@ -484,7 +862,7 @@ function jam_timeout(args)
         card_move(uid, discard_jitter(), 0.3)
     end
     if p.jams % 2 == 1 then
-        announce("The action was JAMMED - no effect.")
+        announce("{the_action_was_jammed}")
         broadcast_state()
         return
     end
@@ -495,19 +873,29 @@ end
 function apply_action(p)
     local by_name = players[p.by] and players[p.by].name or "?"
     if p.kind == "attack" then
-        announce(by_name .. " sets an AMBUSH - next agent owes two turns!")
+        announce(by_name .. "{sets_an_ambush_next_agent_owes_two_turns}")
         advance_turn()
         turns_owed = 2
     elseif p.kind == "skip" then
-        announce(by_name .. " retreats.")
+        announce(by_name .. "{retreats}")
         finish_turn_step()
     elseif p.kind == "shuffle" then
         card_shuffle(DECK)
+        bot_recon = {} -- the deck order just changed; any earlier peek is stale
         play_sound("card_shuffle")
-        announce(by_name .. " shuffled the mission deck.")
+        announce(by_name .. "{shuffled_the_mission_deck}")
     elseif p.kind == "future" then
-        card_peek(DECK, 3, p.by)
-        announce(by_name .. " launches a recon drone...")
+        -- A bot has no client peer for card_peek()'s _on_card_peek callback to
+        -- reach, so it reads the same information back synchronously instead -
+        -- same card, same 3 cards, just delivered to host-side Lua where the
+        -- bot's own decisions run (see card_get_hand()'s host-always-knows
+        -- pattern for the same reason).
+        if is_bot(p.by) then
+            bot_recon[p.by] = card_peek_host(DECK, 3)
+        else
+            card_peek(DECK, 3, p.by)
+        end
+        announce(by_name .. "{launches_a_recon_drone}")
     elseif p.kind == "favor" then
         local giver = p.data.target
         if alive[giver] then
@@ -520,25 +908,25 @@ function apply_action(p)
                 wait_time = FAVOR_TIME,
                 duration = FAVOR_TIME,
             })
-            announce(by_name .. " demands supplies from " ..
+            announce(by_name .. "{demands_supplies_from}" ..
                 (players[giver] and players[giver].name or "?") .. "!")
         end
     elseif p.kind == "combo2" then
         local stolen = card_transfer("", p.data.target, p.by)
         if stolen ~= "" then
-            announce(by_name .. " steals a random card with a pair of " ..
-                (get_card_info(p.data.weapon).name or "weapons") .. "!")
+            announce(by_name .. "{steals_a_random_card_with_a_pair_of}" ..
+                (get_card_info(p.data.weapon).name or "{weapons_fallback}") .. "!")
         end
     elseif p.kind == "combo3" then
         local uids = find_in_hand(p.data.target, p.data.named, 1)
         if #uids > 0 then
             card_transfer(uids[1], p.data.target, p.by)
-            announce(by_name .. " names \"" .. (get_card_info(p.data.named).name or p.data.named) ..
-                "\" - and takes it!")
+            announce(by_name .. "{names}" .. (get_card_info(p.data.named).name or p.data.named) ..
+                "{quote_and_takes_it}")
         else
-            announce(by_name .. " names \"" .. (get_card_info(p.data.named).name or p.data.named) ..
-                "\" - but " .. (players[p.data.target] and players[p.data.target].name or "?") ..
-                " has none. Wasted!")
+            announce(by_name .. "{names}" .. (get_card_info(p.data.named).name or p.data.named) ..
+                "{quote_but}" .. (players[p.data.target] and players[p.data.target].name or "?") ..
+                "{has_none_wasted}")
         end
     end
 end
@@ -569,6 +957,7 @@ function draw_card_HOST(sender_id)
     if pending or awaiting_favor or awaiting_bomb then return end
     if sender_id ~= current_turn_id() or not alive[sender_id] then return end
     local uid = card_draw(DECK, sender_id)
+    bot_recon = {} -- the deck's top card just moved; any earlier peek is stale
     if uid == "" then
         finish_turn_step()
         broadcast_state()
@@ -586,7 +975,7 @@ function draw_card_HOST(sender_id)
             explode(sender_id, uid)
         else
             awaiting_bomb = { id = sender_id, bomb = uid, disarm = disarms[1] }
-            announce(drawer .. " drew a TIME BOMB - disarming it...")
+            announce(drawer .. "{drew_a_time_bomb_disarming_it}")
             stop_timer("od_bomb")
             start_timer({
                 timer_id = "od_bomb",
@@ -630,8 +1019,9 @@ function resolve_bomb(index)
     play_sound("card_flip")
     card_move(disarm, discard_jitter(), 0.25)
     card_return_to_deck(bomb, DECK, index)
+    bot_recon = {} -- the bomb went back into the deck; any earlier peek is stale
     announce((players[holder] and players[holder].name or "?") ..
-        " DEFUSED the bomb and hid it back in the deck!")
+        "{defused_the_bomb}")
     finish_turn_step()
     broadcast_state()
 end
@@ -640,7 +1030,7 @@ function explode(victim, bomb_uid)
     alive[victim] = nil
     stop_timer("od_turn")
     announce("*** " .. (players[victim] and players[victim].name or "?") ..
-        " had no Disarm Kit. BOOM - out of the mission! ***")
+        "{had_no_disarm_kit_boom}")
     -- Their equipment is lost with them.
     card_discard(bomb_uid)
     for _, entry in ipairs(card_get_hand(victim)) do
@@ -712,6 +1102,14 @@ function _on_user_initialized(steam_id, nickname)
     if not list_contains(connected, steam_id) then
         table.insert(connected, steam_id)
     end
+    -- Two bots are already sitting at the table the moment the host arrives, so
+    -- a single player can start a mission right away. The host can remove them
+    -- (or add more) at any time with the buttons at the table edge.
+    if not bots_seeded and steam_id == HOST_STEAM_ID then
+        bots_seeded = true
+        add_bot()
+        add_bot()
+    end
     broadcast_state(steam_id)
     broadcast_state()
 end
@@ -779,6 +1177,7 @@ function sync_ALL(sender_id, state)
     cl_names = state.names or {}
     cl_wins = state.wins or {}
     cl_colors = state.colors or {}
+    cl_bots = state.bots or {}
     cl_pending = state.pending
     cl_favor = state.favor
     cl_bomb_holder = state.bomb_holder or ""
@@ -837,6 +1236,7 @@ function sync_ALL(sender_id, state)
 
     refresh_hud()
     update_table_buttons()
+    refresh_bot_buttons()
     refresh_scoreboard()
     refresh_bomb_panel()
     refresh_seat_avatars()
@@ -854,14 +1254,20 @@ function refresh_seat_avatars()
         if i <= count then
             local id = cl_seated[i]
             local angle = math.pi / 2 + (i - 1) * (2 * math.pi / math.max(count, 1))
-            local outer = Vector2(math.cos(angle) * (SEAT_RADIUS + 76), math.sin(angle) * (SEAT_RADIUS + 76))
+            -- Pushed further out (past where the opponents' fanned card backs
+            -- reach) and drawn ABOVE the cards (z_index > CARD_Z=500 in
+            -- card_manager.gd), so the cards never paint over the avatar/name.
+            local outer = Vector2(math.cos(angle) * (SEAT_RADIUS + 106), math.sin(angle) * (SEAT_RADIUS + 106))
             local dead = (cl_phase == "playing" and not cl_alive[id])
-            set_image({ name = av, image_path = id, position = outer, rotation = cl_local_rot,
-                scale = Vector2(58, 58), z_index = 45,
+            -- A bot has no Steam avatar to fetch, so its seat gets the mod's own
+            -- robot face instead of a (missing) steam_id texture.
+            local face = cl_bots[id] and "bot" or id
+            set_image({ name = av, image_path = face, position = outer, rotation = cl_local_rot,
+                scale = Vector2(58, 58), z_index = 520,
                 modulate = dead and Color(0.5, 0.5, 0.5, 1) or Color(1, 1, 1, 1), visible = true })
             set_label({ name = nm, text = cl_names[id] or "", position = outer + Vector2(-48, 34),
                 size = Vector2(96, 20), font_size = 14, rotation = cl_local_rot,
-                modulate = hex_to_color(cl_colors[id] or "#ffffff"), visible = true })
+                modulate = hex_to_color(cl_colors[id] or "#ffffff"), visible = true, z_index = 520 })
         else
             set_image({ name = av, visible = false })
             set_label({ name = nm, visible = false })
@@ -878,24 +1284,32 @@ function _on_hand_card_dropped(uid, card_id)
     _on_hand_card_clicked(uid, card_id)
 end
 
+-- Used to be its own bottom-of-screen popup panel, which covered the hand
+-- cards at the bottom edge; it now just feeds the top-left HUD panel instead
+-- (see refresh_hud), same as the +2/jam countdown already does.
 function announce_ALL(sender_id, text)
-    create_panel({
-        title = "Operation: Detonate",
-        text = "[center]" .. text .. "[/center]",
-        countdown = 4,
-        close = false,
-        set_time = false,
-        resizable = false,
-        no_multiple_tag = "od_announce",
-        minimum_size = Vector2(380, 110),
-        offset_ratio = Vector2(1, 2),
-    })
+    cl_log = text
+    cl_log_time_left = LOG_DURATION
+    refresh_hud()
+end
+
+-- Runs on EVERY peer (round_over_ALL): each spawns its own confetti at the
+-- fixed table-camera origin (world.lua pins the camera to (0,0)), so it reads
+-- as one shared celebration even though nothing about it travels the wire.
+function spawn_confetti()
+    create_particle({ particle_id = "od_confetti", texture_path = "white",
+        lifetime = 1.8, amount = 160, explosiveness = 1.0, one_shot = true,
+        spread = 180, initial_velocity_min = 90, initial_velocity_max = 260,
+        gravity = { x = 0, y = 160 }, scale_amount_min = 0.15, scale_amount_max = 0.3,
+        color_random = true })
+    start_particle({ particle_id = "od_confetti", position = Vector2(0, -40) })
 end
 
 function round_over_ALL(sender_id, winner_name)
+    spawn_confetti()
     create_panel({
-        title = "Mission complete",
-        text = "[center][b]" .. winner_name .. "[/b] is the last agent standing![/center]",
+        title ="{mission_complete}",
+        text = "[center][b]" .. winner_name .. "{is_the_last_agent_standing}",
         countdown = ROUND_END_TIME - 1,
         close = false,
         set_time = false,
@@ -911,41 +1325,56 @@ function refresh_hud()
         if cl_pending then
             local by = cl_names[cl_pending.by] or "?"
             local secs = math.max(0, math.ceil(cl_jam_time_left))
-            txt = "[center][b]JAM WINDOW - " .. secs .. "s[/b]\n" .. by .. "'s action resolves when it runs out.\n" ..
-                "Click a Signal Jammer in your hand to cancel it! (jams: " ..
+            txt = "{jam_window}" .. secs .. "s[/b]\n" .. by .. "{s_action_resolves_when_it_runs_out}" ..
+                "{click_a_signal_jammer}" ..
                 tostring(cl_pending.jams) .. ")[/center]"
         elseif cl_favor then
             txt = "[center][b]" .. (cl_names[cl_favor.giver] or "?") ..
-                "[/b] must hand a card to [b]" .. (cl_names[cl_favor.receiver] or "?") .. "[/b][/center]"
+                "{must_hand_a_card_to}" .. (cl_names[cl_favor.receiver] or "?") .. "[/b][/center]"
         elseif cl_bomb_holder ~= "" then
             txt = "[center][b]" .. (cl_names[cl_bomb_holder] or "?") ..
-                "[/b] is disarming a TIME BOMB...[/center]"
+                "{is_disarming_a_time_bomb}"
         elseif cl_turn == LOCAL_STEAM_ID then
-            txt = "[center][b]YOUR TURN[/b] - play action cards, then click the deck to draw" ..
-                (cl_owed > 1 and (" (" .. cl_owed .. " turns owed!)") or "") .. "[/center]"
+            txt = "{your_turn_play_action_cards_then_click_t}" ..
+                (cl_owed > 1 and (" (" .. cl_owed .. "{turns_owed}") or "") .. "[/center]"
         else
-            txt = "[center][b]" .. (cl_names[cl_turn] or "?") .. "[/b]'s turn" ..
-                (cl_owed > 1 and (" (owes " .. cl_owed .. " turns)") or "") .. "[/center]"
+            txt = "[center][b]" .. (cl_names[cl_turn] or "?") .. "{s_turn}" ..
+                (cl_owed > 1 and ("{owes}" .. cl_owed .. "{turns}") or "") .. "[/center]"
         end
     elseif cl_phase == "starting" then
-        txt = "[center]Mission starting... sit down now to join![/center]"
+        txt = "{mission_starting_sit_down}"
     elseif cl_phase == "roundend" then
-        txt = "[center]Mission finished - debriefing.[/center]"
+        txt = "{mission_finished_debriefing}"
     else
-        txt = "[center][b]Operation: Detonate[/b]\nSit at the table (" .. #cl_seated .. "/" ..
-            MIN_PLAYERS .. "+ needed, max " .. MAX_SEATS .. ")[/center]"
+        txt = "{operation_detonate_sit_at_the_table}" .. #cl_seated .. "/" ..
+            MIN_PLAYERS .. "{needed_max}" .. MAX_SEATS .. ")[/center]"
+        -- Bots fill seats but never start a mission on their own, so say so
+        -- rather than showing a satisfied "2/2" that stubbornly does nothing.
+        local humans = 0
+        for _, id in ipairs(cl_seated) do
+            if not cl_bots[id] then humans = humans + 1 end
+        end
+        if humans == 0 then txt = txt .. "{bots_wait_for_a_player}" end
+    end
+    -- The latest "what just happened" line rides above the status text, in its
+    -- own color so it reads as a log entry rather than part of the status.
+    if cl_log ~= "" then
+        txt = "[center][color=#ffd166][b]" .. cl_log .. "[/b][/color][/center]\n" .. txt
     end
     if is_panel_exists(HUD) then
         update_panel_settings(HUD, { text = txt })
     else
         HUD = create_panel({
-            title = "Operation: Detonate",
+            title ="{operation_detonate}",
             text = txt,
             close = false,
             set_time = false,
             resizable = false,
             no_multiple_tag = "od_hud",
-            minimum_size = Vector2(430, 100),
+            -- Tall enough for the status text AND a wrapped log line (the log
+            -- used to be its own bottom-of-screen panel that covered the hand
+            -- cards - see announce_ALL).
+            minimum_size = Vector2(430, 150),
             offset_ratio = Vector2(0, 0),
         })
     end
@@ -959,13 +1388,26 @@ function update_table_buttons()
     set_button({
         name = "_sit_btn",
         visible = not am_seated,
-        text = round_running and "Sit next mission" or "Sit at table",
+        text = round_running and "{sit_next_mission}" or "{sit_at_table}",
     })
     set_button({
         name = "_stand_btn",
         visible = am_seated and (cl_phase == "lobby" or cl_phase == "starting"),
     })
 end
+
+-- The two bot controls are screen-space buttons defined in the "table" view
+-- (general/views/table.json, right under the Sit/Zoom buttons), not world-space
+-- - so they never need counter-rotation math and never drift over the felt.
+-- Only the host ever sees them; add_bot_HOST/remove_bot_HOST re-check that on
+-- arrival anyway.
+function refresh_bot_buttons()
+    set_button({ name = "_bot_add_btn", visible = (IS_HOST == true) })
+    set_button({ name = "_bot_del_btn", visible = (IS_HOST == true) })
+end
+
+function add_bot_click(args) run_network_function(name, "add_bot_HOST", {}) end
+function remove_bot_click(args) run_network_function(name, "remove_bot_HOST", {}) end
 
 function sit_click(args) run_network_function(name, "sit_HOST", {}) end
 function stand_click(args) run_network_function(name, "stand_HOST", {}) end
@@ -986,17 +1428,17 @@ function refresh_scoreboard()
     local lines = ""
     for i, id in ipairs(cl_seated) do
         local marker = (id == cl_turn and cl_phase == "playing") and "> " or "   "
-        local status = cl_alive[id] and (tostring(counts[id] or 0) .. " cards") or "EXPLODED"
+        local status = cl_alive[id] and (tostring(counts[id] or 0) .. "{cards}") or "EXPLODED"
         local hex = cl_colors[id] or "#ffffff"
         lines = lines .. marker .. "[color=" .. hex .. "]" .. (cl_names[id] or id) .. "[/color]" ..
-            "  -  " .. status .. ", " .. tostring(cl_wins[id] or 0) .. " wins\n"
+            "  -  " .. status .. ", " .. tostring(cl_wins[id] or 0) .. "{wins}"
     end
-    if lines == "" then lines = "(nobody is seated yet)" end
+    if lines == "" then lines = "{nobody_is_seated_yet}" end
     if is_panel_exists(SCORE) then
         update_panel_settings(SCORE, { text = lines })
     else
         SCORE = create_panel({
-            title = "Agents",
+            title ="{agents}",
             text = lines,
             close = false,
             set_time = false,
@@ -1017,8 +1459,8 @@ function refresh_bomb_panel()
     end
     if is_panel_exists(BOMBP) then return end
     BOMBP = create_panel({
-        title = "Bomb defused!",
-        text = "[center]Where do you hide the Time Bomb?[/center]",
+        title ="{bomb_defused}",
+        text ="{where_do_you_hide_the_time_bomb}",
         close = false,
         set_time = false,
         resizable = false,
@@ -1071,13 +1513,13 @@ function _on_hand_card_clicked(uid, card_id)
         run_network_function(name, "play_action_HOST", { uid = uid, target = "" })
     elseif kind == "favor" then
         show_target_picker("supply_target_click", { uid = uid },
-            "Who must hand you a card?")
+            "{who_must_hand_you_a_card}")
     elseif kind == "weapon" then
         show_combo_panel(card_id)
     elseif kind == "nope" then
-        announce_local("Signal Jammers are reactive - use one while someone else's action is resolving.")
+        announce_local("{signal_jammers_are_reactive}")
     elseif kind == "disarm" then
-        announce_local("Disarm Kits trigger automatically when you draw a Time Bomb.")
+        announce_local("{disarm_kits_trigger_automatically}")
     end
 end
 
@@ -1090,7 +1532,7 @@ end
 
 function announce_local(text)
     create_panel({
-        title = "Hint",
+        title ="{hint}",
         text = "[center]" .. text .. "[/center]",
         countdown = 4,
         close = true,
@@ -1109,12 +1551,12 @@ function show_target_picker(callback_name, extra, title_text)
         if id ~= LOCAL_STEAM_ID and cl_alive[id] then any_target = true break end
     end
     if not any_target then
-        announce_local("No valid target right now (everyone else is out or not seated).")
+        announce_local("{no_valid_target_right_now}")
         return
     end
     if is_panel_exists(PICKER) then close_panel(PICKER) end
     PICKER = create_panel({
-        title = "Choose target",
+        title ="{choose_target}",
         text = "[center]" .. title_text .. "[/center]",
         close = true,
         set_time = false,
@@ -1153,14 +1595,14 @@ function show_combo_panel(weapon_id)
         if entry.card_id == weapon_id then mine = mine + 1 end
     end
     if mine < 2 then
-        announce_local("Weapons have no power alone - collect 2 or 3 identical ones.")
+        announce_local("{weapons_have_no_power_alone}")
         return
     end
     pending_weapon = weapon_id
     if is_panel_exists(PICKER) then close_panel(PICKER) end
     PICKER = create_panel({
-        title = get_card_info(weapon_id).name or "Weapon combo",
-        text = "[center]Play a set of identical weapons:[/center]",
+        title = get_card_info(weapon_id).name or "{weapon_combo}",
+        text ="{play_a_set_of_identical_weapons}",
         close = true,
         set_time = false,
         resizable = false,
@@ -1168,7 +1610,7 @@ function show_combo_panel(weapon_id)
         minimum_size = Vector2(280, 200),
     })
     add_button_to_panel(PICKER, {
-        text = "Pair (2) - steal a RANDOM card",
+        text ="{pair_2_steal_a_random_card}",
         entity_name = name,
         function_name = "combo_count_click",
         extra_args = { count = 2 },
@@ -1177,7 +1619,7 @@ function show_combo_panel(weapon_id)
     })
     if mine >= 3 then
         add_button_to_panel(PICKER, {
-            text = "Triple (3) - NAME a card to take",
+            text ="{triple_3_name_a_card_to_take}",
             entity_name = name,
             function_name = "combo_count_click",
             extra_args = { count = 3 },
@@ -1190,7 +1632,7 @@ end
 function combo_count_click(args)
     pending_count = args.extra_args.count
     show_target_picker("combo_target_click", {},
-        pending_count == 2 and "Steal a random card from..." or "Demand a named card from...")
+        pending_count == 2 and "{steal_a_random_card_from}" or "{demand_a_named_card_from}")
 end
 
 function combo_target_click(args)
@@ -1208,8 +1650,8 @@ end
 function show_named_picker()
     if is_panel_exists(PICKER) then close_panel(PICKER) end
     PICKER = create_panel({
-        title = "Name a card",
-        text = "[center]If they have it, they must hand it over:[/center]",
+        title ="{name_a_card}",
+        text ="{if_they_have_it_they_must_hand_it_over}",
         close = true,
         set_time = false,
         resizable = false,
@@ -1236,24 +1678,52 @@ function named_card_click(args)
     if is_panel_exists(PICKER) then close_panel(PICKER) end
 end
 
--- Recon Drone result (arrives only on the peeking peer).
+-- Recon Drone result (arrives only on the peeking peer). Shows the actual
+-- (localized, live-rendered) card faces on screen instead of a text list, so
+-- the player really sees what's coming - topmost card = top of the deck.
 function _on_card_peek(deck_name, ids)
-    if is_panel_exists(PEEK) then close_panel(PEEK) end
-    local lines = ""
-    for i, id in ipairs(ids) do
-        lines = lines .. tostring(i) .. ". " .. (get_card_info(id).name or id) .. "\n"
+    stop_timer("od_peek")
+    if #ids == 0 then
+        if is_panel_exists(PEEK) then close_panel(PEEK) end
+        PEEK = create_panel({
+            title = "{recon_drone_top_of_the_deck}",
+            text = "{the_deck_is_empty}",
+            countdown = 3,
+            close = true,
+            set_time = false,
+            resizable = false,
+            no_multiple_tag = "od_peek",
+            minimum_size = Vector2(300, 150),
+        })
+        return
     end
-    if lines == "" then lines = "(the deck is empty)" end
-    PEEK = create_panel({
-        title = "Recon Drone - top of the deck",
-        text = lines,
-        countdown = 8,
-        close = true,
-        set_time = false,
-        resizable = false,
-        no_multiple_tag = "od_peek",
-        minimum_size = Vector2(300, 180),
+    set_label({ name = "_od_peek_title", visible = true })
+    set_label({ name = "_od_peek_hint", visible = true })
+    for i, slot in ipairs(PEEK_SLOTS) do
+        local id = ids[i]
+        if id then
+            set_image({ name = slot, image_path = "card:" .. id .. ":front", visible = true })
+        else
+            set_image({ name = slot, visible = false })
+        end
+    end
+    start_timer({
+        timer_id = "od_peek",
+        entity_name = name,
+        function_name = "hide_recon_peek",
+        wait_time = PEEK_DURATION,
+        duration = PEEK_DURATION,
     })
+end
+
+-- Timer callback: pull the peeked cards back off the screen. It was only a
+-- representation of what's coming up next - not playable, not real cards.
+function hide_recon_peek()
+    set_label({ name = "_od_peek_title", visible = false })
+    set_label({ name = "_od_peek_hint", visible = false })
+    for _, slot in ipairs(PEEK_SLOTS) do
+        set_image({ name = slot, visible = false })
+    end
 end
 
 -- Keep the scoreboard counters fresh on every card movement.

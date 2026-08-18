@@ -1,11 +1,14 @@
+network_mode = 2 -- the host walks it around, so every peer needs its position streamed
 lock_rotation = true
 linear_damp = 0
+friction = 0 -- slide along walls instead of sticking
 
 -- =============================================================================
 -- MineBlockLand - the Guardian of the Isle (day-7 boss).
 --
 -- Bullet-hell patterns: expanding rings, a rotating spiral and aimed volleys,
--- plus a huge 3-second telegraphed slam you must walk out of. All simulation
+-- plus a huge 3-second telegraphed slam you must walk out of and a meteor
+-- shower of small telegraphed impacts scattered around it. All simulation
 -- is host-side; bullets are fire-and-forget entities (one spawn message each,
 -- no per-frame sync). Below 30% HP it gets angry and everything speeds up.
 -- =============================================================================
@@ -27,6 +30,14 @@ local SLAM_SECONDS = 9.0
 local SLAM_RADIUS = 90
 local SLAM_WINDUP = 3.0
 local SLAM_DMG = 45
+local METEOR_SECONDS = 7.0          -- how often a shower starts
+local METEOR_COUNT = 6              -- impacts per shower
+local METEOR_RADIUS = 26            -- much smaller than the slam
+local METEOR_WINDUP = 1.1           -- shorter warning than the slam too
+local METEOR_DMG = 18
+local METEOR_MIN_RANGE = 40         -- ring around the boss the impacts land in
+local METEOR_MAX_RANGE = 170
+local METEOR_STAGGER = 0.18         -- seconds between one impact and the next
 local ENRAGE_FRACTION = 0.3
 local ENRAGE_EXTRA_BULLETS = 6
 local HP_BAR_WIDTH = 56
@@ -116,6 +127,32 @@ function slam()
         windup = SLAM_WINDUP, dmg = SLAM_DMG, targets = "players", attacker = name } })
 end
 
+-- Meteor shower: a handful of small telegraphs rain down on random spots
+-- around the boss, one every METEOR_STAGGER seconds, so the whole arena
+-- becomes unsafe for a moment instead of one big circle under the boss.
+-- Each drop is its own delayed call - if the boss dies mid-shower the
+-- pending calls simply never fire.
+function meteor_shower()
+    if not IS_HOST then return end
+    local my_pos = get_value("", name, "position")
+    if not my_pos then return end
+    local count = METEOR_COUNT + (enraged() and 3 or 0)
+    for i = 1, count do
+        local angle = math.random() * 2 * math.pi
+        local range = METEOR_MIN_RANGE + math.random() * (METEOR_MAX_RANGE - METEOR_MIN_RANGE)
+        run_function(name, "meteor_drop",
+            { my_pos.x + math.cos(angle) * range, my_pos.y + math.sin(angle) * range },
+            (i - 1) * METEOR_STAGGER)
+    end
+end
+
+function meteor_drop(x, y)
+    if not IS_HOST then return end
+    run_function("-combat", "start_telegraph", { {
+        x = x, y = y, shape = "circle", r = METEOR_RADIUS,
+        windup = METEOR_WINDUP, dmg = METEOR_DMG, targets = "players", attacker = name } })
+end
+
 if IS_HOST then
     retarget()
     start_timer({ timer_id = "brt" .. name, entity_name = name,
@@ -124,6 +161,8 @@ if IS_HOST then
         function_name = "run_pattern", wait_time = PATTERN_SECONDS })
     start_timer({ timer_id = "bslam" .. name, entity_name = name,
         function_name = "slam", wait_time = SLAM_SECONDS })
+    start_timer({ timer_id = "bmet" .. name, entity_name = name,
+        function_name = "meteor_shower", wait_time = METEOR_SECONDS })
 end
 
 -- =============================================================================
@@ -137,12 +176,12 @@ function npc_take_damage(dmg_in, attacker, kb, angle)
     if my_pos then
         run_function("-combat", "show_damage", { my_pos.x, my_pos.y, dmg_in, "npc" })
     end
-    if attacker and has_tag(attacker, "user") then
+    if attacker and attacker ~= "" and has_tag(attacker, "user") then
         run_function("-gm", "add_stat", { attacker, "dmg_dealt", dmg_in })
     end
     run_network_function(name, "hp_bar_ALL", { hp })
     if hp <= 0 then
-        if attacker and has_tag(attacker, "user") then
+        if attacker and attacker ~= "" and has_tag(attacker, "user") then
             run_function("-gm", "add_stat", { attacker, "kills", 1 })
         end
         run_function("-gm", "on_boss_defeated", { {} })

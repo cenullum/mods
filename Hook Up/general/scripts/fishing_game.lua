@@ -4,36 +4,36 @@ singleton_name = "fishing_game"
 -- Fish types based on fish_types.txt (22 fish total)
 fish_types = {
     -- Common fish (7)
-    {name = "Salmon", min_weight = 0.5, max_weight = 1.2, base_health = 40, heal_amount = 6, image = "fish/fish1", rarity = "common", water_source = "sea"},
-    {name = "Mackerel", min_weight = 0.3, max_weight = 0.8, base_health = 35, heal_amount = 5, image = "fish/fish3", rarity = "common", water_source = "sea"},
-    {name = "Mullet", min_weight = 0.4, max_weight = 1.0, base_health = 38, heal_amount = 5, image = "fish/fish5", rarity = "common", water_source = "lake"},
+    {name = "{fish_salmon}", min_weight = 0.5, max_weight = 1.2, base_health = 40, heal_amount = 6, image = "fish/fish1", rarity = "common", water_source = "sea"},
+    {name = "{fish_mackerel}", min_weight = 0.3, max_weight = 0.8, base_health = 35, heal_amount = 5, image = "fish/fish3", rarity = "common", water_source = "sea"},
+    {name = "{fish_mullet}", min_weight = 0.4, max_weight = 1.0, base_health = 38, heal_amount = 5, image = "fish/fish5", rarity = "common", water_source = "lake"},
 
-    {name = "Shrimp", min_weight = 0.1, max_weight = 0.3, base_health = 25, heal_amount = 3, image = "fish/fish21", rarity = "common", water_source = "swamp_water"},
-    {name = "Scallop", min_weight = 0.2, max_weight = 0.5, base_health = 28, heal_amount = 4, image = "fish/fish15", rarity = "common", water_source = "sea"},
-    {name = "Sea Urchin", min_weight = 0.1, max_weight = 0.4, base_health = 32, heal_amount = 4, image = "fish/fish19", rarity = "common", water_source = "cave_water"},
+    {name = "{fish_shrimp}", min_weight = 0.1, max_weight = 0.3, base_health = 25, heal_amount = 3, image = "fish/fish21", rarity = "common", water_source = "swamp_water"},
+    {name = "{fish_scallop}", min_weight = 0.2, max_weight = 0.5, base_health = 28, heal_amount = 4, image = "fish/fish15", rarity = "common", water_source = "sea"},
+    {name = "{fish_sea_urchin}", min_weight = 0.1, max_weight = 0.4, base_health = 32, heal_amount = 4, image = "fish/fish19", rarity = "common", water_source = "cave_water"},
     
     -- Rare fish (7)
-    {name = "Vermillon Snapper", min_weight = 0.8, max_weight = 1.8, base_health = 55, heal_amount = 8, image = "fish/fish2", rarity = "rare", water_source = "sea"},
-    {name = "Angelfish", min_weight = 0.3, max_weight = 0.7, base_health = 45, heal_amount = 7, image = "fish/fish4", rarity = "rare", water_source = "lake"},
-    {name = "Mediterranean Trout", min_weight = 1.0, max_weight = 2.2, base_health = 60, heal_amount = 9, image = "fish/fish6", rarity = "rare", water_source = "lake"},
-    {name = "Sheepshead", min_weight = 1.2, max_weight = 2.5, base_health = 65, heal_amount = 10, image = "fish/fish8", rarity = "rare", water_source = "sea"},
-    {name = "Squid", min_weight = 0.8, max_weight = 1.6, base_health = 50, heal_amount = 8, image = "fish/fish12", rarity = "rare", water_source = "cave_water"},
-    {name = "Seahorse", min_weight = 0.1, max_weight = 0.3, base_health = 40, heal_amount = 6, image = "fish/fish13", rarity = "rare", water_source = "swamp_water"},
+    {name = "{fish_vermillon_snapper}", min_weight = 0.8, max_weight = 1.8, base_health = 55, heal_amount = 8, image = "fish/fish2", rarity = "rare", water_source = "sea"},
+    {name = "{fish_angelfish}", min_weight = 0.3, max_weight = 0.7, base_health = 45, heal_amount = 7, image = "fish/fish4", rarity = "rare", water_source = "lake"},
+    {name = "{fish_mediterranean_trout}", min_weight = 1.0, max_weight = 2.2, base_health = 60, heal_amount = 9, image = "fish/fish6", rarity = "rare", water_source = "lake"},
+    {name = "{fish_sheepshead}", min_weight = 1.2, max_weight = 2.5, base_health = 65, heal_amount = 10, image = "fish/fish8", rarity = "rare", water_source = "sea"},
+    {name = "{fish_squid}", min_weight = 0.8, max_weight = 1.6, base_health = 50, heal_amount = 8, image = "fish/fish12", rarity = "rare", water_source = "cave_water"},
+    {name = "{fish_seahorse}", min_weight = 0.1, max_weight = 0.3, base_health = 40, heal_amount = 6, image = "fish/fish13", rarity = "rare", water_source = "swamp_water"},
 
     
     -- Epic fish (5)
-    {name = "Tuna", min_weight = 3.0, max_weight = 6.0, base_health = 100, heal_amount = 15, image = "fish/fish7", rarity = "epic", water_source = "sea"},
-    {name = "Octopus", min_weight = 2.0, max_weight = 4.5, base_health = 90, heal_amount = 13, image = "fish/fish11", rarity = "epic", water_source = "cave_water"},
-    {name = "Eel", min_weight = 1.5, max_weight = 3.0, base_health = 85, heal_amount = 12, image = "fish/fish16", rarity = "epic", water_source = "swamp_water"},
-    {name = "Jellyfish", min_weight = 0.8, max_weight = 2.0, base_health = 75, heal_amount = 11, image = "fish/fish17", rarity = "epic", water_source = "sea"},
-    {name = "Discus Fish", min_weight = 0.4, max_weight = 0.9, base_health = 48, heal_amount = 7, image = "fish/fish20", rarity = "epic", water_source = "lake"},
-    {name = "Sea Turtle", min_weight = 15.0, max_weight = 35.0, base_health = 250, heal_amount = 30, image = "fish/fish14", rarity = "epic", water_source = "sea"},
+    {name = "{fish_tuna}", min_weight = 3.0, max_weight = 6.0, base_health = 100, heal_amount = 15, image = "fish/fish7", rarity = "epic", water_source = "sea"},
+    {name = "{fish_octopus}", min_weight = 2.0, max_weight = 4.5, base_health = 90, heal_amount = 13, image = "fish/fish11", rarity = "epic", water_source = "cave_water"},
+    {name = "{fish_eel}", min_weight = 1.5, max_weight = 3.0, base_health = 85, heal_amount = 12, image = "fish/fish16", rarity = "epic", water_source = "swamp_water"},
+    {name = "{fish_jellyfish}", min_weight = 0.8, max_weight = 2.0, base_health = 75, heal_amount = 11, image = "fish/fish17", rarity = "epic", water_source = "sea"},
+    {name = "{fish_discus}", min_weight = 0.4, max_weight = 0.9, base_health = 48, heal_amount = 7, image = "fish/fish20", rarity = "epic", water_source = "lake"},
+    {name = "{fish_sea_turtle}", min_weight = 15.0, max_weight = 35.0, base_health = 250, heal_amount = 30, image = "fish/fish14", rarity = "epic", water_source = "sea"},
     
     -- Legendary fish (3)
-    {name = "Shark", min_weight = 8.0, max_weight = 20.0, base_health = 200, heal_amount = 25, image = "fish/fish9", rarity = "legendary", water_source = "sea"},
-    {name = "Crab", min_weight = 0.2, max_weight = 0.6, base_health = 30, heal_amount = 4, image = "fish/fish10", rarity = "legendary", water_source = "swamp_water"},
-    {name = "Yellow Pufferfish", min_weight = 0.6, max_weight = 1.4, base_health = 80, heal_amount = 12, image = "fish/fish18", rarity = "legendary", water_source = "lake"},
-    {name = "Lobster", min_weight = 1.0, max_weight = 3.5, base_health = 150, heal_amount = 20, image = "fish/fish22", rarity = "legendary", water_source = "cave_water"}
+    {name = "{fish_shark}", min_weight = 8.0, max_weight = 20.0, base_health = 200, heal_amount = 25, image = "fish/fish9", rarity = "legendary", water_source = "sea"},
+    {name = "{fish_crab}", min_weight = 0.2, max_weight = 0.6, base_health = 30, heal_amount = 4, image = "fish/fish10", rarity = "legendary", water_source = "swamp_water"},
+    {name = "{fish_yellow_pufferfish}", min_weight = 0.6, max_weight = 1.4, base_health = 80, heal_amount = 12, image = "fish/fish18", rarity = "legendary", water_source = "lake"},
+    {name = "{fish_lobster}", min_weight = 1.0, max_weight = 3.5, base_health = 150, heal_amount = 20, image = "fish/fish22", rarity = "legendary", water_source = "cave_water"}
 }
 
 -- Healing system
@@ -131,7 +131,7 @@ function generate_garbage()
     local garbage_image = "garbage/garbage" .. math.random(1, 6) -- Random garbage1-6
     
     return {
-        name = "Garbage",
+        name = "{fish_garbage}",
         weight = 0,
         health = 0,
         heal_amount = 0,
@@ -396,7 +396,7 @@ function start_green_phase_for_player(steam_id)
     -- Send green phase to UI with correct total timer (green + yellow)
     local total_timer = player_data.green_duration + player_data.yellow_duration
     run_network_function("-fishing_game_ui", "update_fishing_phase_CLIENT", {
-        "green", "ŞİMDİ ÇEK!", total_timer
+        "green", "{pull_now}", total_timer
     }, steam_id)
 end
 
@@ -421,7 +421,7 @@ function start_yellow_phase_for_player(steam_id)
     
     -- Send yellow phase to UI
     run_network_function("-fishing_game_ui", "update_fishing_phase_CLIENT", {
-        "yellow", "DURMAK ÜZERE...", player_data.yellow_duration
+        "yellow", "{durmak_zere}", player_data.yellow_duration
     }, steam_id)
 end
 
@@ -448,7 +448,7 @@ function start_red_phase_for_player(steam_id)
     
     -- Send red phase to UI
     run_network_function("-fishing_game_ui", "update_fishing_phase_CLIENT", {
-        "red", "SAKIN ÇEKME!", player_data.red_duration
+        "red", "{do_not_pull}", player_data.red_duration
     }, steam_id)
 end
 
@@ -529,7 +529,7 @@ function handle_fish_caught(steam_id)
         garbage = Color(0.5,0.5,0.5,1)
     }
     local fish_weight_pounds = math.floor(fish.weight * 2.20462 * 100) / 100
-    local fish_text = fish.name .. "\n" .. fish.weight .. " kg / " .. fish_weight_pounds .. " lbs\nRarity: " .. fish.rarity
+    local fish_text = fish.name .. "\n" .. fish.weight .. "{kg}" .. fish_weight_pounds .. "{lbs_rarity}" .. fish.rarity
     show_world_space_result(steam_id, fish.image, fish_text, fish.weight, rarity_colors[fish.rarity])
 
     -- Reset player's hook system to READY state after success

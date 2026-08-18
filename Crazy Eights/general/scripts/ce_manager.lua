@@ -21,7 +21,7 @@ singleton_name = "ce_manager"
 
 local MIN_PLAYERS = 2
 local HAND_SIZE = 7
-local TURN_TIME = 30
+local TURN_TIME = 8      -- AFK protection: act within this or the turn auto-plays
 local START_DELAY = 6
 local ROUND_END_TIME = 8
 local PENALTY_TIME = 5    -- seconds a +2 victim has to stack another +2 or eat the pile
@@ -81,9 +81,24 @@ cl_pen = nil          -- { victim, total } mirror of the +2 stacking window
 cl_pen_time_left = 0.0 -- local cosmetic countdown for that window
 cl_pen_shown = -1
 cl_pen_last = -1       -- detects a new/re-opened window (accumulated total changes)
+cl_bots = {}          -- bot_id -> true, so every peer can draw a bot face at that seat
 
 local MAX_SEATS = 8
 local DROP_RADIUS = 170
+
+-- ---------- HOST: bots ----------
+-- A bot is an ordinary seat that has no peer behind it, so its id is a plain
+-- "bot1" string (never a Steam id) and the host owns its cards exactly like a
+-- player's. Every bot decision is routed through the SAME *_HOST validator a
+-- real client's intent goes through, so a bot can never make a move the rules
+-- would refuse from a human.
+local MAX_BOTS = 6
+local BOT_MIN_DELAY = 1.0   -- a bot "thinks" this long before it acts, so a
+local BOT_MAX_DELAY = 2.0   -- human can actually follow what just hit the table
+bots = {}             -- bot_id -> true (host only)
+bot_order = {}        -- ordered bot ids: "remove bot" always pops the last one
+bot_delay = -1        -- host-only countdown; < 0 means "arm a fresh pause"
+bots_seeded = false   -- the two starting bots are only ever added once
 
 local function hex_to_color(hex)
     local r = tonumber(hex:sub(2, 3), 16) / 255
@@ -94,10 +109,10 @@ end
 
 -- What each special/action card does (shown bottom-right when one is played).
 local ACTION_NOTES = {
-    skip    = "[center][b]Skip[/b]\nThe next player is skipped.[/center]",
-    reverse = "[center][b]Reverse[/b]\nTurn order flips (a Skip with 2 players).[/center]",
-    draw2   = "[center][b]Draw Two (+2)[/b]\nNext player must stack their own +2 within 5s or draw the pile (+2, +4, +6...) and be skipped.[/center]",
-    ["8"]   = "[center][b]Wild 8[/b]\nPlay it on anything, then choose the next color.[/center]",
+    skip    = "{note_skip}",
+    reverse = "{note_reverse}",
+    draw2   = "{note_draw2}",
+    ["8"]   = "{note_wild8}",
 }
 local NOTE = ""
 
@@ -170,7 +185,196 @@ function _process(delta, inputs)
             refresh_hud()
         end
     end
+    if IS_HOST then bot_process(delta) end
     return inputs
+end
+
+-- =============================================================================
+-- HOST: bot seats
+--
+-- The bots live entirely on the host: clients only ever learn that a seat is a
+-- bot (for the face + name), never anything about its hand. Their pacing runs
+-- off _process instead of start_timer on purpose - a bot regularly has to act
+-- twice in a row (draw, then play the drawn card), and re-arming a timer from
+-- inside its own callback is the exact trap documented at penalty_timeout().
+-- =============================================================================
+local function is_bot(id)
+    return id ~= nil and id ~= "" and bots[id] == true
+end
+
+local function human_seated_count()
+    local n = 0
+    for _, id in ipairs(seated) do
+        if not is_bot(id) then n = n + 1 end
+    end
+    return n
+end
+
+-- Which bot (if any) owes the table a decision right now, and what kind.
+local function bot_actor()
+    if phase ~= "playing" or pen_dealing then return "", "" end
+    if pen_active then
+        if is_bot(pen_victim) then return pen_victim, "penalty" end
+        return "", ""
+    end
+    local id = current_turn_id()
+    if is_bot(id) then return id, "turn" end
+    return "", ""
+end
+
+-- How badly a bot wants to play one card. Only cards it is ALLOWED to play ever
+-- get a weight, so an illegal move cannot be rolled at all. Action cards beat
+-- plain numbers, high numbers beat low ones (they are the ones you get stuck
+-- with), and the wild 8 is hoarded - it is the card that always saves you later.
+local function bot_card_weight(card_id, color_counts)
+    if get_card_keyword(card_id, "wild") then return 1.5 end
+    local value = tostring(get_card_keyword(card_id, "value") or "")
+    local color = tostring(get_card_keyword(card_id, "color") or "")
+    local weight
+    if value == "draw2" then weight = 10
+    elseif value == "skip" then weight = 8
+    elseif value == "reverse" then weight = 7
+    else weight = 3 + (tonumber(value) or 0) * 0.15 end
+    -- Prefer the color we hold most of: dumping an off-color card early leaves
+    -- the hand with fewer ways to answer the next discard.
+    return weight + (color_counts[color] or 0) * 0.35
+end
+
+-- Weighted random pick over { uid, card_id, weight } entries.
+local function bot_pick(candidates)
+    local total = 0
+    for _, c in ipairs(candidates) do total = total + c.weight end
+    if total <= 0 then return nil end
+    local roll = math.random() * total
+    for _, c in ipairs(candidates) do
+        roll = roll - c.weight
+        if roll <= 0 then return c end
+    end
+    return candidates[#candidates]
+end
+
+local function bot_color_counts(hand, skip_uid)
+    local counts = {}
+    for _, entry in ipairs(hand) do
+        if entry.uid ~= skip_uid and not get_card_keyword(entry.card_id, "wild") then
+            local color = tostring(get_card_keyword(entry.card_id, "color") or "")
+            counts[color] = (counts[color] or 0) + 1
+        end
+    end
+    return counts
+end
+
+-- Color to declare on a wild 8: whatever is left in the hand after playing it
+-- (ties broken randomly so the bot never becomes predictable).
+local function bot_best_color(hand, played_uid)
+    local counts = bot_color_counts(hand, played_uid)
+    local best = COLOR_KEYS[1]
+    local best_score = -1
+    for _, key in ipairs(COLOR_KEYS) do
+        local score = (counts[key] or 0) + math.random() * 0.5
+        if score > best_score then
+            best = key
+            best_score = score
+        end
+    end
+    return best
+end
+
+function bot_play(id, mode)
+    local hand = card_get_hand(id)
+    if mode == "penalty" then
+        -- Under a stacked +2 the only legal answer is another +2 (play_card_HOST
+        -- enforces that too); with none in hand the bot lets the clock run out
+        -- and eats the pile, exactly like a player who cannot answer.
+        local candidates = {}
+        for _, entry in ipairs(hand) do
+            if tostring(get_card_keyword(entry.card_id, "value") or "") == "draw2" then
+                table.insert(candidates, { uid = entry.uid, card_id = entry.card_id, weight = 1 })
+            end
+        end
+        local pick = bot_pick(candidates)
+        if pick then play_card_HOST(id, { uid = pick.uid, color = "" }) end
+        return
+    end
+
+    local color_counts = bot_color_counts(hand, "")
+    local candidates = {}
+    for _, entry in ipairs(hand) do
+        if entry.card_id ~= "" and is_playable(entry.card_id) then
+            table.insert(candidates, { uid = entry.uid, card_id = entry.card_id,
+                weight = bot_card_weight(entry.card_id, color_counts) })
+        end
+    end
+    local pick = bot_pick(candidates)
+    if not pick then
+        -- Nothing playable: draw one. The host passes for us when the drawn card
+        -- is dead, otherwise we simply get another decision next tick.
+        draw_card_HOST(id)
+        return
+    end
+    local color = ""
+    if get_card_keyword(pick.card_id, "wild") then
+        color = bot_best_color(hand, pick.uid)
+    end
+    play_card_HOST(id, { uid = pick.uid, color = color })
+end
+
+function bot_process(delta)
+    local id, mode = bot_actor()
+    if id == "" then
+        bot_delay = -1
+        return
+    end
+    if bot_delay < 0 then
+        bot_delay = BOT_MIN_DELAY + math.random() * (BOT_MAX_DELAY - BOT_MIN_DELAY)
+    end
+    bot_delay = bot_delay - delta
+    if bot_delay > 0 then return end
+    bot_delay = -1 -- the next decision (even by the same bot) re-arms a fresh pause
+    bot_play(id, mode)
+end
+
+-- ---------- adding / removing bot seats (host only) ----------
+function add_bot()
+    if not IS_HOST then return end
+    if #bot_order >= MAX_BOTS then return end
+    if #seated + #waiting >= MAX_SEATS then return end
+    local index = 1
+    while bots["bot" .. index] do index = index + 1 end
+    local id = "bot" .. index
+    bots[id] = true
+    table.insert(bot_order, id)
+    players[id] = { name = "{bot} " .. index, wins = 0 }
+    table.insert(connected, id)
+    if phase == "lobby" or phase == "starting" then
+        table.insert(seated, id)
+        try_start()
+    else
+        table.insert(waiting, id) -- sits down when the round ends, like a player
+    end
+    broadcast_state()
+end
+
+function remove_bot(id)
+    if not IS_HOST or not is_bot(id) then return end
+    bots[id] = nil
+    list_remove(bot_order, id)
+    -- A bot leaving is a player leaving minus the engine's own hand cleanup
+    -- (that only runs for real peers), so its cards are dropped here first.
+    for _, entry in ipairs(card_get_hand(id)) do
+        card_discard(entry.uid)
+    end
+    _on_user_disconnected(id, "")
+end
+
+function add_bot_HOST(sender_id)
+    if not IS_HOST or sender_id ~= HOST_STEAM_ID then return end -- host-only control
+    add_bot()
+end
+
+function remove_bot_HOST(sender_id)
+    if not IS_HOST or sender_id ~= HOST_STEAM_ID then return end
+    remove_bot(bot_order[#bot_order])
 end
 
 -- =============================================================================
@@ -192,6 +396,7 @@ function broadcast_state(target)
         names = names,
         wins = wins,
         colors = assign_colors(),
+        bots = bots,
         pen = pen_active and { victim = pen_victim, total = pen_total } or nil,
     } }, target or "")
 end
@@ -228,6 +433,9 @@ end
 function try_start()
     if not IS_HOST then return end
     if phase ~= "lobby" or #seated < MIN_PLAYERS then return end
+    -- Bots never deal themselves in: a table of nothing but bots would loop
+    -- rounds forever with nobody watching.
+    if human_seated_count() == 0 then return end
     phase = "starting"
     start_timer({
         timer_id = "ce_start",
@@ -321,16 +529,15 @@ function restart_turn_timer()
     })
 end
 
+-- Too slow (or just AFK): the SAME weighted decision a bot would make - play a
+-- playable card if the hand has one, otherwise draw. bot_play already routes
+-- through play_card_HOST/draw_card_HOST, so this is exactly as validated as a
+-- human's own click; it works for any current_turn_id(), bot or human.
 function turn_timeout(args)
     if not IS_HOST or phase ~= "playing" then return end
-    -- Too slow: draw a card (if they had not) and pass.
     local id = current_turn_id()
-    if id ~= "" and not drawn_this_turn and card_deck_count(DECK) > 0 then
-        card_draw(DECK, id)
-        play_sound("card_taking_from_deck")
-    end
-    advance_turn(1)
-    broadcast_state()
+    if id == "" then return end
+    bot_play(id, "turn")
 end
 
 function advance_turn(steps)
@@ -589,6 +796,14 @@ function _on_user_initialized(steam_id, nickname)
     if not list_contains(connected, steam_id) then
         table.insert(connected, steam_id)
     end
+    -- Two bots are already sitting at the table the moment the host arrives, so
+    -- a single player can start a game right away. The host can remove them (or
+    -- add more) at any time with the buttons at the table edge.
+    if not bots_seeded and steam_id == HOST_STEAM_ID then
+        bots_seeded = true
+        add_bot()
+        add_bot()
+    end
     -- The engine already synced decks/hand counts to the late joiner;
     -- this mirrors the mod-level state (phase, seats, turn).
     broadcast_state(steam_id)
@@ -656,6 +871,7 @@ function sync_ALL(sender_id, state)
     cl_names = state.names or {}
     cl_wins = state.wins or {}
     cl_colors = state.colors or {}
+    cl_bots = state.bots or {}
 
     -- Mirror the +2 stacking window and (re)start the local cosmetic countdown
     -- whenever the accumulated total changes (a fresh window, or a stacked +2).
@@ -715,6 +931,7 @@ function sync_ALL(sender_id, state)
 
     refresh_hud()
     update_table_buttons()
+    refresh_bot_buttons()
     refresh_scoreboard()
     refresh_seat_avatars()
     -- Dropping a dragged card near the discard pile plays it (else it snaps back).
@@ -731,12 +948,18 @@ function refresh_seat_avatars()
         if i <= count then
             local id = cl_seated[i]
             local angle = math.pi / 2 + (i - 1) * (2 * math.pi / math.max(count, 1))
-            local outer = Vector2(math.cos(angle) * (SEAT_RADIUS + 74), math.sin(angle) * (SEAT_RADIUS + 74))
-            set_image({ name = av, image_path = id, position = outer, rotation = cl_local_rot,
-                scale = Vector2(58, 58), z_index = 45, visible = true })
+            -- Pushed further out (past where the opponents' fanned card backs
+            -- reach) and drawn ABOVE the cards (z_index > CARD_Z=500 in
+            -- card_manager.gd), so the cards never paint over the avatar/name.
+            local outer = Vector2(math.cos(angle) * (SEAT_RADIUS + 104), math.sin(angle) * (SEAT_RADIUS + 104))
+            -- A bot has no Steam avatar to fetch, so its seat gets the mod's own
+            -- robot face instead of a (missing) steam_id texture.
+            local face = cl_bots[id] and "bot" or id
+            set_image({ name = av, image_path = face, position = outer, rotation = cl_local_rot,
+                scale = Vector2(58, 58), z_index = 520, visible = true })
             set_label({ name = nm, text = cl_names[id] or "", position = outer + Vector2(-48, 34),
                 size = Vector2(96, 20), font_size = 14, rotation = cl_local_rot,
-                modulate = hex_to_color(cl_colors[id] or "#ffffff"), visible = true })
+                modulate = hex_to_color(cl_colors[id] or "#ffffff"), visible = true, z_index = 520 })
         else
             set_image({ name = av, visible = false })
             set_label({ name = nm, visible = false })
@@ -757,7 +980,7 @@ function show_action_note(card_id)
         update_panel_settings(NOTE, { text = note })
     else
         NOTE = create_panel({
-            title = "Card effect",
+            title ="{card_effect}",
             text = note,
             close = false,
             set_time = false,
@@ -772,10 +995,23 @@ function show_action_note(card_id)
     end
 end
 
+-- Runs on EVERY peer (round_over_ALL): each spawns its own confetti at the
+-- fixed table-camera origin (world.lua pins the camera to (0,0)), so it reads
+-- as one shared celebration even though nothing about it travels the wire.
+function spawn_confetti()
+    create_particle({ particle_id = "ce_confetti", texture_path = "white",
+        lifetime = 1.8, amount = 160, explosiveness = 1.0, one_shot = true,
+        spread = 180, initial_velocity_min = 90, initial_velocity_max = 260,
+        gravity = { x = 0, y = 160 }, scale_amount_min = 0.15, scale_amount_max = 0.3,
+        color_random = true })
+    start_particle({ particle_id = "ce_confetti", position = Vector2(0, -40) })
+end
+
 function round_over_ALL(sender_id, winner_name)
+    spawn_confetti()
     create_panel({
-        title = "Round over!",
-        text = "[center][b]" .. winner_name .. "[/b] wins the round![/center]",
+        title ="{round_over}",
+        text = "[center][b]" .. winner_name .. "{wins_the_round}",
         countdown = ROUND_END_TIME - 1,
         close = false,
         set_time = false,
@@ -791,36 +1027,43 @@ function refresh_hud()
         -- A +2 is on the clock: warn the victim (or spectators) with a countdown.
         local secs = math.max(0, math.ceil(cl_pen_time_left))
         if cl_pen.victim == LOCAL_STEAM_ID then
-            txt = "[center][b]+" .. cl_pen.total .. " STACKING![/b]\nPlay a [b]+2[/b] within " ..
-                secs .. "s to pass it on, or draw " .. cl_pen.total .. " cards![/center]"
+            txt = "[center][b]+" .. cl_pen.total .. "{stacking_play_a_2_within}" ..
+                secs .. "{s_to_pass_it_on_or_draw}" .. cl_pen.total .. "{cards}"
         else
             local vic = cl_names[cl_pen.victim] or "?"
-            txt = "[center][b]" .. vic .. " is under +" .. cl_pen.total .. "[/b]\n" ..
-                secs .. "s to stack a +2 or draw " .. cl_pen.total .. "...[/center]"
+            txt = "[center][b]" .. vic .. "{is_under}" .. cl_pen.total .. "[/b]\n" ..
+                secs .. "{s_to_stack_a_2_or_draw}" .. cl_pen.total .. "...[/center]"
         end
     elseif cl_phase == "playing" then
         local who = cl_names[cl_turn] or "?"
         local hex = COLOR_HEX[cl_color] or "#ffffff"
         if cl_turn == LOCAL_STEAM_ID then
-            who = "YOUR TURN - play a matching card or click the deck"
+            who = "{your_turn_play_or_draw}"
         else
-            who = who .. "'s turn"
+            who = who .. "{s_turn}"
         end
-        txt = "[center][b]" .. who .. "[/b]\nActive color: [color=" .. hex .. "]" ..
+        txt = "[center][b]" .. who .. "{active_color_color}" .. hex .. "]" ..
             string.upper(cl_color) .. "[/color][/center]"
     elseif cl_phase == "starting" then
-        txt = "[center]Round starting... sit down now to join![/center]"
+        txt = "{round_starting_sit_down}"
     elseif cl_phase == "roundend" then
-        txt = "[center]Round finished - next one soon.[/center]"
+        txt = "{round_finished_next_soon}"
     else
-        txt = "[center][b]Crazy Eights[/b]\nSit at the table (" .. #cl_seated .. "/" ..
-            MIN_PLAYERS .. " needed)[/center]"
+        txt = "{crazy_eights_sit_at_the_table}" .. #cl_seated .. "/" ..
+            MIN_PLAYERS .. "{needed}"
+        -- Bots fill seats but never start a round on their own, so say so rather
+        -- than showing a satisfied "2/2" that stubbornly does nothing.
+        local humans = 0
+        for _, id in ipairs(cl_seated) do
+            if not cl_bots[id] then humans = humans + 1 end
+        end
+        if humans == 0 then txt = txt .. "{bots_wait_for_a_player}" end
     end
     if is_panel_exists(HUD) then
         update_panel_settings(HUD, { text = txt })
     else
         HUD = create_panel({
-            title = "Crazy Eights",
+            title ="{crazy_eights}",
             text = txt,
             close = false,
             set_time = false,
@@ -840,12 +1083,30 @@ function update_table_buttons()
     set_button({
         name = "_sit_btn",
         visible = not am_seated,
-        text = round_running and "Sit next round" or "Sit at table",
+        text = round_running and "{sit_next_round}" or "{sit_at_table}",
     })
     set_button({
         name = "_stand_btn",
         visible = am_seated and (cl_phase == "lobby" or cl_phase == "starting"),
     })
+end
+
+-- The two bot controls are screen-space buttons defined in the "table" view
+-- (general/views/table.json, right under the Sit/Zoom buttons), not world-space
+-- - so they never need counter-rotation math and never drift over the felt.
+-- Only the host ever sees them; add_bot_HOST/remove_bot_HOST re-check that on
+-- arrival anyway.
+function refresh_bot_buttons()
+    set_button({ name = "_bot_add_btn", visible = (IS_HOST == true) })
+    set_button({ name = "_bot_del_btn", visible = (IS_HOST == true) })
+end
+
+function add_bot_click(args)
+    run_network_function(name, "add_bot_HOST", {})
+end
+
+function remove_bot_click(args)
+    run_network_function(name, "remove_bot_HOST", {})
 end
 
 function sit_click(args)
@@ -874,15 +1135,15 @@ function refresh_scoreboard()
         local marker = (id == cl_turn and cl_phase == "playing") and "> " or "   "
         local hex = cl_colors[id] or "#ffffff"
         lines = lines .. marker .. "[color=" .. hex .. "]" .. (cl_names[id] or id) .. "[/color]" ..
-            "  -  " .. tostring(counts[id] or 0) .. " cards, " ..
-            tostring(cl_wins[id] or 0) .. " wins\n"
+            "  -  " .. tostring(counts[id] or 0) .. "{cards_2}" ..
+            tostring(cl_wins[id] or 0) .. "{wins}"
     end
-    if lines == "" then lines = "(nobody is seated yet)" end
+    if lines == "" then lines = "{nobody_is_seated_yet}" end
     if is_panel_exists(SCORE) then
         update_panel_settings(SCORE, { text = lines })
     else
         SCORE = create_panel({
-            title = "Players",
+            title ="{players}",
             text = lines,
             close = false,
             set_time = false,
@@ -922,8 +1183,8 @@ end
 function show_wild_panel()
     if is_panel_exists(WILD) then close_panel(WILD) end
     WILD = create_panel({
-        title = "Wild 8!",
-        text = "[center]Choose the new color:[/center]",
+        title ="{wild_8}",
+        text ="{choose_the_new_color}",
         close = true,
         set_time = false,
         resizable = false,

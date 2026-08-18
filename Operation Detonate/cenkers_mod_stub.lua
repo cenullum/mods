@@ -398,7 +398,7 @@ function get_nearest_entity_by_tag(entity_name, tag, excluded_entities) end
 --- Config parameters:
 ---   - parent_name (string, required): Parent entity name.
 ---   - name (string, optional): Image node name. Default: auto-generated.
----   - image_path (string, optional): Path to image in mod/general/images/ (without .png extension). If empty and creating new sprite, uses default icon. Default: "".
+---   - image_path (string, optional): Path to image in mod/general/images/ (without .png extension). If empty and creating new sprite, uses default icon. Also accepts "card:<card_id>:front" or "card:<card_id>:back" to show a live-rendered (localized) card face instead of a plain file. Default: "".
 ---   - position (Vector2, optional): Position offset from parent. Default: Vector2(0, 0).
 ---   - scale (Vector2, optional): Scale the image to this pixel size (based on texture size). Cannot use with 'size'. Default: none.
 ---   - size (Vector2, optional): Direct scale multiplier. Cannot use with 'scale'. Default: none.
@@ -620,6 +620,12 @@ function set_image_pixel(parent_name, image_name, pixel_size) end
 ---   - anchor_bottom (number, optional): For UI labels, bottom anchor (0.0 to 1.0).
 ---   - rotation (number, optional): LOCAL-ONLY visual rotation in radians, around
 ---     the label's own centre. Never synced automatically — set it per peer.
+---   - scale (number|Vector2, optional): visual scale (float = uniform). CRISP
+---     WORLD-SPACE TEXT: small font sizes render blurry, so pick a BIG font_size
+---     and scale the label down instead — e.g. font_size = 48, scale = 0.25
+---     looks like size 12 but razor sharp. Set once; no per-frame work needed.
+---     Remember position/size are pre-scale (size 384x72 at scale 0.25 covers
+---     96x18 world pixels).
 ---@param config table Label configuration dictionary.
 ---@return string The created/updated label node name.
 function set_label(config) end
@@ -645,6 +651,8 @@ function set_label(config) end
 ---   - anchor_right (number, optional): For UI progress bars, right anchor (0.0 to 1.0).
 ---   - anchor_top (number, optional): For UI progress bars, top anchor (0.0 to 1.0).
 ---   - anchor_bottom (number, optional): For UI progress bars, bottom anchor (0.0 to 1.0).
+---   - rotation (number, optional): LOCAL-ONLY visual rotation in radians, around
+---     the bar's own centre. Never synced automatically — set it per peer.
 ---@param config table Progress bar configuration dictionary.
 ---@return string The created/updated progress bar node name.
 function set_progress_bar(config) end
@@ -669,6 +677,8 @@ function set_progress_bar(config) end
 ---   - anchor_right (number, optional): For UI buttons, right anchor (0.0 to 1.0).
 ---   - anchor_top (number, optional): For UI buttons, top anchor (0.0 to 1.0).
 ---   - anchor_bottom (number, optional): For UI buttons, bottom anchor (0.0 to 1.0).
+---   - rotation (number, optional): LOCAL-ONLY visual rotation in radians, around
+---     the button's own centre. Never synced automatically — set it per peer.
 ---@param config table Button configuration dictionary.
 ---@return string The created/updated button node name.
 function set_button(config) end
@@ -798,6 +808,36 @@ function set_vignette(config) end
 ---@return table Dictionary with keys: visible, smoothness, strength, color, radius.
 function get_vignette_settings() end
 
+--- Briefly show a colored vignette that fades back out on its own (e.g. a hit
+--- flash, a pickup glow, a warning pulse). Fully independent from
+--- set_vignette/get_vignette_settings (its own overlay + shader instance), so
+--- triggering a flash never reads or overwrites whatever set_vignette is
+--- currently showing - the two layer cleanly on top of each other.
+--- Config parameters (all optional):
+---   - color (Color|table|string, optional): Flash color. Default: red (0.8, 0.05, 0.05, 1).
+---   - duration (number, optional): Seconds to fade back to invisible. Default: 0.25.
+---   - strength (number, optional): Vignette strength/intensity. Default: 1.6.
+---   - radius (number, optional): Vignette radius (0.0 to 1.0). Default: 0.35.
+---   - smoothness (number, optional): Edge smoothness (0.0 to 1.0). Default: 0.35.
+---@param config table Vignette flash configuration dictionary.
+function flash_vignette(config) end
+
+--- Set the global tile-shadow effect (the same settings as the map editor's
+--- "Shadow Effect Settings"). Great for day/night cycles: animate shadow_angle
+--- to move the sun and shadow_color/visible for dusk and dawn.
+--- Config parameters:
+---   - visible (boolean, optional): Enable/disable the shadow effect.
+---   - shadow_color (Color|table|string, optional): Shadow color (alpha = darkness).
+---   - shadow_angle (number, optional): Light angle in degrees (0-360).
+---   - shadow_length (number, optional): Shadow length in pixels.
+---   - shadow_blur (number, optional): Shadow blur strength (0-10).
+---@param config table Shadow configuration dictionary.
+function set_shadow(config) end
+
+--- Get current shadow effect settings.
+---@return table Dictionary with keys: visible, shadow_color, shadow_angle, shadow_length, shadow_blur.
+function get_shadow_settings() end
+
 ---------------------------------------------------
 -- PARTICLES
 ---------------------------------------------------
@@ -815,6 +855,7 @@ function get_vignette_settings() end
 ---   - local_coords (boolean, optional): Use local coordinates. Default: false.
 ---   - fixed_fps (integer, optional): Fixed FPS for particle simulation. Default: 30.
 ---   - fract_delta (boolean, optional): Use fractional delta. Default: true.
+---   - z_index (integer, optional): Draw order, clamped to [-999, 999]. Default: 10 (above ground tiles, which sit at 0-1).
 ---   - direction (table, optional): Emission direction {x=number, y=number}. Default: none.
 ---   - spread (number, optional): Emission spread angle in degrees. Default: 0.0.
 ---   - initial_velocity_min (number, optional): Minimum initial velocity. Default: 0.0.
@@ -824,6 +865,8 @@ function get_vignette_settings() end
 ---   - gravity (table, optional): Gravity vector {x=number, y=number}. Default: none.
 ---   - scale_amount_min (number, optional): Minimum particle scale. Default: 1.0.
 ---   - scale_amount_max (number, optional): Maximum particle scale. Default: 1.0.
+---   - scale_curve (table, optional): Scale over lifetime, evenly sampled, e.g. {0.35, 1.0} grows. Multiplies scale_amount_min/max, so set those to the PEAK size. Needs at least 2 numbers. Default: none (constant scale).
+---   - alpha_curve (table, optional): Alpha over lifetime, evenly sampled, e.g. {1.0, 0.0} fades out. Needs at least 2 numbers. Default: none (constant alpha).
 ---   - angle_min (number, optional): Minimum particle angle. Default: 0.0.
 ---   - angle_max (number, optional): Maximum particle angle. Default: 0.0.
 ---   - color (Color, optional): Particle color. Default: Color.WHITE.
@@ -934,9 +977,11 @@ function set_camera_rotation(radians) end
 function get_camera_rotation() end
 
 --- Create screen shake effect.
----@param intensity number Shake strength.
+--- Note: the actual argument order is (duration, intensity) - matches every
+--- existing caller (e.g. Campfire Survivors' `screenshake(1, shake_intensity)`).
 ---@param duration number Shake duration in seconds.
-function screenshake(intensity, duration) end
+---@param intensity number Shake strength.
+function screenshake(duration, intensity) end
 
 ---------------------------------------------------
 -- CARD SYSTEM (tabletop decks, hands, table cards)
@@ -1081,6 +1126,15 @@ function card_draw(deck_name, target_steam_id) end
 ---@param target_steam_id string Peeking player's Steam id string.
 function card_peek(deck_name, count, target_steam_id) end
 
+--- HOST ONLY: same information as card_peek(), returned synchronously instead
+--- of via the _on_card_peek callback. Use this for host-side logic that has no
+--- client peer to call that back on (e.g. bot AI reacting to its own "see the
+--- future" card) - a bot has no screen, so nothing is ever sent over the wire.
+---@param deck_name string Deck identifier.
+---@param count integer How many cards from the top.
+---@return table Array of card ids, index 1 = top of the deck.
+function card_peek_host(deck_name, count) end
+
 --- HOST ONLY: put a card (from a hand or the table) back into a deck.
 ---@param uid string Card uid.
 ---@param deck_name string Deck identifier.
@@ -1188,6 +1242,147 @@ function card_set_world_rotation(radians) end
 ---@param world_pos Vector2 Centre of the play/drop area in world space.
 ---@param radius number Accept radius in world units (<= 0 = anywhere).
 function card_set_drop_zone(world_pos, radius) end
+
+---------------------------------------------------
+-- VISUAL NOVEL / BRANCHING STORY (VNStory format)
+---------------------------------------------------
+-- Runtime for stories authored in the Online Asset Editor's Visual Novel tab
+-- (or built by hand as a table). The engine is DETERMINISTIC AND LOCAL: each
+-- peer loads the same story file and advances its OWN copy with explicit
+-- calls. It never networks story state for you — a multiplayer mod stays
+-- host-authoritative the usual way (clients send an intent with
+-- run_network_function("..._HOST"), the host validates + broadcasts the
+-- winning choice id with "..._ALL", every peer runs the SAME vn_choose()).
+--
+-- Presentation is entirely up to the mod. Node/choice `bg`, `sound` and a
+-- character mood `image` are opaque path strings for you to feed to
+-- set_image / set_audio; choices carry their id + tags so you can attach any
+-- effect in Lua. Conditions/variables are evaluated by the engine exactly the
+-- way the editor's Preview does.
+--
+-- A NODE table (returned by vn_start / vn_current / vn_advance / vn_choose /
+-- vn_goto / vn_node_info) has:
+--   id (string), char (string, "" = narrator), char_name (string),
+--   char_color (string "(r,g,b,a)"), mood (string), image (string mood image
+--   path), text (string), bg (string), sound (string), tags (string[]),
+--   next (string), has_choices (bool), is_end (bool).
+-- A CHOICE table (from vn_choices / _on_vn_choice) has:
+--   index (int, 1-based), id (string), text (string), tags (string[]),
+--   next (string), enabled (bool), hidden (bool).
+
+--- Load a story JSON exported by the Visual Novel editor from the mod folder
+--- (path relative to the mod root, no ".."). Call once, e.g. in world.lua.
+---@param relative_path string Path to the story .json inside the mod folder.
+---@return string Story id (the file's base name), or "" on failure.
+function vn_load(relative_path) end
+
+--- Load a story straight from a Lua table (same shape as the exported JSON).
+---@param data table Story table (kind="vn", start, vars, chars, nodes).
+---@param story_id? string Optional id to register it under. Default: auto.
+---@return string Story id, or "" on failure.
+function vn_load_data(data, story_id) end
+
+--- Choose which entity's Lua script receives the story callbacks on this peer:
+---   _on_vn_node(story_id, node)              -- a node was entered
+---   _on_vn_choice(story_id, node_id, choice) -- a choice was accepted
+---   _on_vn_end(story_id, node_id)            -- the story reached an end
+---@param entity_name string Entity whose script defines the _on_vn_* callbacks.
+function vn_set_listener(entity_name) end
+
+--- (Re)start a story: variables reset to their defaults and the entry node is
+--- entered (its on-enter variable operations apply, callbacks fire).
+---@param story_id string Story id from vn_load.
+---@param node_id? string Optional start node override. Default: story start.
+---@return table The entered node table (see above), or {} on failure.
+function vn_start(story_id, node_id) end
+
+--- Get the current node table without changing anything.
+---@param story_id string Story id.
+---@return table Current node table, or {} if none is active.
+function vn_current(story_id) end
+
+--- Current node's choices with conditions evaluated against the story
+--- variables. Disabled choices come back enabled=false; SECRET failing choices
+--- (hidden=true) are omitted. Empty = linear node (use vn_advance) or an end.
+---@param story_id string Story id.
+---@return table Array of choice tables (see above).
+function vn_choices(story_id) end
+
+--- Follow the current node's linear "next" link.
+---@param story_id string Story id.
+---@return table The entered node table, or {} if the node has choices / ended.
+function vn_advance(story_id) end
+
+--- Pick a choice of the current node BY ID. Rejected (returns {}) if that
+--- choice's conditions currently fail. On success the choice's variable
+--- operations apply, _on_vn_choice fires, and the target node is entered.
+---@param story_id string Story id.
+---@param choice_id string The choice's id (from vn_choices).
+---@return table The entered node table, or {} if the choice was not allowed.
+function vn_choose(story_id, choice_id) end
+
+--- Jump to any node. With apply_enter_ops=true (default) it enters normally:
+--- the node's on-enter variable operations apply and _on_vn_node fires (chapter
+--- select / debug). With apply_enter_ops=false it is a PURE SEEK (set the
+--- current node without applying ops or firing the callback) — use it for
+--- late-joiner sync: vn_set_var the shared variables first, then seek + render.
+---@param story_id string Story id.
+---@param node_id string Target node id.
+---@param apply_enter_ops? boolean Apply the node's on-enter ops + fire callback. Default: true.
+---@return table The node table, or {} on failure.
+function vn_goto(story_id, node_id, apply_enter_ops) end
+
+--- True when the story has ended (no current node, or the node has neither
+--- choices nor a next link).
+---@param story_id string Story id.
+---@return boolean
+function vn_is_end(story_id) end
+
+--- Read a story variable's current value (number, boolean or string).
+---@param story_id string Story id.
+---@param var_name string Variable name.
+---@return any The value, or nil if the story/variable is unknown.
+function vn_get_var(story_id, var_name) end
+
+--- Set a story variable directly (bypasses node/choice operations). In
+--- multiplayer you must call this identically on every peer.
+---@param story_id string Story id.
+---@param var_name string Variable name.
+---@param value any New value (number, boolean or string).
+function vn_set_var(story_id, var_name, value) end
+
+--- Get a copy of ALL current story variables as a table.
+---@param story_id string Story id.
+---@return table {var_name = value, ...}.
+function vn_get_vars(story_id) end
+
+--- Inspect ANY node without entering it. Includes its raw `choices` array (with
+--- their conditions) for building custom visualizations in Lua.
+---@param story_id string Story id.
+---@param node_id string Node id.
+---@return table Node table plus a `choices` array, or {} if unknown.
+function vn_node_info(story_id, node_id) end
+
+--- All node ids of a loaded story, sorted (deterministic across peers).
+---@param story_id string Story id.
+---@return table Array of node id strings.
+function vn_node_ids(story_id) end
+
+--- Callback: a story node was entered (via vn_start/advance/choose/goto).
+---@param story_id string Story id.
+---@param node table The entered node table.
+function _on_vn_node(story_id, node) end
+
+--- Callback: a choice was accepted, fired BEFORE its target node is entered.
+---@param story_id string Story id.
+---@param node_id string The node the choice belonged to.
+---@param choice table The chosen choice table.
+function _on_vn_choice(story_id, node_id, choice) end
+
+--- Callback: the story reached an end (an end node, or an empty "next").
+---@param story_id string Story id.
+---@param node_id string The last node id ("" if it ran off a dangling link).
+function _on_vn_end(story_id, node_id) end
 
 --- Set a navigation icon marker on an entity.
 --- This creates an off-screen indicator that points to the target entity when it's outside the viewport.
@@ -1392,6 +1587,10 @@ function update_panel_settings(panel_name, settings) end
 ---     Cell config can include:
 ---       - text (string, optional): Cell button text content. Default: "".
 ---       - color (Color|string, required): Cell button background color (also affects hover/pressed states).
+---       - icon_path (string, optional): Icon path under mod/general/images/ (without .png extension). Default: "" (no icon).
+---       - icon_alignment (integer, optional): HORIZONTAL_ALIGNMENT_* for the icon. Default: LEFT (CENTER if text is empty).
+---       - expand_icon (boolean, optional): Whether the icon expands to fit the cell. Default: true.
+---       - size (Vector2, optional): Cell button minimum size. Default: Vector2(60, 30).
 ---       - Any other metadata: Custom key-value pairs will be stored in the button's metadata (accessible via get_meta()).
 ---   - entity_name (string, optional): Entity with callback function for cell clicks. Required if using function_name.
 ---   - function_name (string, optional): Function to call when a cell is clicked. Required if using entity_name.
@@ -1588,6 +1787,72 @@ function load_json(relative_path) end
 function get_file_names(relative_folder, extension) end
 
 ---------------------------------------------------
+-- LOCALIZATION
+---------------------------------------------------
+--
+-- Put one JSON per language in your mod's `general/language/` folder:
+--
+--   general/language/en.json
+--   {
+--     "meta": { "code": "en", "name": "English", "native_name": "English", "flag": "gb" },
+--     "keys": { "{score}": "Score", "{you_win}": "You win!" }
+--   }
+--
+-- Then write the keyword instead of the text anywhere you show something:
+--
+--   set_label({ name = "_score", text = "{score}: " .. points })
+--
+-- Rules worth knowing:
+--   * The game translates automatically at display time, so you almost never call
+--     translate() yourself. Text with no keyword is shown exactly as written.
+--   * A keyword the language file does not define is left as-is ("{score}"), which
+--     makes a typo obvious instead of silent.
+--   * `{single}` braces are YOUR keywords. `{{double}}` braces belong to the base
+--     game; a mod file that defines one is ignored, so you cannot break the menus.
+--   * English is the fallback: if the player runs Turkish and your tr.json lacks a
+--     key, the en.json text is used. You do not have to translate every language.
+--   * Your keywords are dropped when the player leaves the mod.
+--   * Send the KEYWORD over the network, not the translated text — every peer then
+--     reads it in their own language:
+--        run_network_function(name, "announce_ALL", { text = "{you_win}" })
+--   * Word order changes between languages, so never glue a suffix onto a value.
+--     Put the placeholder inside the translated text instead:
+--        "{wait_seconds}" -> en "WAIT %s SECONDS", tr "%s SANİYE BEKLEYİN"
+--        set_label({ name = "_t", text = string.format(translate("{wait_seconds}"), n) })
+
+--- The language the player is currently using, e.g. "tr".
+---@return string Two-letter language code.
+function get_current_language() end
+
+--- Every language the game has a file for. Useful when you want to accept input in
+--- any language (see translate_all).
+---@return table Array of language code strings, e.g. { "en", "tr" }.
+function get_languages() end
+
+--- Details of one language, for building your own language UI.
+---@param code string Language code, e.g. "tr".
+---@return table { code, name, native_name, flag } — or {} if not installed.
+function get_language_info(code) end
+
+--- Replace every keyword in a text. You rarely need this for display (that happens
+--- automatically); it is for when you need the VALUE — comparing a typed answer,
+--- building a string.format() argument, sorting.
+--- Example: translate("{fox}")       --> "tilki" when playing in Turkish
+---          translate("{fox}", "en") --> "fox"   regardless of the current language
+---@param text string Text containing keywords, e.g. "{score}: 10".
+---@param lang? string Language code. Default: the player's current language.
+---@return string Text with known keywords replaced.
+function translate(text, lang) end
+
+--- Resolve a text into EVERY installed language at once.
+--- Made for word games: accept the answer no matter which language it was typed in.
+--- Example: local words = translate_all("{fox}")  --> { en = "fox", tr = "tilki" }
+---          for _, w in pairs(words) do if guess == w then ... end end
+---@param text string Text containing keywords.
+---@return table Map of language code -> translated text.
+function translate_all(text) end
+
+---------------------------------------------------
 -- MAP/TILEMAP
 ---------------------------------------------------
 
@@ -1618,6 +1883,70 @@ function get_tile(x, y) end
 ---@param tileset_id? number Tileset source id (default 0).
 ---@return boolean True on success, false if no tileset is loaded.
 function set_tile(x, y, atlas_coords, tileset_id) end
+
+--- HOST ONLY: allow or forbid the minimap (default: forbidden). This is the only
+--- thing that travels over the network — the map IMAGE itself never does: every
+--- peer renders its own minimap locally from the tiles it has loaded, so it also
+--- doubles as a fog-of-war (you only see what streamed in on your machine).
+---@param allowed boolean true to let every peer use get_minimap().
+function set_minimap(allowed) end
+
+--- Get the minimap texture key for set_image, e.g.:
+---   set_image({ name = "_map", image_path = get_minimap(), visible = true })
+--- Returns "" while the host has not called set_minimap(true) — check for it.
+--- The texture is built locally and keeps updating live while it is on screen
+--- (new chunks appear as they load). Each (tileset, tile) pair gets its own
+--- colour (the average of its texture); tiles with collision are drawn darker;
+--- 47-blob autotile sources use one shared colour. Works in any mod — nothing
+--- about it is game-specific.
+---@return string Texture key for set_image's image_path, or "" if not allowed.
+function get_minimap() end
+
+--- Track a moving entity OR a fixed spot on the minimap (icon + optional label);
+--- the ENGINE keeps it positioned every frame — no per-frame Lua. Give exactly
+--- one of `entity_name` (re-resolved every frame) or `world_position` (a fixed
+--- Vector2, e.g. the world spawn point).
+--- Targets are LOCAL (not networked): register them per peer (e.g. in the player
+--- entity script, which runs on every peer for every player).
+--- `image_name` is only needed if you draw your OWN minimap HUD from a raw
+--- `set_image` element (STRETCH_SCALE; markers become its children so they
+--- pan/zoom with it). Skip it if you only use create_minimap_panel or your own
+--- render loop off get_minimap_targets()/get_minimap_target_position() — the
+--- target is still tracked and available either way.
+--- config keys:
+---   name (required)      unique marker id
+---   entity_name?         world entity whose position is followed
+---   world_position?      fixed Vector2 world position (static marker)
+---   image_name?          a raw HUD image element to auto-draw the marker over
+---   parent_name?         owner used to resolve image_name (default "")
+---   icon?                image path under general/images (default: coloured dot)
+---   icon_size?           Vector2 marker size in px (default (10,10))
+---   text?                optional label under the marker
+---   color?               icon/label tint (default white)
+---@param config table Minimap target configuration.
+function set_minimap_target(config) end
+
+--- Current world position of a target: a Node2D lookup for entity_name targets,
+--- or the stored Vector2 for world_position ones.
+---@param name string The marker id.
+---@return Vector2|nil World position, or nil if not resolvable right now.
+function get_minimap_target_position(name) end
+
+--- Remove a marker created with set_minimap_target.
+---@param name string The marker id passed as `name`.
+function delete_minimap_target(name) end
+
+--- Open the ready-made minimap popup (the minimap twin of create_painting_panel):
+--- the live map with zoom in/out, a lock-on-target toggle that keeps a tracked
+--- entity centred, and < / > arrows to cycle between set_minimap_target markers —
+--- all with zero UI code. Or build your own HUD from get_minimap() +
+--- set_minimap_target instead. Needs the host to have allowed the minimap.
+--- config keys mirror create_panel (title, close, minimum_size, offset_ratio,
+--- resizable, color, panel_name) plus:
+---   lock_target?  entity or target name to start centred/locked on.
+---@param config table Panel configuration.
+---@return string panel_name The popup name.
+function create_minimap_panel(config) end
 
 --- Cast a 2D ray through the physics world (walls, entity bodies, areas) and
 --- return the first thing it hits. Server-authoritative games should raycast on

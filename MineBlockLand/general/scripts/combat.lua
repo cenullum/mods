@@ -160,7 +160,7 @@ function tg_resolve(args)
     if not IS_HOST or not cfg then return end
     run_network_function(name, "tg_done_ALL", { cfg.id })
     local ff = get_value("", "-gm", "friendly_fire") or false
-    local attacker_is_player = has_tag(cfg.attacker or "", "user")
+    local attacker_is_player = cfg.attacker ~= nil and cfg.attacker ~= "" and has_tag(cfg.attacker, "user")
     if cfg.targets == "players" or cfg.targets == "all" then
         each_victim(cfg, "alive", function(victim, pos)
             if attacker_is_player and not ff then return end

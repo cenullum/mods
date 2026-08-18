@@ -23,11 +23,11 @@ local history_search_steam_id = ""
 
 -- Print initial message when mod loads (only for host)
 if IS_HOST then
-    add_to_chat("[color=#FFD700]You can type /moderation to open moderation panel[/color]", false)
+    add_to_chat("{you_can_type_moderation_to_open_moderati}", false)
 end
 
 -- Register moderation command to the centralized system
-add_command(name, "show_moderation_panel", "moderation", "(Host only) Open the moderation panel", true)
+add_command(name, "show_moderation_panel", "moderation", "{host_only_open_the_moderation_panel}", true)
 
 
 
@@ -50,9 +50,9 @@ function _on_user_disconnected(steam_id, nickname)
 end
 
 function _on_user_kicked(steam_id, nickname, reason)
-    local message = "[color=#FF6B6B]" .. nickname .. " has been kicked"
+    local message = "[color=#FF6B6B]" .. nickname .. "{has_been_kicked}"
     if reason ~= "" then
-        message = message .. " (Reason: " .. reason .. ")"
+        message = message .. "{reason_3}" .. reason .. ")"
     end
     message = message .. "[/color]"
     add_to_chat(message, false)
@@ -63,9 +63,9 @@ end
 
 function _on_user_banned(steam_id, nickname, duration, reason)
     local duration_text = format_duration(duration)
-    local message = "[color=#FF0000]" .. nickname .. " has been banned for " .. duration_text
+    local message = "[color=#FF0000]" .. nickname .. "{has_been_banned_for}" .. duration_text
     if reason ~= "" then
-        message = message .. " (Reason: " .. reason .. ")"
+        message = message .. "{reason_3}" .. reason .. ")"
     end
     message = message .. "[/color]"
     add_to_chat(message, false)
@@ -76,7 +76,7 @@ end
 
 function show_moderation_panel()
     if not IS_HOST then
-        add_to_chat("[color=#FF0000]Only the host can access moderation panel[/color]", false)
+        add_to_chat("{only_the_host_can_access_moderation_pane}", false)
         return
     end
 
@@ -86,7 +86,7 @@ function show_moderation_panel()
     end
 
     local settings = {
-        title = "Moderation Panel",
+        title ="{moderation_panel}",
         resizable = true,
         is_scrollable = true,
         name = MAIN_PANEL_NAME,
@@ -98,7 +98,7 @@ function show_moderation_panel()
 
     -- Add button to open Banned Users Panel
     add_button_to_panel(MAIN_PANEL_NAME, {
-        text = "Banned Users",
+        text ="{banned_users}",
         is_vertical = false,
         color = "#FF0000",
         entity_name = name,
@@ -123,7 +123,7 @@ function show_banned_users_panel()
     end
 
     local settings = {
-        title = "Banned Users",
+        title ="{banned_users}",
         resizable = true,
         is_scrollable = true,
         name = BANNED_USERS_PANEL_NAME,
@@ -138,7 +138,7 @@ function show_banned_users_panel()
 
     -- Add search section for history (under the table)
     add_input_to_panel(BANNED_USERS_PANEL_NAME, {
-        text = "Search Steam ID",
+        text ="{search_steam_id}",
         default_value = "",
         entity_name = name,
         function_name = "on_history_search_input_changed"
@@ -146,7 +146,7 @@ function show_banned_users_panel()
 
     -- View History button (at the bottom, in the same row as Back)
     add_button_to_panel(BANNED_USERS_PANEL_NAME, {
-        text = "View History",
+        text ="{view_history}",
         is_vertical = false,
         color = "#4B8BF4",
         entity_name = name,
@@ -155,7 +155,7 @@ function show_banned_users_panel()
 
     -- Back button (at the bottom)
     add_button_to_panel(BANNED_USERS_PANEL_NAME, {
-        text = "Back",
+        text ="{back}",
         is_vertical = false,
         color = "#808080",
         entity_name = name,
@@ -186,8 +186,8 @@ function create_connected_users_table()
     local table_data = {}
 
     -- Header row
-    table_data[vector2_to_string(Vector2(0, 0))] = { text = "Connected Users", color = "#4B8BF4" }
-    table_data[vector2_to_string(Vector2(1, 0))] = { text = "Steam ID", color = "#4B8BF4" }
+    table_data[vector2_to_string(Vector2(0, 0))] = { text ="{connected_users}", color = "#4B8BF4" }
+    table_data[vector2_to_string(Vector2(1, 0))] = { text ="{steam_id}", color = "#4B8BF4" }
 
     -- Sort users by nickname
     local sorted_users = {}
@@ -209,7 +209,7 @@ function create_connected_users_table()
         local color = "#FFFFFF"
         if steam_id == HOST_STEAM_ID then
             color = "#00FF00"
-            nickname = nickname .. " (Host)"
+            nickname = nickname .. "{host}"
         end
 
         table_data[vector2_to_string(Vector2(0, row))] = {
@@ -239,9 +239,9 @@ function create_banned_users_table(panel_name)
     local table_data = {}
 
     -- Header row
-    table_data[vector2_to_string(Vector2(0, 0))] = { text = "Banned Users", color = "#FF0000" }
-    table_data[vector2_to_string(Vector2(1, 0))] = { text = "Time Remaining", color = "#FF0000" }
-    table_data[vector2_to_string(Vector2(2, 0))] = { text = "Reason", color = "#FF0000" }
+    table_data[vector2_to_string(Vector2(0, 0))] = { text ="{banned_users}", color = "#FF0000" }
+    table_data[vector2_to_string(Vector2(1, 0))] = { text ="{time_remaining}", color = "#FF0000" }
+    table_data[vector2_to_string(Vector2(2, 0))] = { text ="{reason}", color = "#FF0000" }
 
     -- Fill data rows
     for i, ban_info in ipairs(banned_users) do
@@ -252,7 +252,7 @@ function create_banned_users_table(panel_name)
         local reason = ban_info.reason
 
         if reason == "" then
-            reason = "No reason provided"
+            reason = "{no_reason_provided}"
         end
 
         table_data[vector2_to_string(Vector2(0, row))] = {
@@ -305,7 +305,7 @@ function on_banned_user_clicked(args)
     end
 
     local steam_id = cell_data.steam_id
-    local nickname = cell_data.nickname or "Unknown User"
+    local nickname = cell_data.nickname or "{unknown_user}"
     local ban_info = get_ban_info(steam_id)
 
     show_unban_panel(steam_id, ban_info, nickname)
@@ -313,8 +313,8 @@ end
 
 function show_user_action_panel(steam_id, nickname)
     local settings = {
-        text = "User Actions - " .. nickname .. " (" .. steam_id .. ")",
-        title = "User Actions",
+        text ="{user_actions}" .. nickname .. " (" .. steam_id .. ")",
+        title ="{user_actions_2}",
         resizable = false,
         name = "moderation_user_action_panel_id",
         no_multiple_tag = "moderation_user_action_panel"
@@ -324,7 +324,7 @@ function show_user_action_panel(steam_id, nickname)
 
     -- View Steam Profile button
     add_button_to_panel(panel_name, {
-        text = "View Steam Profile",
+        text ="{view_steam_profile}",
         is_vertical = true,
         color = "#4B8BF4",
         entity_name = name,
@@ -336,7 +336,7 @@ function show_user_action_panel(steam_id, nickname)
     if steam_id ~= HOST_STEAM_ID then
         -- Kick button
         add_button_to_panel(panel_name, {
-            text = "Kick User",
+            text ="{kick_user}",
             is_vertical = true,
             color = "#FF6B6B",
             entity_name = name,
@@ -346,7 +346,7 @@ function show_user_action_panel(steam_id, nickname)
 
         -- Ban button
         add_button_to_panel(panel_name, {
-            text = "Ban User",
+            text ="{ban_user}",
             is_vertical = true,
             color = "#FF0000",
             entity_name = name,
@@ -370,8 +370,8 @@ function show_kick_panel(args)
     close_panel(args.panel_name)
 
     local settings = {
-        text = "Kick " .. nickname,
-        title = "Kick User",
+        text ="{kick}" .. nickname,
+        title ="{kick_user}",
         resizable = false,
         name = "moderation_kick_panel_id",
         no_multiple_tag = "moderation_kick_panel"
@@ -381,7 +381,7 @@ function show_kick_panel(args)
 
     -- Reason input
     add_input_to_panel(panel_name, {
-        text = "Reason",
+        text ="{reason}",
         default_value = "",
         entity_name = name,
         extra_args = { steam_id = steam_id }
@@ -389,7 +389,7 @@ function show_kick_panel(args)
 
     -- Kick button
     add_button_to_panel(panel_name, {
-        text = "Kick User",
+        text ="{kick_user}",
         is_vertical = false,
         color = "#FF0000",
         entity_name = name,
@@ -404,11 +404,11 @@ function execute_kick(args)
     
     local reason = args.Reason or ""
     if reason == "" then
-        reason = "No reason provided"
+        reason = "{no_reason_provided}"
     end
 
     create_confirmation_panel(
-        "Are you sure you want to kick " .. nickname .. "?\nReason: " .. reason,
+        "{are_you_sure_you_want_to_kick}" .. nickname .. "{reason_4}" .. reason,
         "confirm_kick",
         "cancel_action"
     )
@@ -447,8 +447,8 @@ function show_ban_panel(args)
     close_panel(args.panel_name)
 
     local settings = {
-        text = "Ban " .. nickname,
-        title = "Ban User",
+        text ="{ban}" .. nickname,
+        title ="{ban_user}",
         resizable = false,
         name = "moderation_ban_panel_id",
         no_multiple_tag = "moderation_ban_panel"
@@ -458,15 +458,15 @@ function show_ban_panel(args)
 
     -- Duration option box
     add_optionbox_to_panel(panel_name, {
-        text = "Duration",
-        options = { "1 Hour", "6 Hours", "12 Hours", "1 Day", "1 Week", "1 Month", "Permanent" },
+        text ="{duration}",
+        options = { "1 Hour", "6 Hours", "12 Hours", "1 Day", "1 Week", "1 Month", "{permanent}" },
         entity_name = name,
         extra_args = { steam_id = steam_id }
     })
 
     -- Reason input
     add_input_to_panel(panel_name, {
-        text = "Reason",
+        text ="{reason}",
         default_value = "",
         entity_name = name,
         extra_args = { steam_id = steam_id }
@@ -474,7 +474,7 @@ function show_ban_panel(args)
 
     -- Ban button
     add_button_to_panel(panel_name, {
-        text = "Ban User",
+        text ="{ban_user}",
         is_vertical = false,
         color = "#FF0000",
         entity_name = name,
@@ -499,7 +499,7 @@ function execute_ban(args)
     local reason = args.Reason or ""
 
     if reason == "" then
-        reason = "No reason provided"
+        reason = "{no_reason_provided}"
     end
     
     if not temp_data[steam_id] then
@@ -509,7 +509,7 @@ function execute_ban(args)
     local duration_seconds = get_duration_seconds(duration_text)
 
     create_confirmation_panel(
-        "Are you sure you want to ban " .. nickname .. "?\nDuration: " .. duration_text .. "\nReason: " .. reason,
+        "{are_you_sure_you_want_to_ban}" .. nickname .. "{duration_2}" .. duration_text .. "{reason_5}" .. reason,
         "confirm_ban",
         "cancel_action"
     )
@@ -527,7 +527,7 @@ function confirm_ban(args)
     for steam_id, data in pairs(temp_data) do
         if data.pending_action and data.pending_action.type == "ban" then
             local duration = data.pending_action.duration or get_duration_seconds("1 Hour")
-            local reason = data.pending_action.reason or "No reason provided"
+            local reason = data.pending_action.reason or "{no_reason_provided}"
 
             ban_user(steam_id, duration, reason)
             temp_data[steam_id] = nil
@@ -538,11 +538,11 @@ function confirm_ban(args)
 end
 
 function show_unban_panel(steam_id, ban_info, nickname)
-    local nickname = nickname or (ban_info and ban_info.nickname) or "Unknown User"
+    local nickname = nickname or (ban_info and ban_info.nickname) or "{unknown_user}"
 
     local settings = {
-        text = "Unban " .. nickname .. "?",
-        title = "Unban User",
+        text ="{unban}" .. nickname .. "?",
+        title ="{unban_user}",
         resizable = false,
         name = "moderation_unban_panel_id",
         no_multiple_tag = "moderation_unban_panel"
@@ -551,11 +551,11 @@ function show_unban_panel(steam_id, ban_info, nickname)
     local panel_name = create_panel(settings)
 
     -- Show ban info text
-    local info_text = "Reason: " .. (ban_info.reason or "No reason provided")
+    local info_text ="{reason_2}" .. (ban_info.reason or "{no_reason_provided}")
 
     -- Unban button
     add_button_to_panel(panel_name, {
-        text = "Unban User",
+        text ="{unban_user}",
         is_vertical = false,
         color = "#00FF00",
         entity_name = name,
@@ -565,7 +565,7 @@ function show_unban_panel(steam_id, ban_info, nickname)
 
     -- Cancel button
     add_button_to_panel(panel_name, {
-        text = "Cancel",
+        text ="{cancel}",
         is_vertical = false,
         color = "#808080",
         entity_name = name,
@@ -578,7 +578,7 @@ function execute_unban(args)
     local nickname = args.extra_args.nickname
 
     unban_user(steam_id)
-    add_to_chat("[color=#00FF00]" .. nickname .. " has been unbanned[/color]", false)
+    add_to_chat("[color=#00FF00]" .. nickname .. "{has_been_unbanned}", false)
 
     close_panel(args.panel_name)
     refresh_main_panel()
@@ -591,7 +591,7 @@ end
 function create_confirmation_panel(message, ok_function, cancel_function)
     local settings = {
         text = message,
-        title = "Are you sure?",
+        title ="{are_you_sure}",
         resizable = false,
         name = "moderation_confirmation_id",
         no_multiple_tag = "moderation_confirmation_panel"
@@ -601,7 +601,7 @@ function create_confirmation_panel(message, ok_function, cancel_function)
 
     -- OK button
     add_button_to_panel(panel_name, {
-        text = "OK",
+        text ="{ok}",
         is_vertical = false,
         color = "#00FF00",
         entity_name = name,
@@ -610,7 +610,7 @@ function create_confirmation_panel(message, ok_function, cancel_function)
 
     -- Cancel button
     add_button_to_panel(panel_name, {
-        text = "Cancel",
+        text ="{cancel}",
         is_vertical = false,
         color = "#FF0000",
         entity_name = name,
@@ -643,7 +643,7 @@ function get_duration_seconds(duration_str)
         return 3600 * 24 * 7
     elseif duration_str == "1 Month" then
         return 3600 * 24 * 30
-    elseif duration_str == "Permanent" then
+    elseif duration_str == "{permanent}" then
         return 3600 * 24 * 365 * 100
     else
         return 3600
@@ -652,29 +652,29 @@ end
 
 function format_duration(seconds)
     if seconds >= 3600 * 24 * 365 then
-        return "Permanent"
+        return "{permanent}"
     elseif seconds >= 3600 * 24 * 30 then
-        return math.floor(seconds / (3600 * 24 * 30)) .. " month(s)"
+        return math.floor(seconds / (3600 * 24 * 30)) .. "{month_s}"
     elseif seconds >= 3600 * 24 * 7 then
-        return math.floor(seconds / (3600 * 24 * 7)) .. " week(s)"
+        return math.floor(seconds / (3600 * 24 * 7)) .. "{week_s}"
     elseif seconds >= 3600 * 24 then
-        return math.floor(seconds / (3600 * 24)) .. " day(s)"
+        return math.floor(seconds / (3600 * 24)) .. "{day_s}"
     elseif seconds >= 3600 then
-        return math.floor(seconds / 3600) .. " hour(s)"
+        return math.floor(seconds / 3600) .. "{hour_s}"
     elseif seconds >= 60 then
-        return math.floor(seconds / 60) .. " minute(s)"
+        return math.floor(seconds / 60) .. "{minute_s}"
     else
-        return seconds .. " second(s)"
+        return seconds .. "{second_s}"
     end
 end
 
 function on_history_search_input_changed(args)
-    history_search_steam_id = args["Search Steam ID"] or ""
+    history_search_steam_id = args["{search_steam_id}"] or ""
 end
 
 function search_user_history(args)
     if history_search_steam_id == "" then
-        add_to_chat("[color=#FF0000]Please enter a Steam ID to search[/color]", false)
+        add_to_chat("{please_enter_a_steam_id_to_search}", false)
         return
     end
 
@@ -689,8 +689,8 @@ end
 
 function show_no_history_panel(steam_id)
     local settings = {
-        text = "No moderation records found for Steam ID: " .. steam_id,
-        title = "No History Found",
+        text ="{no_moderation_records_found_for_steam_id}" .. steam_id,
+        title ="{no_history_found}",
         resizable = false,
         name = "moderation_history_panel_id",
         no_multiple_tag = "moderation_history_panel"
@@ -699,7 +699,7 @@ function show_no_history_panel(steam_id)
     local panel_name = create_panel(settings)
 
     add_button_to_panel(panel_name, {
-        text = "Close",
+        text ="{close}",
         is_vertical = false,
         color = "#808080",
         entity_name = name,
@@ -709,7 +709,7 @@ end
 
 function show_history_panel(steam_id, history)
     local settings = {
-        title = "Moderation History - " .. get_nickname_from_history(history),
+        title ="{moderation_history}" .. get_nickname_from_history(history),
         resizable = true,
         is_scrollable = true,
         name = "moderation_history_panel_id",
@@ -722,7 +722,7 @@ function show_history_panel(steam_id, history)
     create_history_table(panel_name, history)
 
     add_button_to_panel(panel_name, {
-        text = "Close",
+        text ="{close}",
         is_vertical = false,
         color = "#808080",
         entity_name = name,
@@ -734,10 +734,10 @@ function create_history_table(panel_name, history)
     local table_data = {}
 
     -- Header row
-    table_data[vector2_to_string(Vector2(0, 0))] = { text = "Date & Time", color = "#4B8BF4" }
-    table_data[vector2_to_string(Vector2(1, 0))] = { text = "Action", color = "#4B8BF4" }
-    table_data[vector2_to_string(Vector2(2, 0))] = { text = "Duration", color = "#4B8BF4" }
-    table_data[vector2_to_string(Vector2(3, 0))] = { text = "Reason", color = "#4B8BF4" }
+    table_data[vector2_to_string(Vector2(0, 0))] = { text ="{date_time}", color = "#4B8BF4" }
+    table_data[vector2_to_string(Vector2(1, 0))] = { text ="{action}", color = "#4B8BF4" }
+    table_data[vector2_to_string(Vector2(2, 0))] = { text ="{duration}", color = "#4B8BF4" }
+    table_data[vector2_to_string(Vector2(3, 0))] = { text ="{reason}", color = "#4B8BF4" }
 
     -- Fill data rows (history sorted newest-first from GDScript)
     for i, entry in ipairs(history) do
@@ -756,7 +756,7 @@ function create_history_table(panel_name, history)
 
         local reason = entry.reason
         if reason == "" then
-            reason = "No reason provided"
+            reason = "{no_reason_provided}"
         end
 
         table_data[vector2_to_string(Vector2(0, row))] = {
@@ -808,5 +808,5 @@ function get_nickname_from_history(history)
     if #history > 0 then
         return history[1].nickname
     end
-    return "Unknown User"
+    return "{unknown_user}"
 end

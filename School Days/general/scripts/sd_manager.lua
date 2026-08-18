@@ -38,10 +38,10 @@ local NOTIMER_TAG = "notimer"
 local MAX_CHOICES = 6     -- must match the _choice1.._choice6 buttons in hud.json
 
 local CHAPTERS = {
-    chapter1 = "Chapter 1  ·  First Day",
-    chapter2 = "Chapter 2  ·  The Project",
-    chapter3 = "Chapter 3  ·  The Scandal",
-    chapter4 = "Chapter 4  ·  The Festival",
+    chapter1 = "{chapter1_title}",
+    chapter2 = "{chapter2_title}",
+    chapter3 = "{chapter3_title}",
+    chapter4 = "{chapter4_title}",
 }
 
 -- Loaded once on every peer; vn callbacks come back to THIS entity.
@@ -146,12 +146,12 @@ end
 function render_status()
     local text = ""
     if cl_phase == "vote" then
-        text = "Vote  " .. cl_voted .. "/" .. cl_total
+        text ="{vote}" .. cl_voted .. "/" .. cl_total
         if cl_secs >= 0 then text = text .. "   ·   " .. cl_secs .. "s" end
     elseif cl_phase == "narration" then
-        text = "Continue when ready"
+        text ="{continue_when_ready}"
     elseif cl_phase == "ended" then
-        text = "The End"
+        text ="{the_end}"
     end
     set_label({ name = "_status", text = text })
 end

@@ -48,6 +48,7 @@ reports = {}         -- steam_id -> true : reporters of the current drawer
 revealed = {}             -- glyph index -> true : letters revealed via hints
 hint_structure_shown = false  -- true after first hint press (structure reveal)
 revealed_count = 0
+hint_seed = 0             -- shared per round so every peer uncovers "the same" letters
 total_letters = 0
 max_reveal = 0
 drawer_round_bonus = 0
@@ -179,9 +180,9 @@ function choose_timeout(args)
     if not IS_HOST then return end
     if phase ~= "choosing" then return end
     -- Drawer never chose: they forfeit this turn.
-    local skipped_name = players[drawer_id] and players[drawer_id].name or "Player"
+    local skipped_name = players[drawer_id] and players[drawer_id].name or "{player}"
     if players[drawer_id] then players[drawer_id].has_drawn = true end
-    run_network_function(name, "turn_skipped_ALL", { skipped_name, "did not pick a word" }, "")
+    run_network_function(name, "turn_skipped_ALL", { skipped_name, "{did_not_pick}" }, "")
     phase = "intermission"
     set_painter(IMAGE_NAME, 0)
     start_timer({
@@ -214,9 +215,13 @@ function begin_round(word)
     revealed = {}
     hint_structure_shown = false
     revealed_count = 0
+    -- Which letters a hint uncovers is decided per peer (translated words differ
+    -- in length), so all we share is this seed plus how many are revealed.
+    hint_seed = math.random(1, 2000000000)
     drawer_round_bonus = 0
     draw_time_left = DRAW_TIME
-    total_letters = run_function(DATA, "dtw_letter_count", { word })
+    -- `word` is a keyword; measure the text the host itself would read.
+    total_letters = run_function(DATA, "dtw_letter_count", { translate(word) })
     max_reveal = math.floor(total_letters * MAX_REVEAL_RATIO)
 
     -- Snapshot the guessers (everyone connected except the drawer).
@@ -283,7 +288,7 @@ function submit_guess_HOST(sender_id, raw_text)
     if correct[sender_id] then return end
 
     local p = players[sender_id]
-    local sender_name = p and p.name or "Player"
+    local sender_name = p and p.name or "{player}"
 
     -- Spectators (joined mid-round) are not guessing; just relay their chatter.
     if not participants[sender_id] then
@@ -291,10 +296,9 @@ function submit_guess_HOST(sender_id, raw_text)
         return
     end
 
-    local guess = run_function(DATA, "dtw_normalize", { raw_text })
-    local answer = run_function(DATA, "dtw_normalize", { secret_word })
-
-    if guess == answer and guess ~= "" then
+    -- "fox" and "tilki" are both right when the keyword is {w_fox}: the guess is
+    -- compared against the word in every installed language.
+    if run_function(DATA, "dtw_matches", { raw_text, secret_word }) then
         -- Correct guess.
         local pts = compute_points()
         correct[sender_id] = pts
@@ -314,7 +318,7 @@ function submit_guess_HOST(sender_id, raw_text)
         if count_map(correct) >= count_map(participants) then
             end_round("all_guessed")
         end
-    elseif run_function(DATA, "dtw_is_close", { guess, answer }) then
+    elseif run_function(DATA, "dtw_is_close", { raw_text, secret_word }) then
         -- Close: tell only this guesser, never reveal to the room.
         run_network_function(UI, "notify_close_CLIENT", {}, sender_id)
     else
@@ -335,28 +339,18 @@ function reveal_hint_HOST(sender_id)
         -- First press: reveal word shape (underscores only, no letter exposed).
         -- This does not consume a letter-reveal slot; used=0 keeps the counter clean.
         hint_structure_shown = true
-        local structure_mask = run_function(DATA, "dtw_build_mask", { secret_word, {} })
-        run_network_function(name, "hint_ALL", { structure_mask, 0, max_reveal }, "")
+        run_network_function(name, "hint_ALL", { secret_word, 0, max_reveal, hint_seed }, "")
         return
     end
 
-    -- Second press and beyond: reveal one random unrevealed letter.
+    -- Second press and beyond: uncover one more letter. The host only counts
+    -- them; each peer picks WHICH letters from the same seed, against its own
+    -- translation of the word.
     if revealed_count >= max_reveal then return end
-    local eligible = {}
-    for i = 1, #secret_word do
-        local ch = string.sub(secret_word, i, i)
-        if string.match(ch, "%a") and not revealed[i] then
-            table.insert(eligible, i)
-        end
-    end
-    if #eligible == 0 then return end
-
-    local idx = eligible[math.random(1, #eligible)]
-    revealed[idx] = true
+    if revealed_count >= total_letters then return end
     revealed_count = revealed_count + 1
-
-    local mask = run_function(DATA, "dtw_build_mask", { secret_word, revealed })
-    run_network_function(name, "hint_ALL", { mask, revealed_count, max_reveal }, "")
+    run_network_function(name, "hint_ALL",
+        { secret_word, revealed_count, max_reveal, hint_seed }, "")
 end
 
 -- HOST: anyone may report the current drawer; over half skips them.
@@ -376,11 +370,11 @@ function report_drawer_HOST(sender_id)
     run_network_function(name, "report_update_ALL", { report_count, threshold }, "")
 
     if report_count >= threshold then
-        local skipped_name = players[drawer_id] and players[drawer_id].name or "Player"
+        local skipped_name = players[drawer_id] and players[drawer_id].name or "{player}"
         if players[drawer_id] then players[drawer_id].has_drawn = true end
         if phase == "choosing" then stop_timer("dtw_choose_timer") end
         if phase == "drawing" then stop_timer("dtw_draw_timer") end
-        run_network_function(name, "turn_skipped_ALL", { skipped_name, "was reported by most players" }, "")
+        run_network_function(name, "turn_skipped_ALL", { skipped_name, "{reported_by_most}" }, "")
         phase = "intermission"
         set_painter(IMAGE_NAME, 0)
         start_timer({
@@ -403,7 +397,7 @@ function pass_turn_HOST(sender_id)
     if phase == "choosing" then stop_timer("dtw_choose_timer") end
     if phase == "drawing" then stop_timer("dtw_draw_timer") end
 
-    run_network_function(name, "turn_skipped_ALL", { players[drawer_id] and players[drawer_id].name or "Player", "passed their turn" }, "")
+    run_network_function(name, "turn_skipped_ALL", { players[drawer_id] and players[drawer_id].name or "{player}", "{passed_turn}" }, "")
     phase = "intermission"
     set_painter(IMAGE_NAME, 0)
     start_timer({
@@ -428,13 +422,13 @@ function end_round(reason)
     -- Build the "who guessed it" summary.
     local lines = {}
     for _, steam_id in ipairs(correct_order) do
-        local nm = players[steam_id] and players[steam_id].name or "Player"
+        local nm = players[steam_id] and players[steam_id].name or "{player}"
         table.insert(lines, { name = nm, points = correct[steam_id] })
     end
 
     run_network_function(name, "round_end_ALL", {
         secret_word,
-        players[drawer_id] and players[drawer_id].name or "Player",
+        players[drawer_id] and players[drawer_id].name or "{player}",
         drawer_round_bonus,
         lines,
     }, "")
@@ -510,7 +504,9 @@ function timer_ALL(sender_id, time_left)
     run_function(UI, "on_timer", { time_left })
 end
 
-function hint_ALL(sender_id, mask, used, maxr)
+function hint_ALL(sender_id, word_key, used, maxr, seed)
+    -- Built locally so the blanks match the word in MY language, not the host's.
+    local mask = run_function(DATA, "dtw_local_mask", { word_key, used, seed })
     run_function(UI, "on_hint", { mask, used, maxr })
 end
 
@@ -617,12 +613,18 @@ function _on_user_initialized(steam_id, nickname)
     -- send the current mask (underscores + any revealed letters); if the drawer
     -- has not pressed hint yet, send an empty mask so the late joiner also sees
     -- nothing (consistent with what everyone else is seeing).
-    local sync_mask = ""
+    local sync_word = ""
+    local sync_used = 0
+    local sync_seed = 0
     local sync_total = 0
     local sync_time = 0
     if phase == "drawing" then
         if hint_structure_shown then
-            sync_mask = run_function(DATA, "dtw_build_mask", { secret_word, revealed })
+            -- Send the keyword, not a mask: the late joiner rebuilds it in its
+            -- own language exactly like everybody else did.
+            sync_word = secret_word
+            sync_used = revealed_count
+            sync_seed = hint_seed
         end
         sync_total = total_letters
         sync_time = draw_time_left
@@ -631,7 +633,9 @@ function _on_user_initialized(steam_id, nickname)
         phase,
         (drawer_id ~= "" and players[drawer_id]) and players[drawer_id].name or "",
         drawer_id,
-        sync_mask,
+        sync_word,
+        sync_used,
+        sync_seed,
         sync_total,
         sync_time,
     }, steam_id)
@@ -671,7 +675,7 @@ function _on_user_disconnected(steam_id, nickname)
         -- The drawer left: drop the round and move on.
         if phase == "choosing" then stop_timer("dtw_choose_timer") end
         if phase == "drawing" then stop_timer("dtw_draw_timer") end
-        run_network_function(name, "turn_skipped_ALL", { nickname, "left the game" }, "")
+        run_network_function(name, "turn_skipped_ALL", { nickname, "{left_the_game}" }, "")
         phase = "intermission"
         set_painter(IMAGE_NAME, 0)
         start_timer({
@@ -690,5 +694,6 @@ function _on_user_disconnected(steam_id, nickname)
 end
 
 function _on_user_connected(steam_id, nickname)
-    add_to_chat("[color=#88ccff]" .. nickname .. "[/color] joined the room.", false)
+    add_to_chat(string.format(translate("{x_joined_room}"),
+        "[color=#88ccff]" .. nickname .. "[/color]"), false)
 end

@@ -20,3 +20,10 @@ queue in with one click for the next mission.
 Card faces are generated from the engine's "cards" JSON (same format the
 online image editor exports) with English + Turkish localization built in;
 the art PNGs in general/images are flat placeholders - repaint freely.
+
+Two bots are already sitting at the table, so you can play on your own: the
+host gets Add bot / Remove bot buttons at the table edge and can seat up to
+four of them. They follow the rules exactly (a bot's move goes through the same
+host-side validation a player's does), weigh which card is worth playing, hide
+the bomb where it hurts, and even answer with a Signal Jammer - always with a
+second or two of thinking time so you can follow the table.

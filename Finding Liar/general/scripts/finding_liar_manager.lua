@@ -239,12 +239,12 @@ function liar_select_word_HOST(sender_id, selected_word_guess)
     if is_correct then
         -- Liar wins - send to all clients
         run_network_function(name, "end_game_ALL",
-            { "liar", "The liar correctly guessed the word!", liars_names, selected_word })
+            { "liar", "{the_liar_guessed_correctly}", liars_names, selected_word })
     else
         -- Liar loses - send to all clients
-        local reason = "The liar guessed [b]" ..
+        local reason = "{the_liar_guessed}" ..
             selected_word_guess ..
-            "[/b], but the correct word was [color=#ffff00][b]" .. selected_word .. "[/b][/color]!"
+            "{but_the_correct_word_was}" .. selected_word .. "[/b][/color]!"
         run_network_function(name, "end_game_ALL", { "innocent", reason, liars_names, selected_word })
     end
 end
@@ -422,14 +422,14 @@ function resolve_vote()
             if count_alive_liars() == 0 then
                 -- Send to all clients
                 run_network_function(name, "end_game_ALL",
-                    { "innocent", "All liars have been eliminated!", liars_names, selected_word })
+                    { "innocent", "{all_liars_eliminated}", liars_names, selected_word })
             else
                 run_network_function(name, "player_eliminated_ALL", { target_name, "liar", false })
             end
         else
             -- Innocent was eliminated - liars win
             run_network_function(name, "end_game_ALL",
-                { "liar", "An innocent player was eliminated!", liars_names, selected_word })
+                { "liar", "{an_innocent_was_eliminated}", liars_names, selected_word })
         end
     else
         -- Vote failed
@@ -473,7 +473,7 @@ function update_game_timer(args)
             end
         end
         local liars_names = table.concat(liars, ", ")
-        run_network_function(name, "end_game_ALL", { "liar", "Time is up!", liars_names, selected_word })
+        run_network_function(name, "end_game_ALL", { "liar", "{time_is_up}", liars_names, selected_word })
         return
     end
 
@@ -802,7 +802,7 @@ function _on_user_disconnected(steam_id, nickname)
             end
             local liars_names = table.concat(liars, ", ")
             run_network_function(name, "end_game_ALL",
-                { "none", "Not enough users remaining!", liars_names, selected_word })
+                { "none", "{not_enough_users_remaining}", liars_names, selected_word })
         end
     end
 
@@ -840,13 +840,13 @@ end
 
 --don't send run_network_function this steam_id yet in _on_user_connected
 function _on_user_connected(steam_id, nickname)
-    add_to_chat(nickname .. " connected.", false)
+    add_to_chat(nickname .. "{connected}", false)
 end
 
 -- Initialize connected users on script load
 function _on_user_initialized(steam_id, nickname)
     -- Ensure user is in connected_users list
-    add_to_chat(nickname .. " joined.", false)
+    add_to_chat(nickname .. "{joined}", false)
     if not table_contains(connected_users, steam_id) then
         table.insert(connected_users, steam_id)
     end
@@ -880,17 +880,17 @@ function update_status_display()
     local status_text = ""
 
     if game_active then
-        status_text = status_text .. "Game in progress..."
+        status_text = status_text .. "{game_in_progress}"
     elseif initial_countdown_active then
-        status_text = status_text .. "Starting in " .. initial_countdown .. "s"
+        status_text = status_text .. "{starting_in}" .. initial_countdown .. "s"
     elseif countdown_active then
-        status_text = status_text .. "Next game in " .. next_game_countdown .. "s"
+        status_text = status_text .. "{next_game_in}" .. next_game_countdown .. "s"
     else
-        status_text = status_text .. "Connected: " .. #connected_users .. "/3\n"
+        status_text = status_text .. "{connected_2}" .. #connected_users .. "/3\n"
         if #connected_users >= 3 then
-            status_text = status_text .. "Waiting to start..."
+            status_text = status_text .. "{waiting_to_start}"
         else
-            status_text = status_text .. "Waiting for more players..."
+            status_text = status_text .. "{waiting_for_more_players}"
         end
     end
 

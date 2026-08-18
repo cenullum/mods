@@ -41,7 +41,7 @@ function start_fishing_game_CLIENT(sender_id, fish_name, fish_weight, fish_healt
     local fish_weight_pounds = math.floor(fish_weight * 2.20462 * 100) / 100  -- Convert kg to pounds with 2 decimal places
     set_label({
         name = "_fish_name_label",
-        text = fish_name .. " " .. fish_weight .. " kg (" .. fish_weight_pounds .. " lbs)\nRarity: " .. fish_rarity .. "\nSource: " .. fish_water_source,
+        text = fish_name .. " " .. fish_weight .. "{kg_2}" .. fish_weight_pounds .. "{lbs_rarity_2}" .. fish_rarity .. "{source}" .. fish_water_source,
         visible=true
     })
     

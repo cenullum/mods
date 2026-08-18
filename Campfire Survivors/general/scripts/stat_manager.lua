@@ -4,25 +4,25 @@ singleton_name = "sm"
 
 -- Character attributes that can be upgraded (static data known by all clients)
 local character_upgrades = {
-{id = 1, name = "Movement Speed", description = "Increases your movement speed by 15%", value = 0.15},
-{id = 2, name = "Health/HP", description = "Increases your max health by 20%", value = 0.20},
-{id = 3, name = "Armor/Defense", description = "Reduces damage taken by 10%", value = 0.10},
-{id = 4, name = "Pickup Range", description = "Increases XP pickup range by 25%", value = 0.25},
-{id = 5, name = "Experience Gain", description = "Increases XP gain by 15%", value = 0.15},
-{id = 6, name = "Regeneration", description = "Restores 1% of max HP per second", value = 0.01},
-{id = 7, name = "Dodge Chance", description = "Adds 5% chance to avoid damage", value = 0.05}
+{id = 1, name = "{stat_movement_speed}", description ="{increases_your_movement_speed_by_15}", value = 0.15},
+{id = 2, name = "{stat_health_hp}", description ="{increases_your_max_health_by_20}", value = 0.20},
+{id = 3, name = "{stat_armor_defense}", description ="{reduces_damage_taken_by_10}", value = 0.10},
+{id = 4, name = "{stat_pickup_range}", description ="{increases_xp_pickup_range_by_25}", value = 0.25},
+{id = 5, name = "{stat_experience_gain}", description ="{increases_xp_gain_by_15}", value = 0.15},
+{id = 6, name = "{stat_regeneration}", description ="{restores_1_of_max_hp_per_second}", value = 0.01},
+{id = 7, name = "{stat_dodge_chance}", description ="{adds_5_chance_to_avoid_damage}", value = 0.05}
 }
 
 -- Weapon attributes that can be upgraded (static data known by all clients)
 local weapon_upgrades = {
-{id = 1, name = "Attack Speed", description = "Decreases time between shots by 10%", value = 0.10},
-{id = 2, name = "Projectile Size", description = "Increases bullet size by 20%", value = 0.20},
-{id = 3, name = "Projectile Count", description = "Adds an additional projectile", value = 1},
-{id = 4, name = "Projectile Speed", description = "Increases bullet speed by 15%", value = 0.15},
-{id = 5, name = "Projectile Penetration", description = "Bullets penetrate through one enemy", value = 1},
-{id = 6, name = "Lifesteal", description = "Recover 1% of damage as health", value = 0.01},
-{id = 7, name = "Knockback Power", description = "Increases enemy pushback by 20%", value = 0.20},
-{id = 8, name = "Damage", description = "Increases bullet damage by 15%", value = 0.15}
+{id = 1, name = "{stat_attack_speed}", description ="{decreases_time_between_shots_by_10}", value = 0.10},
+{id = 2, name = "{stat_projectile_size}", description ="{increases_bullet_size_by_20}", value = 0.20},
+{id = 3, name = "{stat_projectile_count}", description ="{adds_an_additional_projectile}", value = 1},
+{id = 4, name = "{stat_projectile_speed}", description ="{increases_bullet_speed_by_15}", value = 0.15},
+{id = 5, name = "{stat_projectile_penetration}", description ="{bullets_penetrate_through_one_enemy}", value = 1},
+{id = 6, name = "{stat_lifesteal}", description ="{recover_1_of_damage_as_health}", value = 0.01},
+{id = 7, name = "{stat_knockback_power}", description ="{increases_enemy_pushback_by_20}", value = 0.20},
+{id = 8, name = "{stat_damage}", description ="{increases_bullet_damage_by_15}", value = 0.15}
 }
 
 -- Create lookup tables for faster access by ID
@@ -323,16 +323,16 @@ function show_upgrade_panel()
     end
 
     -- Create level progression text
-    local level_text = "Upgrade right of level " .. (local_next_upgrade_level - 1) .. " → " .. local_next_upgrade_level
+    local level_text ="{upgrade_right_of_level}" .. (local_next_upgrade_level - 1) .. " → " .. local_next_upgrade_level
 
     -- Create remaining rights text
-    local rights_text = local_remaining_rights - 1 .. " remaining right"
+    local rights_text = local_remaining_rights - 1 .. "{remaining_right}"
 
     -- Full header text
-    local header_text = "Select one upgrade to enhance your character:\n"
+    local header_text ="{select_one_upgrade_to_enhance_your_chara}"
 
     header_text = header_text .. rights_text
-    header_text = header_text .. "\n\nFor each level up you get one upgrade right."
+    header_text = header_text .. "{for_each_level_up_you_get_one_upgrade_ri}"
     -- Create panel with close button disabled to prevent escape
     local panel_config = {
         name = "upgrade_panel",
@@ -355,10 +355,10 @@ function show_upgrade_panel()
         local button_color = Color(0, 0, 0, 0)
 
         if upgrade.type == "character" then
-            type_label = "Character: "
+            type_label ="{character}"
             button_color = Color(0.2, 0.5, 0.8)
         else
-            type_label = "Weapon: "
+            type_label ="{weapon}"
             button_color = Color(0.8, 0.2, 0.2)
         end
 
@@ -393,9 +393,9 @@ function show_upgrade_panel()
     end
 
     -- Add reroll button at the bottom - only if they have a reroll right
-    local reroll_text = "Reroll Options"
+    local reroll_text ="{reroll_options}"
     if not local_reroll_right then
-        reroll_text = "Reroll Used (Select an Upgrade)"
+        reroll_text ="{reroll_used_select_an_upgrade}"
     end
 
     local reroll_config = {
@@ -412,8 +412,8 @@ end
 function show_no_reroll_message()
     -- Create a temporary message panel
     local message_config = {
-    title = "No Rerolls Left",
-    text = "You've already used your reroll for this upgrade. Please select one of the available upgrades.",
+    title ="{no_rerolls_left}",
+    text = "{already_used_reroll}",
     resizable = false,
     countdown = 3
     }

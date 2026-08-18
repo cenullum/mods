@@ -7,38 +7,38 @@ set_camera_zoom(Vector2(2.0, 2.0))
 
 
 -- Input display names
-set_input_display_name("stick_1", "Move")
-set_input_display_name("stick_2", "Aim")
-set_input_display_name("key_6", "Inventory")
-set_input_display_name("key_7", "Hook")
-set_input_display_name("key_12", "Hook")
+set_input_display_name("stick_1","{move}")
+set_input_display_name("stick_2","{aim}")
+set_input_display_name("key_6","{inventory}")
+set_input_display_name("key_7","{hook}")
+set_input_display_name("key_12","{hook}")
 
 function refresh_status_label(state, charging, cooldown)
-    local header = "@key_6@ Inventory\n@stick_1@ Move\n\n"
+    local header = "{hook_hint_header}"
     local status = ""
 
     if charging then
         if state == "READY" then
-            status = "(RELEASE) to Fire Hook!"
+            status = "{release_to_fire_hook_2}"
         elseif state == "ATTACHED" then
-            status = "(RELEASE) to Launch!"
+            status = "{release_to_launch}"
         end
     else
         if state == "READY" then
             if cooldown and cooldown > 0 then
-                status = string.format("Cooldown: %.1fs", cooldown) .. "\n"
+                status = string.format(translate("{cooldown_1fs}"), cooldown) .. "\n"
             end
-            status = status .. "@key_7@/@key_12@ Hook"
+            status = status .. "{hint_hook}"
         elseif state == "ATTACHED" then
-            status = "@key_7@/@key_12@ Launch self"
+            status = "{hint_launch_self}"
         elseif state == "SEARCHING" then
-            status = "Searching for fish...\n@key_7@/@key_12@ Cancel"
+            status = "{hint_searching_for_fish}"
         elseif state == "WARNING" then
-            status = "🐟 FISH FOUND! 🐟\n@key_7@/@key_12@ CATCH!"
+            status = "{hint_fish_found}"
         elseif state == "FISHING" then
-            status = "FISHING!\n@key_7@/@key_12@ Pull!"
+            status = "{hint_fishing}"
         elseif state == "FIRING" then
-            status = "Hook Firing...\n@key_7@/@key_12@ Cancel"
+            status = "{hint_hook_firing}"
         end
     end
     set_value("", "_hook_status_label", "text", header .. status)

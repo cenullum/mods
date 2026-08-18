@@ -102,7 +102,7 @@ function start_wave()
             math.floor(level_data.color.g * 255),
             math.floor(level_data.color.b * 255)
         )
-        add_to_chat(string.format("[color=%s]Monsters have evolved to %s level![/color]", color_hex, level_data.name), true)
+        add_to_chat(string.format(translate("{monsters_have_evolved_to_s_level}"), color_hex, level_data.name), true)
     end
     
     -- Refill all players' health
@@ -152,12 +152,12 @@ end
 
 -- Update the _center_information label with current wave and time info
 function update_information_label()
-    local label_text = "Game is not started yet"
+    local label_text ="{game_is_not_started_yet}"
     
     if wave_state == "active" then
-        label_text = string.format("WAVE %d - %s remaining", current_wave, format_time(remaining_time))
+        label_text = string.format(translate("{wave_remaining}"), math.floor(current_wave), format_time(remaining_time))
     elseif wave_state == "cooldown" then
-        label_text = string.format("Next Wave in %s", format_time(remaining_time))
+        label_text = string.format(translate("{next_wave_in}"), format_time(remaining_time))
     end
     
     set_label({
@@ -176,7 +176,13 @@ function end_wave()
     -- Disable monster spawning - updated to use "-mg"
     set_value("", "-mg", "spawning_enabled", false)
     
-    destroy_entities_by_tag("monster")
+    -- Clear the horde, but leave the boss standing: its fight runs across wave
+    -- boundaries and it is never part of the wave's monster count.
+    for _, monster_name in ipairs(get_entity_names_by_tag("monster")) do
+        if not has_tag(monster_name, "boss") then
+            destroy("", monster_name)
+        end
+    end
     -- Destroy all bullets
     destroy_entities_by_tag("bullet")
     run_function("-mg","monster_count_reset")
@@ -223,7 +229,7 @@ function revive_all_dead_players()
         -- Get all user entities
         run_function_by_tag("dead","revive_player",{})
         
-        add_to_chat("[color=#117733]All users have been automatically revived as the wave ended![/color]", true)
+        add_to_chat("{all_users_have_been_automatically_revive}", true)
 
     end
 end
@@ -289,15 +295,14 @@ function announce_wave_start(wave_num, duration, params)
     -- Get level data for this wave
     local level_data = run_function("-mg", "get_level_data", {wave_num})
     
-    local msg = string.format(
-        "WAVE %d HAS BEGUN! (%s Level) Duration: %d seconds\nMonsters: %d-%d, Spawn rate: %.1f-%.1f sec",
-        wave_num,
+    local msg = string.format(translate("{wave_has_begun}"),
+        math.floor(wave_num),
         level_data.name,
         math.floor(duration),
-        params.min_monsters,
-        params.max_monsters,
-        params.min_interval,
-        params.max_interval
+        math.floor(params.min_monsters),
+        math.floor(params.max_monsters),
+        string.format("%.1f", params.min_interval),
+        string.format("%.1f", params.max_interval)
     )
     
     -- Convert color to hex for chat
@@ -315,7 +320,7 @@ function announce_wave_end(wave_num)
     -- Get level data for this wave
     local level_data = run_function("-mg", "get_level_data", {wave_num})
     
-    local msg = string.format("WAVE %d (%s Level) COMPLETE! Get ready for the next wave...", wave_num, level_data.name)
+    local msg = string.format(translate("{wave_d_s_level_complete_get_ready_for_th}"), wave_num, level_data.name)
     
     -- Convert color to hex for chat
     local color = level_data.color
@@ -334,7 +339,7 @@ function announce_wave_end(wave_num)
 end
 
 function announce_wave_cooldown(cooldown)
-    local msg = string.format("Next wave begins in %d seconds", math.floor(cooldown))
+    local msg = string.format(translate("{next_wave_begins_in}"), math.floor(cooldown))
     add_to_chat("[color=#ddcc77]"..msg.."[/color]",true)
 end
 
@@ -389,10 +394,14 @@ function game_over()
     stop_timer("cooldown_timer_update")
     stop_timer("monster_spawn")-- starts in monster_generation 
 
-    -- Destroy all entities
+    -- Destroy all entities (the boss is tagged "monster" too, so it goes here)
     destroy_entities_by_tag("monster")
     destroy_entities_by_tag("bullet")
     destroy_entities_by_tag("xp")
+
+    -- Clear the boss UI and shrink the arena back to its normal size, which
+    -- also teleports everyone to the middle so nobody is left outside it.
+    run_function("-bm", "reset_boss_state")
 
     -- Reset monster generation
     run_function("-mg", "monster_count_reset")
@@ -411,7 +420,7 @@ function game_over()
 
     -- Update UI
     update_information_label()
-    add_to_chat("[color=#ddcc77]Game Over! All players have been revived and the game has been reset.[/color]", true)
+    add_to_chat("{game_over_all_players_have_been_revived}", true)
 
     -- Sync game over state to all clients using existing sync function
     run_network_function(name, "sync_wave_state_CLIENT", {

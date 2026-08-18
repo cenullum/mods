@@ -200,8 +200,8 @@ function create_loading_panel()
     end
     
     local panel_config = {
-        title = "Fish Inventory",
-        text = "Loading...",
+        title ="{fish_inventory}",
+        text ="{loading}",
         resizable = true,
         is_scrollable = true,
         minimum_size = Vector2(420, 540),
@@ -225,8 +225,8 @@ function send_inventory_data_CLIENT(sender_id, fish_list)
     close_panel(inventory_panel_name)
 
     local panel_config = {
-        title = "Fish Inventory (" .. #client_fish_list .. "/" .. MAX_INVENTORY_SIZE .. ")",
-        text = "Click on a fish to see details",
+        title ="{fish_inventory_2}" .. #client_fish_list .. "/" .. MAX_INVENTORY_SIZE .. ")",
+        text ="{click_on_a_fish_to_see_details}",
         resizable = true,
         is_scrollable = true,
         minimum_size = Vector2(420, 540),
@@ -287,10 +287,10 @@ function show_fish_details(args)
         end
     end
 
-    local detail_text = "[color=" .. color_hex .. "]" .. fish.name .. "[/color]\nWeight: " .. weight_kg .. " kg (" .. fish_weight_pounds .. " lbs)\nRarity: " .. fish.rarity .. "\nSource: " .. fish.water_source .. "\nCaught: " .. format_timestamp(fish.catch_time) .. "\nLocation: (" .. math.floor(pos_x) .. ", " .. math.floor(pos_y) .. ")"
+    local detail_text ="[color=" .. color_hex .. "]" .. fish.name .. "{weight}" .. weight_kg .. "{kg_2}" .. fish_weight_pounds .. "{lbs_rarity_2}" .. fish.rarity .. "{source}" .. fish.water_source .. "{caught}" .. format_timestamp(fish.catch_time) .. "{location}" .. math.floor(pos_x) .. ", " .. math.floor(pos_y) .. ")"
 	
 	local panel_config = {
-		title = "Fish Details",
+		title ="{fish_details}",
 		text = detail_text,
 		resizable = false
 	}
@@ -301,14 +301,14 @@ function show_fish_details(args)
 	
 	-- Remove button
 	add_button_to_panel(detail_panel_name, {
-		text = "Remove",
+		text ="{remove}",
 		entity_name = "-inventory_manager",
 		function_name = "request_remove_fish",
 		extra_args = {index = index}
 	})
 	-- Replay catch button
 	add_button_to_panel(detail_panel_name, {
-		text = "Replay Catch",
+		text ="{replay_catch}",
 		entity_name = "-inventory_manager",
 		function_name = "replay_catch_animation",
 		extra_args = {index = index}
@@ -318,8 +318,8 @@ end
 -- CLIENT function to show inventory full message
 function show_inventory_full_CLIENT(sender_id)
     create_panel({
-        title = "Inventory Full",
-        text = "Your inventory is full, the fish could not be added to your inventory!",
+        title ="{inventory_full}",
+        text ="{your_inventory_is_full_the_fish_could_no}",
         resizable = false,
         countdown = 3
     })
@@ -328,8 +328,8 @@ end
 -- CLIENT function to show inventory warning
 function show_inventory_warning_CLIENT(sender_id, current_count, max_count)
     create_panel({
-        title = "Inventory Warning",
-        text = string.format("⚠️ Inventory almost full!\nRemove some fish or you will not be able to be added to inventory anymore(%d/%d)", current_count, max_count),
+        title ="{inventory_warning}",
+        text = string.format(translate("{inventory_almost_full}"), math.floor(current_count), math.floor(max_count)),
         resizable = false,
         countdown = 10,
         no_multiple_tag = "inventory_warning"
@@ -343,7 +343,7 @@ are_you_sure_panel_name=nil
 function create_remove_fish_confirmation(message, fish_index)
     local settings = {
         text = message,
-        title = "Are you sure?",
+        title ="{are_you_sure}",
         resizable = false,
         no_multiple_tag = "remove_fish_confirmation"
     }
@@ -356,7 +356,7 @@ function create_remove_fish_confirmation(message, fish_index)
 
     -- Add Yes button
     add_button_to_panel(are_you_sure_panel_name, {
-        text = "Yes",
+        text ="{yes}",
         is_vertical = false,
         color = "#FF0000",
         entity_name = "-inventory_manager",
@@ -365,7 +365,7 @@ function create_remove_fish_confirmation(message, fish_index)
 
     -- Add Cancel button
     add_button_to_panel(are_you_sure_panel_name, {
-        text = "Cancel",
+        text ="{cancel}",
         is_vertical = false,
         color = "#808080",
         entity_name = "-inventory_manager",
@@ -412,7 +412,7 @@ function request_remove_fish(args)
     if not client_fish_list[idx] then return end
     
     local fish = client_fish_list[idx]
-    local message = "Do you want to remove this fish from your inventory?\n\n" .. fish.name .. " (" .. fish.weight .. " kg)"
+    local message = "{do_you_want_to_remove_this_fish_from_you}" .. fish.name .. " (" .. fish.weight .. " kg)"
     
     create_remove_fish_confirmation(message, idx)
 end
@@ -427,8 +427,8 @@ function replay_catch_animation(args)
     if remaining > 0 then
         -- Show cooldown panel
         create_panel({
-            title = "Cooldown",
-            text = "Try again in " .. math.ceil(remaining) .. " seconds",
+            title ="{cooldown}",
+            text ="{try_again_in}" .. math.ceil(remaining) .. "{seconds}",
             resizable = false,
             countdown = math.ceil(remaining),
             no_multiple_tag = "replay_catch_cooldown"
@@ -458,7 +458,7 @@ function replay_catch_animation_HOST(sender_id, index)
 
     local weight_kg = to_number(fish.weight, 0)
     local fish_weight_pounds = math.floor(weight_kg * 2.20462 * 100) / 100
-    local fish_text = fish.name .. "\n" .. weight_kg .. " kg / " .. fish_weight_pounds .. " lbs\nRarity: " .. fish.rarity
+    local fish_text = fish.name .. "\n" .. weight_kg .. "{kg}" .. fish_weight_pounds .. "{lbs_rarity}" .. fish.rarity
 
     -- Show bubble effect above the owner player; spawning on host replicates to all
     run_function("-fishing_game", "show_world_space_result", {

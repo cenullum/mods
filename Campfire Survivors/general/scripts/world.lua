@@ -5,8 +5,8 @@ set_gravity_direction(Vector2(0,0))
 set_camera_zoom(Vector2(2.5,2.5))
 set_background_color(Color(0.2,0.1,0.1,1.0))
 
-set_input_display_name("stick_1","Movement")
-set_input_display_name("key_6","Interact")
+set_input_display_name("stick_1","{movement}")
+set_input_display_name("key_6","{interact}")
 
 -- Background music system
 local music_files = {

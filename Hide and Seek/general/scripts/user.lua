@@ -264,7 +264,7 @@ function enter_paint_mode()
     -- Panel to the left so the zoomed body stays centred/clear. Brush 1-32, and
     -- the eyedropper also samples world colours to blend in.
     paint_panel = create_painting_panel({
-        name = cur_body, parent_name = name, title = "Your Disguise",
+        name = cur_body, parent_name = name, title ="{your_disguise}",
         brush_min = 1, brush_max = 32, world_pick = true,
         offset_ratio = Vector2(0.3, 1.0),
     })

@@ -1,10 +1,10 @@
 singleton_name = "cmd"
 
 -- Register commands to the centralized system
-add_command("-cmd", "handle_restart", "restart", "Restarts the game (Host only)", true)
-add_command("-cmd", "handle_kill", "kill", "Kills your character", true)
-add_command("-cmd", "show_monsters_info", "monsters", "Shows monster stats and mathematical formulas", true)
-add_command("-cmd", "skip_music", "next", "Skips to the next music track", true)
+add_command("-cmd", "handle_restart", "restart", "{restarts_the_game_host_only}", true)
+add_command("-cmd", "handle_kill", "kill", "{kills_your_character}", true)
+add_command("-cmd", "show_monsters_info", "monsters", "{shows_monster_stats_and_mathematical_for}", true)
+add_command("-cmd", "skip_music", "next", "{skips_to_the_next_music_track}", true)
 
 
 
@@ -13,8 +13,8 @@ function handle_restart(sender_id)
     if not IS_HOST then
         -- If not host, show error message
         local message_config = {
-            title = "Error",
-            text = "Only the host can restart the game!",
+            title ="{error}",
+            text ="{only_the_host_can_restart_the_game}",
             resizable = false,
         }
         create_panel(message_config)
@@ -30,7 +30,7 @@ function handle_restart(sender_id)
     run_function("-wm", "reset_wave_system")
 
     -- Announce restart
-    add_to_chat("[color=#117733]Game has been restarted by the host![/color]", true)
+    add_to_chat("{game_has_been_restarted_by_the_host}", true)
 end
 
 -- Function to handle kill command
@@ -53,50 +53,50 @@ end
 
 -- Function to show monster stats and formulas
 function show_monsters_info(sender_id)
-    local monsters_text = "MONSTER STATS & FORMULAS:\n\n"
+    local monsters_text ="{monster_stats_formulas}"
 
 
     -- Level names
-    monsters_text = monsters_text .. "LEVEL NAMES:\n"
-    monsters_text = monsters_text .. "1: Normal, 2: Enhanced, 3: Superior\n"
-    monsters_text = monsters_text .. "4: Elite, 5: Legendary, 6: Mythic, 7+: Unstoppable\n\n"
+    monsters_text = monsters_text .. "{level_names}"
+    monsters_text = monsters_text .. "{level_names_1_3}"
+    monsters_text = monsters_text .. "{level_names_4_7}"
 
     -- Wave level system
-    monsters_text = monsters_text .. "WAVE LEVEL SYSTEM:\n"
-    monsters_text = monsters_text .. "• Level increases every 7 waves by 1\n"
-    monsters_text = monsters_text .. "• Level Index = (wave - 1) / 7 + 1\n\n"
+    monsters_text = monsters_text .. "{wave_level_system}"
+    monsters_text = monsters_text .. "{level_increases_every_7_waves_by_1}"
+    monsters_text = monsters_text .. "{level_index_wave_1_7_1}"
 
     -- Base monster stats
-    monsters_text = monsters_text .. "BASE MONSTER STATS:\n"
-    monsters_text = monsters_text .. "• Ghost: 30 HP, 1.5 DMG, 50 Speed, 32 Size\n"
-    monsters_text = monsters_text .. "• Wolf: 45 HP, 2.5 DMG, 70 Speed, 36 Size\n"
-    monsters_text = monsters_text .. "• Bandit: 60 HP, 0.5 DMG, 0 Speed, 40 Size\n"
-    monsters_text = monsters_text .. "• Zombie: 75 HP, 3.0 DMG, 30 Speed, 44 Size\n"
-    monsters_text = monsters_text .. "• Cactus: 90 HP, 4.5 DMG, 25 Speed, 48 Size\n"
-    monsters_text = monsters_text .. "• Snake: 35 HP, 2.0 DMG, 60 Speed, 34 Size\n\n"
+    monsters_text = monsters_text .. "{base_monster_stats}"
+    monsters_text = monsters_text .. "{ghost_30_hp_1_5_dmg_50_speed_32_size}"
+    monsters_text = monsters_text .. "{wolf_45_hp_2_5_dmg_70_speed_36_size}"
+    monsters_text = monsters_text .. "{bandit_60_hp_0_5_dmg_0_speed_40_size}"
+    monsters_text = monsters_text .. "{zombie_75_hp_3_0_dmg_30_speed_44_size}"
+    monsters_text = monsters_text .. "{cactus_90_hp_4_5_dmg_25_speed_48_size}"
+    monsters_text = monsters_text .. "{snake_35_hp_2_0_dmg_60_speed_34_size}"
 
     -- Enhanced stats formula
-    monsters_text = monsters_text .. "STATS FORMULA OF MONSTERS:\n"
-    monsters_text = monsters_text .. "• Health = Base Health × Level Index\n"
-    monsters_text = monsters_text .. "• Damage = Base Damage × Level Index\n\n"
+    monsters_text = monsters_text .. "{stats_formula_of_monsters}"
+    monsters_text = monsters_text .. "{health_base_health_level_index}"
+    monsters_text = monsters_text .. "{damage_base_damage_level_index}"
 
     -- Bandit bullet formula
-    monsters_text = monsters_text .. "BANDIT BULLET DAMAGE:\n"
-    monsters_text = monsters_text .. "• Bullet Damage = 10 × Level Index\n"
+    monsters_text = monsters_text .. "{bandit_bullet_damage}"
+    monsters_text = monsters_text .. "{bullet_damage_10_level_index}"
 
     -- Examples
     monsters_text = monsters_text .. "EXAMPLES:\n"
-    monsters_text = monsters_text .. "Wave 2 (Level 1 Normal): Bandit has 60 HP, 0.5 DMG\n"
-    monsters_text = monsters_text .. "• Bullet Damage = 10 × 1 = 10\n\n"
-    monsters_text = monsters_text .. "Wave 8 (Level 2 Enhanced): Bandit has 120 HP, 1.0 DMG\n"
-    monsters_text = monsters_text .. "• Bullet Damage = 10 × 2 = 20\n\n"
-    monsters_text = monsters_text .. "Wave 15 (Level 3 Superior): Bandit has 180 HP, 1.5 DMG\n"
-    monsters_text = monsters_text .. "• Bullet Damage = 10 × 3 = 30\n\n"
+    monsters_text = monsters_text .. "{wave_2_level_1_normal_bandit_has_60_hp_0}"
+    monsters_text = monsters_text .. "{bullet_damage_10_1_10}"
+    monsters_text = monsters_text .. "{wave_8_level_2_enhanced_bandit_has_120_h}"
+    monsters_text = monsters_text .. "{bullet_damage_10_2_20}"
+    monsters_text = monsters_text .. "{wave_15_level_3_superior_bandit_has_180}"
+    monsters_text = monsters_text .. "{bullet_damage_10_3_30}"
 
 
     -- Create a message panel
     local message_config = {
-        title = "Monster Information",
+        title ="{monster_information}",
         text = monsters_text,
         resizable = true,
     }

@@ -4,16 +4,16 @@ set_camera_zoom(Vector2(2, 2))
 
 
 
-set_input_display_name("stick_1", "Movement")
-set_input_display_name("key_6", "Hit Ball")
-set_input_display_name("key_10", "Sprint")
-set_input_display_name("key_11", "Score Table")
+set_input_display_name("stick_1","{movement}")
+set_input_display_name("key_6","{hit_ball}")
+set_input_display_name("key_10","{sprint}")
+set_input_display_name("key_11","{score_table}")
 
-set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_6@ Hit Ball\n@key_11@ Scoreboard\n@stick_1@ Movement") -- right bottom  inputs label
+set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_6@ {hit_ball}\n@key_11@ {scoreboard}\n@stick_1@ {movement}") -- right bottom  inputs label
 
 function _on_gamepad_connection_changed(has_gamepad)
     -- Update inputs
-    set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_6@ Hit Ball\n@key_11@ Scoreboard\n@stick_1@ Movement")
+    set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_6@ {hit_ball}\n@key_11@ {scoreboard}\n@stick_1@ {movement}")
 end
 
 set_audio({

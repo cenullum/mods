@@ -11,8 +11,10 @@ network_mode = 0
 --
 -- The UI is Terraria-style: every recipe is always listed and its colour says
 -- how close you are - gray (own nothing), orange (own some), green (craftable).
--- Clicking any entry shows its description; clicking an equippable item equips
--- it (shown in everyone's world on top of your body).
+-- Clicking any entry shows its description; clicking a tool/food/seed/block
+-- equips it into your hand, shown on the aim dot. A worn accessory is a
+-- separate slot with its own Equip/Unequip button (see items.lua's
+-- "wearable" field) and is drawn at a fixed spot on the body instead.
 -- =============================================================================
 
 local COLOR_HEADER = Color(38 / 255, 43 / 255, 68 / 255, 1)     -- Shade
@@ -22,6 +24,8 @@ local COLOR_NONE = Color(90 / 255, 105 / 255, 136 / 255, 0.6)   -- Iron, dimmed
 local COLOR_SOME = Color(247 / 255, 118 / 255, 34 / 255, 1)     -- Amber
 local COLOR_READY = Color(99 / 255, 199 / 255, 77 / 255, 1)     -- Glade
 local COLOR_DROP = Color(110 / 255, 32 / 255, 32 / 255, 1)      -- Muted red
+local COLOR_EQUIP = Color(58 / 255, 111 / 255, 66 / 255, 1)     -- Moss (put it on)
+local COLOR_UNEQUIP = Color(90 / 255, 105 / 255, 136 / 255, 1)  -- Iron (take it off)
 -- Inventory and crafting are two separate side-by-side panels (left / right)
 -- that always open and close together on E - see toggle_panel().
 local INV_PANEL = "_mbl_inventory"
@@ -29,17 +33,31 @@ local CRAFT_LIST_PANEL = "_mbl_crafting"
 local CRAFT_PANEL = "_mbl_craft_qty" -- the "how many?" popup opened from a recipe row
 local INV_TABLE = "mbl_inv_table"
 local CRAFT_TABLE = "mbl_craft_table"
-local ITEM_CELL_SIZE = Vector2(340, 40) -- item cell (grid column 0)
-local DROP_CELL_SIZE = Vector2(80, 40)  -- drop cell right next to it (column 1)
-local CRAFT_CELL_SIZE = Vector2(420, 40)
+-- One row is three cells wide, and the three widths add up to the same 420 the
+-- old two-cell row did, so the panel keeps its size.
+local ITEM_CELL_SIZE = Vector2(260, 40)  -- item cell (grid column 0)
+local EQUIP_CELL_SIZE = Vector2(90, 40)  -- Equip / Unequip (column 1)
+local DROP_CELL_SIZE = Vector2(70, 40)   -- Drop (column 2)
+-- Craft rows are two separate buttons (icon-only + text-only) so a long
+-- recipe name can never steal space from the icon and shrink it.
+local CRAFT_ICON_CELL_SIZE = Vector2(56, 56)
+local CRAFT_TEXT_CELL_SIZE = Vector2(364, 56) -- 2 text lines tall
 
 -- Host state.
 inv = {}   -- steam_id -> { item_id -> count }
 held = {}  -- steam_id -> item_id ("" = fists)
+worn = {}  -- steam_id -> item_id ("" = nothing worn); wearable accessories only,
+           -- a slot of its own so equipping a hat never bumps a tool out of hand
+-- Per-player progression that is NOT an item and must outlive a disconnect:
+-- max HP bought with Heart Containers, the cosmetic pet, the current mount.
+-- Kept here (rather than on the user entity) because the user entity is
+-- destroyed on leave, while this table is saved with the world by -gm.
+progress = {} -- steam_id -> { max_hp = n, pet = "", mount = "" }
 
 -- Local (per-peer) state.
 my_inv = {}
 my_held = ""
+my_worn = ""
 
 -- =============================================================================
 -- Host-side inventory primitives.
@@ -70,6 +88,9 @@ function host_consume(args)
         if held[steam_id] == item_id then
             set_held(steam_id, "")
         end
+        if worn[steam_id] == item_id then
+            set_worn(steam_id, "")
+        end
     end
     host_sync(steam_id)
     return true
@@ -84,7 +105,7 @@ end
 function inv_sync_ALL(sender_id, target_id, bag)
     if LOCAL_STEAM_ID ~= target_id then return end
     my_inv = bag or {}
-    set_label({ name = "_mbl_arrows", text = "Arrows: " .. math.floor(my_inv.arrow or 0) })
+    set_label({ name = "_mbl_arrows", text ="{arrows}" .. math.floor(my_inv.arrow or 0) })
     -- Owned counts affect both panels (backpack contents and recipe colors).
     if is_panel_exists(INV_PANEL) then rebuild_inventory_panel() end
     if is_panel_exists(CRAFT_LIST_PANEL) then rebuild_crafting_panel() end
@@ -113,7 +134,7 @@ function host_pickup(args)
             end
         end
         run_function("-gm", "announce", { get_value("", picker, "nickname")
-            .. " opened a chest: " .. table.concat(got, ", ") })
+            .. "{opened_a_chest}" .. table.concat(got, ", ") })
     else
         host_add(picker, item_id, count)
     end
@@ -140,6 +161,7 @@ function host_scatter(steam_id)
     end
     inv[steam_id] = {}
     set_held(steam_id, "")
+    set_worn(steam_id, "")
     host_sync(steam_id)
 end
 
@@ -159,6 +181,7 @@ function drop_HOST(sender_id, item_id, count)
     if bag[item_id] <= 0 then
         bag[item_id] = nil
         if held[sender_id] == item_id then set_held(sender_id, "") end
+        if worn[sender_id] == item_id then set_worn(sender_id, "") end
     end
     -- Nudge it off the player's own body so it does not get instantly
     -- re-picked-up by the same collision that dropped it.
@@ -202,6 +225,54 @@ function get_held(steam_id)
 end
 
 -- =============================================================================
+-- Worn accessory (its own slot: a hat/boots never bumps a tool out of hand).
+-- Host validates, every peer renders it fixed on the body (see user.lua's
+-- set_worn_visual) and the wearer's own copy also gates local passive effects.
+-- =============================================================================
+
+function set_worn(steam_id, item_id)
+    worn[steam_id] = item_id
+    run_network_function(name, "worn_ALL", { steam_id, item_id })
+end
+
+function wear_HOST(sender_id, item_id)
+    if item_id ~= "" then
+        if host_count(sender_id, item_id) <= 0 then return end
+        if not run_function("-items", "is_wearable", { item_id }) then return end
+    end
+    set_worn(sender_id, item_id)
+end
+
+function worn_ALL(sender_id, steam_id, item_id)
+    if steam_id == LOCAL_STEAM_ID then
+        my_worn = item_id
+        if is_panel_exists(INV_PANEL) then rebuild_inventory_panel() end
+    end
+    if get_value("", steam_id, "name") ~= nil then -- entity may not exist yet on a joining peer
+        run_function(steam_id, "set_worn_visual", { item_id })
+    end
+end
+
+function get_worn(steam_id)
+    return worn[steam_id] or ""
+end
+
+-- =============================================================================
+-- Per-player progression (host only). Read/written by user.lua; saved by -gm.
+-- =============================================================================
+
+function host_get_progress(steam_id, key)
+    local entry = progress[steam_id]
+    return entry and entry[key] or nil
+end
+
+function host_set_progress(args)
+    if not IS_HOST then return end
+    if not progress[args.steam_id] then progress[args.steam_id] = {} end
+    progress[args.steam_id][args.key] = args.value
+end
+
+-- =============================================================================
 -- Crafting.
 -- =============================================================================
 
@@ -238,7 +309,7 @@ end
 -- =============================================================================
 
 function get_save_data()
-    return { inv = inv, held = held }
+    return { inv = inv, held = held, worn = worn, progress = progress }
 end
 
 function load_save_data(data)
@@ -251,13 +322,27 @@ function load_save_data(data)
         end
     end
     held = data.held or {}
+    worn = data.worn or {}
+    -- Same float round-trip: max_hp must come back as a whole number or the HP
+    -- bar and every "max_hp - hp" comparison drift by fractions.
+    progress = {}
+    for steam_id, entry in pairs(data.progress or {}) do
+        progress[steam_id] = {
+            max_hp = entry.max_hp and math.floor(entry.max_hp) or nil,
+            pet = entry.pet,
+            mount = entry.mount,
+        }
+    end
 end
 
 function host_sync_all_to(steam_id)
     host_sync(steam_id)
-    -- Late joiner also needs to see what everyone currently holds.
+    -- Late joiner also needs to see what everyone currently holds and wears.
     for other_id, item_id in pairs(held) do
         run_network_function(name, "held_ALL", { other_id, item_id }, steam_id)
+    end
+    for other_id, item_id in pairs(worn) do
+        run_network_function(name, "worn_ALL", { other_id, item_id }, steam_id)
     end
 end
 
@@ -315,49 +400,78 @@ local function recipe_color(recipe)
     return COLOR_NONE
 end
 
--- Inventory rows are a 2-column grid: item cell (equip) + a drop cell right
--- next to it. Rows with nothing to drop (Fists, the empty-bag message) still
--- need BOTH cells filled in - set_table lays cells out by insertion order, so
--- a row missing its column-1 cell would shift every following row sideways.
-local function inv_row(table_data, row, color, icon, text, item_id, droppable)
+-- Inventory rows are a 3-column grid: the item cell, an Equip/Unequip button
+-- and a Drop button. Clicking the item cell equips a tool/food/seed/block into
+-- your HAND same as always (and always shows the description) - that slot has
+-- no dedicated button, since R already cycles it and Fists is one click away.
+-- The labelled Equip/Unequip button is reserved for WORN accessories: a
+-- separate slot (see items.lua's "wearable" field) with no Fists-equivalent
+-- to fall back to, so it needs its own explicit way to take it back off.
+--
+-- Rows with nothing to equip or drop (Fists, the empty-bag message) still need
+-- ALL THREE cells filled in: set_table walks the grid and silently skips any
+-- cell you did not provide, and a GridContainer packs its children in sequence,
+-- so one missing cell would shift every following row sideways.
+--
+-- equip_state: "equip" | "unequip" | "none".
+local function inv_row(table_data, row, color, icon, text, item_id, equip_state, droppable)
     table_data[vector2_to_string(Vector2(0, row))] = { text = text, color = color,
         icon_path = icon or "", size = ITEM_CELL_SIZE, role = "equip", item_id = item_id or "" }
-    if droppable then
-        table_data[vector2_to_string(Vector2(1, row))] = { text = "Drop", color = COLOR_DROP,
-            size = DROP_CELL_SIZE, role = "drop", item_id = item_id }
+    if equip_state == "equip" then
+        table_data[vector2_to_string(Vector2(1, row))] = { text ="{equip}", color = COLOR_EQUIP,
+            size = EQUIP_CELL_SIZE, role = "equip_btn", item_id = item_id or "" }
+    elseif equip_state == "unequip" then
+        table_data[vector2_to_string(Vector2(1, row))] = { text ="{unequip}", color = COLOR_UNEQUIP,
+            size = EQUIP_CELL_SIZE, role = "unequip_btn", item_id = item_id or "" }
     else
         table_data[vector2_to_string(Vector2(1, row))] = { text = "", color = COLOR_HEADER,
+            size = EQUIP_CELL_SIZE, role = "" }
+    end
+    if droppable then
+        table_data[vector2_to_string(Vector2(2, row))] = { text ="{drop}", color = COLOR_DROP,
+            size = DROP_CELL_SIZE, role = "drop", item_id = item_id }
+    else
+        table_data[vector2_to_string(Vector2(2, row))] = { text = "", color = COLOR_HEADER,
             size = DROP_CELL_SIZE, role = "" }
     end
 end
 
 -- offset_ratio: 0,0 = top-left of screen, 1,1 = centre, 2,2 = bottom-right.
--- 0.5/1.5 centres each panel within its own half of the screen.
+-- Shifted left of the 0.5/1.5 half-screen split so the crafting panel (the
+-- right one) does not clip off the right edge on narrower windows.
 -- The panel itself is only ever created once; every later call (item pickup,
 -- drop, craft, equip...) just refreshes the table in place via set_table, so
 -- the player's window position/size and scroll offset are never reset.
 function rebuild_inventory_panel()
     if not is_panel_exists(INV_PANEL) then
-        create_panel({ name = INV_PANEL, title = "Inventory",
-            text = "Click an item to equip it (or read what it does).",
+        create_panel({ name = INV_PANEL, title ="{inventory}",
+            text ="{click_a_tool_food_seed_block_to_hold_it}",
             minimum_size = Vector2(430, 560), is_scrollable = true, resizable = true,
-            close = true, set_time = false, offset_ratio = Vector2(0.5, 1),
+            close = true, set_time = false, offset_ratio = Vector2(0.3, 1),
             color = Color(24 / 255, 20 / 255, 37 / 255, 0.95) })
     end
 
     local table_data = {}
+    -- Fists are the "nothing equipped" state, so their button IS the unequip:
+    -- it only appears while you are actually holding something else.
     inv_row(table_data, 0, my_held == "" and COLOR_HELD or COLOR_ITEM, "",
-        "Fists (always ready)", "", false)
+        "{fists_always_ready}", "", my_held == "" and "none" or "equip", false)
     local ids = sorted_items()
     if #ids == 0 then
         inv_row(table_data, 1, COLOR_ITEM, "",
-            "(empty - chop trees, mine rock, grab what drops)", "", false)
+            "{inventory_empty_hint}", "", "none", false)
     else
         for row, item_id in ipairs(ids) do
             local item = run_function("-items", "get_item", { item_id })
             local text = item.name .. "  x" .. math.floor(my_inv[item_id])
-            local color = (my_held == item_id) and COLOR_HELD or COLOR_ITEM
-            inv_row(table_data, row, color, item.image, text, item_id, true)
+            local color = (my_held == item_id or my_worn == item_id) and COLOR_HELD or COLOR_ITEM
+            -- Only worn accessories get the labelled button - a tool/food/seed
+            -- is still equipped by clicking the row itself, same as always.
+            local equip_state = "none"
+            if run_function("-items", "is_wearable", { item_id }) then
+                equip_state = (my_worn == item_id) and "unequip" or "equip"
+            end
+            inv_row(table_data, row, color, item.image, text, item_id, equip_state, true)
         end
     end
     set_table(INV_PANEL, { name = INV_TABLE, table_data = table_data,
@@ -381,10 +495,10 @@ end
 
 function rebuild_crafting_panel()
     if not is_panel_exists(CRAFT_LIST_PANEL) then
-        create_panel({ name = CRAFT_LIST_PANEL, title = "Crafting",
-            text = "Click a recipe to craft it.",
+        create_panel({ name = CRAFT_LIST_PANEL, title ="{crafting}",
+            text ="{click_a_recipe_to_craft_it}",
             minimum_size = Vector2(430, 560), is_scrollable = true, resizable = true,
-            close = true, set_time = false, offset_ratio = Vector2(1.5, 1),
+            close = true, set_time = false, offset_ratio = Vector2(1.3, 1),
             color = Color(24 / 255, 20 / 255, 37 / 255, 0.95) })
     end
 
@@ -403,10 +517,15 @@ function rebuild_crafting_panel()
         local item = run_function("-items", "get_item", { recipe.id })
         local text = item.name
         if recipe.count > 1 then text = text .. " x" .. recipe.count end
-        text = text .. "   [" .. needs_text(recipe) .. "]"
-        table_data[vector2_to_string(Vector2(0, row - 1))] = { text = text,
-            color = recipe_color(recipe), icon_path = item.image,
-            size = CRAFT_CELL_SIZE, index = index }
+        text = text .. "\n[" .. needs_text(recipe) .. "]"
+        local color = recipe_color(recipe)
+        -- Icon and text are two separate buttons on the same row (both call
+        -- on_craft_cell_click with the same index) so the icon always renders
+        -- at full size instead of getting squeezed by a long recipe name.
+        table_data[vector2_to_string(Vector2(0, row - 1))] = { text = "",
+            color = color, icon_path = item.image, size = CRAFT_ICON_CELL_SIZE, index = index }
+        table_data[vector2_to_string(Vector2(1, row - 1))] = { text = text,
+            color = color, size = CRAFT_TEXT_CELL_SIZE, index = index }
     end
     set_table(CRAFT_LIST_PANEL, { name = CRAFT_TABLE, table_data = table_data,
         entity_name = name, function_name = "on_craft_cell_click" })
@@ -417,16 +536,27 @@ function on_inv_cell_click(data)
     local item_id = cell.item_id
     if cell.role == "equip" then
         if item_id == "" then
-            update_panel_settings(INV_PANEL, { text = "Fists: " ..
+            update_panel_settings(INV_PANEL, { text ="{fists}" ..
                 run_function("-items", "get_fists").desc })
             run_network_function(name, "equip_HOST", { "" })
             return
         end
         local item = run_function("-items", "get_item", { item_id })
         update_panel_settings(INV_PANEL, { text = item.name .. ": " .. item.desc })
-        if run_function("-items", "is_equippable", { item_id }) then
+        if run_function("-items", "is_wearable", { item_id }) then
+            run_network_function(name, "wear_HOST", { item_id })
+        elseif run_function("-items", "is_equippable", { item_id }) then
             run_network_function(name, "equip_HOST", { item_id })
         end
+    elseif cell.role == "equip_btn" then
+        if item_id == "" then
+            -- The Fists row's own button: equipping nothing IS taking the held tool off.
+            run_network_function(name, "equip_HOST", { "" })
+        else
+            run_network_function(name, "wear_HOST", { item_id })
+        end
+    elseif cell.role == "unequip_btn" then
+        run_network_function(name, "wear_HOST", { "" })
     elseif cell.role == "drop" then
         run_network_function(name, "drop_HOST", { item_id, 1 })
     end
@@ -457,9 +587,9 @@ function on_craft_click(index)
     local item = run_function("-items", "get_item", { recipe.id })
     if is_panel_exists(CRAFT_PANEL) then close_panel(CRAFT_PANEL) end
     local max_times = max_craftable(recipe)
-    create_panel({ name = CRAFT_PANEL, title = "Craft " .. item.name,
-        text = item.name .. ": " .. item.desc .. "\nNeeds: " .. needs_text(recipe) ..
-            "\nMax craftable now: " .. max_times,
+    create_panel({ name = CRAFT_PANEL, title ="{craft}" .. item.name,
+        text = item.name .. ": " .. item.desc .. "{needs}" .. needs_text(recipe) ..
+            "{max_craftable_now}" .. max_times,
         resizable = false, close = true, set_time = false })
     local qty_color = Color(58 / 255, 111 / 255, 66 / 255, 1)
     for _, qty in ipairs({ 1, 10, 100 }) do
@@ -467,7 +597,7 @@ function on_craft_click(index)
             color = qty_color, entity_name = name, function_name = "on_craft_qty_click",
             extra_args = { index = index, count = qty } })
     end
-    add_button_to_panel(CRAFT_PANEL, { text = "Max", is_vertical = false,
+    add_button_to_panel(CRAFT_PANEL, { text ="{max}", is_vertical = false,
         color = COLOR_READY, entity_name = name, function_name = "on_craft_qty_click",
         extra_args = { index = index, count = math.max(max_times, 1) } })
 end

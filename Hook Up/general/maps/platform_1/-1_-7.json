@@ -251,7 +251,7 @@
             "m": "(1, 1, 1, 1)",
             "v": 0,
             "h": 0,
-            "t": "If you touch any magma you will be teleported to nearest green flag",
+            "t": "{map_magma_teleports_you}",
             "o": "(1, 1, 1, 1)",
             "z": 0,
             "f": "(1, 1, 1, 1)",

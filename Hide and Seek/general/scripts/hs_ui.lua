@@ -69,7 +69,7 @@ function on_roles(lr, hlist, round)
     -- their view stays fixed/fair.
     local is_active = (local_role == 1 or local_role == 2)
     local is_hider = (local_role == 2)
-    set_button({ name = BTN_FREEZE, visible = is_active, text = "Paint Mode" })
+    set_button({ name = BTN_FREEZE, visible = is_active, text ="{paint_mode}" })
     set_button({ name = BTN_NEXT, visible = is_hider })
     set_button({ name = BTN_PREV, visible = is_hider })
     set_button({ name = BTN_SELF, visible = is_hider })
@@ -89,17 +89,17 @@ end
 
 local function build_setup_text(vote_same, vote_new)
     local ready = pcount >= minp
-    local lines = { "[b]Host: pick the map[/b]" }
+    local lines = { "{host_pick_the_map}" }
     if ready then
-        table.insert(lines, "Players: " .. n_int(pcount))
+        table.insert(lines, "{players}" .. n_int(pcount))
     else
-        table.insert(lines, "Players: " .. n_int(pcount) .. "  (need " .. n_int(minp - pcount) .. " more)")
+        table.insert(lines, "{players}" .. n_int(pcount) .. "{need}" .. n_int(minp - pcount) .. "{more}")
     end
-    if last_seed > 0 then table.insert(lines, "Current seed: [b]" .. n_int(last_seed) .. "[/b]") end
+    if last_seed > 0 then table.insert(lines, "{current_seed}" .. n_int(last_seed) .. "[/b]") end
     if n_int(vote_same) + n_int(vote_new) > 0 then
-        table.insert(lines, "Votes -> Same: " .. n_int(vote_same) .. "   |   New: " .. n_int(vote_new))
+        table.insert(lines, "{votes_same}" .. n_int(vote_same) .. "{new}" .. n_int(vote_new))
     end
-    if not ready then table.insert(lines, "You can still generate a map to explore it.") end
+    if not ready then table.insert(lines, "{you_can_still_generate_a_map}") end
     return table.concat(lines, "\n")
 end
 
@@ -113,20 +113,20 @@ local function rebuild_setup_panel(body_text, ready, has_seed)
     create_panel({
         -- No close button: the host must act (pick/generate a seed) rather than
         -- being able to dismiss this and lose access to starting the match.
-        name = setup_panel_name, title = "Hide & Seek - Host", text = body_text,
+        name = setup_panel_name, title ="{hide_seek_host}", text = body_text,
         set_time = false, close = false, resizable = false, minimum_size = Vector2(380, 340),
     })
     add_input_to_panel(setup_panel_name, {
-        entity_name = name, function_name = "on_seed_input", text = "Seed",
+        entity_name = name, function_name = "on_seed_input", text ="{seed}",
         default_value = typed_seed,
     })
     add_button_to_panel(setup_panel_name, { entity_name = name, function_name = "on_use_seed",
-        text = ready and "Start With This Seed" or "Generate This Seed", color = Color(0.3, 0.55, 0.35) })
+        text = ready and "{start_with_this_seed}" or "{generate_this_seed}", color = Color(0.3, 0.55, 0.35) })
     add_button_to_panel(setup_panel_name, { entity_name = name, function_name = "on_random_seed",
-        text = ready and "Random Seed & Start" or "Random Seed", color = Color(0.35, 0.45, 0.6) })
+        text = ready and "{random_seed_and_start}" or "{random_seed}", color = Color(0.35, 0.45, 0.6) })
     if has_seed then
         add_button_to_panel(setup_panel_name, { entity_name = name, function_name = "on_same_map",
-            text = "Same Map (seed " .. last_seed .. ")", color = Color(0.5, 0.45, 0.3) })
+            text ="{same_map_seed}" .. last_seed .. ")", color = Color(0.5, 0.45, 0.3) })
     end
 end
 
@@ -157,7 +157,7 @@ function on_vote_update(same, new)
     if setup_panel_name ~= "" and is_panel_exists(setup_panel_name) then
         show_host_setup(last_seed, "gameover", pcount, minp, same, new)
     elseif is_panel_exists(VOTE) then
-        update_panel_settings(VOTE, { text = "Vote for the next map.\nSame: " .. same .. "   |   New: " .. new })
+        update_panel_settings(VOTE, { text ="{vote_for_the_next_map_same}" .. same .. "{new}" .. new })
     end
 end
 
@@ -172,8 +172,8 @@ function close_host_setup()
 end
 
 function on_seed_input(args)
-    -- The input's value is delivered keyed by its label ("Seed").
-    typed_seed = tostring(args["Seed"] or "")
+    -- The input's value is delivered keyed by its RAW label, i.e. the token.
+    typed_seed = tostring(args["{seed}"] or "")
 end
 
 function on_use_seed(args)
@@ -195,14 +195,14 @@ end
 function show_vote(match_seed)
     if is_panel_exists(VOTE) then close_panel(VOTE) end
     create_panel({
-        name = VOTE, title = "Next Map?", set_time = false, close = true,
-        text = "The match is over (seed " .. (match_seed or 0) .. ").\nVote for the next map:",
+        name = VOTE, title ="{next_map}", set_time = false, close = true,
+        text ="{the_match_is_over_seed}" .. (match_seed or 0) .. "{vote_for_the_next_map}",
         minimum_size = Vector2(320, 150),
     })
     add_button_to_panel(VOTE, { entity_name = name, function_name = "on_vote_same",
-        text = "Same Map", color = Color(0.5, 0.45, 0.3) })
+        text ="{same_map}", color = Color(0.5, 0.45, 0.3) })
     add_button_to_panel(VOTE, { entity_name = name, function_name = "on_vote_new",
-        text = "New Map", color = Color(0.35, 0.45, 0.6) })
+        text ="{new_map}", color = Color(0.35, 0.45, 0.6) })
 end
 
 function on_vote_same(args)
@@ -214,9 +214,9 @@ function on_vote_new(args)
 end
 
 function on_stats(hider_alive, hider_total, seekers, my_score)
-    set_label({ name = LBL_HIDERS, text = "Hiders: " .. hider_alive .. "/" .. hider_total })
-    set_label({ name = LBL_SEEKERS, text = "Seekers: " .. seekers })
-    set_label({ name = LBL_SCORE, text = "Score: " .. my_score })
+    set_label({ name = LBL_HIDERS, text ="{hiders}" .. hider_alive .. "/" .. hider_total })
+    set_label({ name = LBL_SEEKERS, text ="{seekers}" .. seekers })
+    set_label({ name = LBL_SCORE, text ="{score}" .. my_score })
 end
 
 -- Round/phase countdown ("m:ss", or "" outside hiding/seeking) - see hs_manager's
@@ -227,25 +227,25 @@ end
 
 function on_banner(text, secs)
     create_panel({
-        title = "Hide & Seek", text = text, countdown = secs or 4,
+        title ="{hide_seek}", text = text, countdown = secs or 4,
         no_multiple_tag = "hs_banner", set_time = false, close = true,
         minimum_size = Vector2(360, 120),
     })
 end
 
 function on_paint_mode(active)
-    set_button({ name = BTN_FREEZE, text = active and "Movement Mode" or "Paint Mode" })
+    set_button({ name = BTN_FREEZE, text = active and "{movement_mode}" or "{paint_mode}" })
 end
 
 function on_caught(hider_name, seeker_name, is_me)
     local msg
     if is_me then
-        msg = "You were caught by " .. seeker_name .. "!"
+        msg = "{you_were_caught_by}" .. seeker_name .. "!"
     else
-        msg = seeker_name .. " caught " .. hider_name .. "!"
+        msg = seeker_name .. "{caught_2}" .. hider_name .. "!"
     end
     create_panel({
-        title = "Caught!", text = msg, countdown = 3,
+        title ="{caught}", text = msg, countdown = 3,
         no_multiple_tag = "hs_caught", set_time = false, minimum_size = Vector2(340, 110),
     })
 end
@@ -253,7 +253,7 @@ end
 function on_game_over(board, match_seed)
     if is_panel_exists("hs_podium") then close_panel("hs_podium") end
     create_panel({
-        name = "hs_podium", title = "Final Scores (seed " .. (match_seed or 0) .. ")", set_time = false,
+        name = "hs_podium", title ="{final_scores_seed}" .. (match_seed or 0) .. ")", set_time = false,
         minimum_size = Vector2(360, 320), is_scrollable = true,
     })
     for i, row in ipairs(board) do

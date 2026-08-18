@@ -5,43 +5,43 @@ singleton_name = "finding_liar_data"
 
 local word_categories = {
     {
-        name = "occupation",
+        name = "{cat_occupation}",
         words = {
-            "Doctor", "Teacher", "Engineer", "Lawyer", "Chef", 
-            "Police Officer", "Firefighter", "Pilot", "Nurse", "Farmer",
-            "Architect", "Dentist", "Painter", "Musician", "Writer"
+            "{w_doctor}", "{w_teacher}", "{w_engineer}", "{w_lawyer}", "{w_chef}", 
+            "{w_police_officer}", "{w_firefighter}", "{w_pilot}", "{w_nurse}", "{w_farmer}",
+            "{w_architect}", "{w_dentist}", "{w_painter}", "{w_musician}", "{w_writer}"
         }
     },
     {
-        name = "item",
+        name = "{cat_item}",
         words = {
-            "Table", "Chair", "Television", "Refrigerator", "Lamp",
-            "Computer", "Phone", "Clock", "Book", "Cup",
-            "Fork", "Spoon", "Knife", "Plate", "Towel"
+            "{w_table}", "{w_chair}", "{w_television}", "{w_refrigerator}", "{w_lamp}",
+            "{w_computer}", "{w_phone}", "{w_clock}", "{w_book}", "{w_cup}",
+            "{w_fork}", "{w_spoon}", "{w_knife}", "{w_plate}", "{w_towel}"
         }
     },
     {
-        name = "place",
+        name = "{cat_place}",
         words = {
-            "School", "Hospital", "Library", "Restaurant", "Airport",
-            "Park", "Museum", "Cinema", "Theater", "Beach",
-            "Market", "Pharmacy", "Bank", "Post Office", "Gym"
+            "{w_school}", "{w_hospital}", "{w_library}", "{w_restaurant}", "{w_airport}",
+            "{w_park}", "{w_museum}", "{w_cinema}", "{w_theater}", "{w_beach}",
+            "{w_market}", "{w_pharmacy}", "{w_bank}", "{w_post_office}", "{w_gym}"
         }
     },
     {
-        name = "animal",
+        name = "{cat_animal}",
         words = {
-            "Cat", "Dog", "Lion", "Elephant", "Giraffe",
-            "Monkey", "Bear", "Wolf", "Rabbit", "Bird",
-            "Snake", "Fish", "Horse", "Cow", "Sheep"
+            "{w_cat}", "{w_dog}", "{w_lion}", "{w_elephant}", "{w_giraffe}",
+            "{w_monkey}", "{w_bear}", "{w_wolf}", "{w_rabbit}", "{w_bird}",
+            "{w_snake}", "{w_fish}", "{w_horse}", "{w_cow}", "{w_sheep}"
         }
     },
     {
-        name = "vehicle",
+        name = "{cat_vehicle}",
         words = {
-            "Car", "Bus", "Bicycle", "Motorcycle", "Train",
-            "Airplane", "Ship", "Truck", "Tractor", "Helicopter",
-            "Subway", "Tram", "Scooter", "Yacht", "Speedboat"
+            "{w_car}", "{w_bus}", "{w_bicycle}", "{w_motorcycle}", "{w_train}",
+            "{w_airplane}", "{w_ship}", "{w_truck}", "{w_tractor}", "{w_helicopter}",
+            "{w_subway}", "{w_tram}", "{w_scooter}", "{w_yacht}", "{w_speedboat}"
         }
     }
 }

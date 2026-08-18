@@ -128,8 +128,8 @@ function show_golden_flag_win_ALL(sender_id, winner)
     
     -- Use PopupManager.create_panel via Lua to show a center message
     create_panel({
-        title = "🏆 Golden Flag Victory 🏆",
-        text = "[center]🎉 [color=gold][b]" .. winner .. "[/b][/color] 🎉\n\n[color=yellow]✨ Touched the [shake freq=5.0 level=10][color=gold]Golden Flag[/color][/shake] and achieved [rainbow freq=0.5 sat=1 val=1]VICTORY[/rainbow]! ✨[/color]\n\n[color=orange]⏰ Game will reset in [b]20 seconds[/b] ⏰[/color][/center]",
+        title ="{golden_flag_victory}",
+        text = "[center]🎉 [color=gold][b]" .. winner .. "{touched_the_golden_flag_and_achieved_vic}",
         resizable = false,
         countdown = 20,
         color=Color(0.5, 0.47, 0.15, 1),

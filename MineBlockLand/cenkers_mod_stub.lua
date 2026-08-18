@@ -651,6 +651,8 @@ function set_label(config) end
 ---   - anchor_right (number, optional): For UI progress bars, right anchor (0.0 to 1.0).
 ---   - anchor_top (number, optional): For UI progress bars, top anchor (0.0 to 1.0).
 ---   - anchor_bottom (number, optional): For UI progress bars, bottom anchor (0.0 to 1.0).
+---   - rotation (number, optional): LOCAL-ONLY visual rotation in radians, around
+---     the bar's own centre. Never synced automatically — set it per peer.
 ---@param config table Progress bar configuration dictionary.
 ---@return string The created/updated progress bar node name.
 function set_progress_bar(config) end
@@ -675,6 +677,8 @@ function set_progress_bar(config) end
 ---   - anchor_right (number, optional): For UI buttons, right anchor (0.0 to 1.0).
 ---   - anchor_top (number, optional): For UI buttons, top anchor (0.0 to 1.0).
 ---   - anchor_bottom (number, optional): For UI buttons, bottom anchor (0.0 to 1.0).
+---   - rotation (number, optional): LOCAL-ONLY visual rotation in radians, around
+---     the button's own centre. Never synced automatically — set it per peer.
 ---@param config table Button configuration dictionary.
 ---@return string The created/updated button node name.
 function set_button(config) end
@@ -861,6 +865,8 @@ function get_shadow_settings() end
 ---   - gravity (table, optional): Gravity vector {x=number, y=number}. Default: none.
 ---   - scale_amount_min (number, optional): Minimum particle scale. Default: 1.0.
 ---   - scale_amount_max (number, optional): Maximum particle scale. Default: 1.0.
+---   - scale_curve (table, optional): Scale over lifetime, evenly sampled, e.g. {0.35, 1.0} grows. Multiplies scale_amount_min/max, so set those to the PEAK size. Needs at least 2 numbers. Default: none (constant scale).
+---   - alpha_curve (table, optional): Alpha over lifetime, evenly sampled, e.g. {1.0, 0.0} fades out. Needs at least 2 numbers. Default: none (constant alpha).
 ---   - angle_min (number, optional): Minimum particle angle. Default: 0.0.
 ---   - angle_max (number, optional): Maximum particle angle. Default: 0.0.
 ---   - color (Color, optional): Particle color. Default: Color.WHITE.
@@ -1770,6 +1776,72 @@ function load_json(relative_path) end
 ---@param extension? string Extension filter without the dot (e.g. "png"). Default: "" (all files).
 ---@return table Array of file name strings (sorted), or empty table {} if missing.
 function get_file_names(relative_folder, extension) end
+
+---------------------------------------------------
+-- LOCALIZATION
+---------------------------------------------------
+--
+-- Put one JSON per language in your mod's `general/language/` folder:
+--
+--   general/language/en.json
+--   {
+--     "meta": { "code": "en", "name": "English", "native_name": "English", "flag": "gb" },
+--     "keys": { "{score}": "Score", "{you_win}": "You win!" }
+--   }
+--
+-- Then write the keyword instead of the text anywhere you show something:
+--
+--   set_label({ name = "_score", text = "{score}: " .. points })
+--
+-- Rules worth knowing:
+--   * The game translates automatically at display time, so you almost never call
+--     translate() yourself. Text with no keyword is shown exactly as written.
+--   * A keyword the language file does not define is left as-is ("{score}"), which
+--     makes a typo obvious instead of silent.
+--   * `{single}` braces are YOUR keywords. `{{double}}` braces belong to the base
+--     game; a mod file that defines one is ignored, so you cannot break the menus.
+--   * English is the fallback: if the player runs Turkish and your tr.json lacks a
+--     key, the en.json text is used. You do not have to translate every language.
+--   * Your keywords are dropped when the player leaves the mod.
+--   * Send the KEYWORD over the network, not the translated text — every peer then
+--     reads it in their own language:
+--        run_network_function(name, "announce_ALL", { text = "{you_win}" })
+--   * Word order changes between languages, so never glue a suffix onto a value.
+--     Put the placeholder inside the translated text instead:
+--        "{wait_seconds}" -> en "WAIT %s SECONDS", tr "%s SANİYE BEKLEYİN"
+--        set_label({ name = "_t", text = string.format(translate("{wait_seconds}"), n) })
+
+--- The language the player is currently using, e.g. "tr".
+---@return string Two-letter language code.
+function get_current_language() end
+
+--- Every language the game has a file for. Useful when you want to accept input in
+--- any language (see translate_all).
+---@return table Array of language code strings, e.g. { "en", "tr" }.
+function get_languages() end
+
+--- Details of one language, for building your own language UI.
+---@param code string Language code, e.g. "tr".
+---@return table { code, name, native_name, flag } — or {} if not installed.
+function get_language_info(code) end
+
+--- Replace every keyword in a text. You rarely need this for display (that happens
+--- automatically); it is for when you need the VALUE — comparing a typed answer,
+--- building a string.format() argument, sorting.
+--- Example: translate("{fox}")       --> "tilki" when playing in Turkish
+---          translate("{fox}", "en") --> "fox"   regardless of the current language
+---@param text string Text containing keywords, e.g. "{score}: 10".
+---@param lang? string Language code. Default: the player's current language.
+---@return string Text with known keywords replaced.
+function translate(text, lang) end
+
+--- Resolve a text into EVERY installed language at once.
+--- Made for word games: accept the answer no matter which language it was typed in.
+--- Example: local words = translate_all("{fox}")  --> { en = "fox", tr = "tilki" }
+---          for _, w in pairs(words) do if guess == w then ... end end
+---@param text string Text containing keywords.
+---@return table Map of language code -> translated text.
+function translate_all(text) end
 
 ---------------------------------------------------
 -- MAP/TILEMAP

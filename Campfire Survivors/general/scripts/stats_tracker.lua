@@ -257,13 +257,13 @@ function show_game_over_stats_ALL(sender_id, all_stats)
     local global = all_stats.global
     local survival_time_formatted = format_time(global.survival_time)
 
-    local panel_text = string.format(
-        "GAME OVER\n\nSurvival Time: %s\nWave Reached: %d\nTotal Enemies Killed: %d",
-        survival_time_formatted, global.wave_reached, global.total_enemies_killed
+    local panel_text = string.format(translate("{game_over_summary}"),
+        survival_time_formatted, math.floor(global.wave_reached),
+        math.floor(global.total_enemies_killed)
     )
 
     local panel_settings = {
-        title = "Campfire Survivors - Game Statistics",
+        title ="{campfire_survivors_game_statistics}",
         text = panel_text,
         resizable = true,
         close = true,
@@ -285,22 +285,22 @@ function create_player_stats_table(panel_name, all_stats)
 
     -- Table 1 Header (Blue Theme)
     local header_color1 = Color(0.2, 0.2, 0.5, 0.9)
-    table_data1[vector2_to_string(Vector2(0, row))] = { text = "Nickname", color = header_color1 }
-    table_data1[vector2_to_string(Vector2(1, row))] = { text = "Level", color = header_color1 }
-    table_data1[vector2_to_string(Vector2(2, row))] = { text = "Kills", color = header_color1 }
-    table_data1[vector2_to_string(Vector2(3, row))] = { text = "Revives", color = header_color1 }
-    table_data1[vector2_to_string(Vector2(4, row))] = { text = "Downed", color = header_color1 }
-    table_data1[vector2_to_string(Vector2(5, row))] = { text = "Crystals", color = header_color1 }
-    table_data1[vector2_to_string(Vector2(6, row))] = { text = "Dodges", color = header_color1 }
+    table_data1[vector2_to_string(Vector2(0, row))] = { text ="{nickname}", color = header_color1 }
+    table_data1[vector2_to_string(Vector2(1, row))] = { text ="{level}", color = header_color1 }
+    table_data1[vector2_to_string(Vector2(2, row))] = { text ="{kills}", color = header_color1 }
+    table_data1[vector2_to_string(Vector2(3, row))] = { text ="{revives}", color = header_color1 }
+    table_data1[vector2_to_string(Vector2(4, row))] = { text ="{downed}", color = header_color1 }
+    table_data1[vector2_to_string(Vector2(5, row))] = { text ="{crystals}", color = header_color1 }
+    table_data1[vector2_to_string(Vector2(6, row))] = { text ="{dodges}", color = header_color1 }
 
     -- Table 2 Header (Green Theme)
     local header_color2 = Color(0.2, 0.5, 0.2, 0.9)
-    table_data2[vector2_to_string(Vector2(0, row))] = { text = "Nickname", color = header_color2 }
-    table_data2[vector2_to_string(Vector2(1, row))] = { text = "DMG Dealt", color = header_color2 }
-    table_data2[vector2_to_string(Vector2(2, row))] = { text = "DMG Taken", color = header_color2 }
-    table_data2[vector2_to_string(Vector2(3, row))] = { text = "Regeneration", color = header_color2 }
-    table_data2[vector2_to_string(Vector2(4, row))] = { text = "Lifesteal", color = header_color2 }
-    table_data2[vector2_to_string(Vector2(5, row))] = { text = "Blocked DMG", color = header_color2 }
+    table_data2[vector2_to_string(Vector2(0, row))] = { text ="{nickname}", color = header_color2 }
+    table_data2[vector2_to_string(Vector2(1, row))] = { text ="{dmg_dealt}", color = header_color2 }
+    table_data2[vector2_to_string(Vector2(2, row))] = { text ="{dmg_taken}", color = header_color2 }
+    table_data2[vector2_to_string(Vector2(3, row))] = { text ="{regeneration}", color = header_color2 }
+    table_data2[vector2_to_string(Vector2(4, row))] = { text ="{lifesteal}", color = header_color2 }
+    table_data2[vector2_to_string(Vector2(5, row))] = { text ="{blocked_dmg}", color = header_color2 }
 
     row = row + 1
 
@@ -348,8 +348,8 @@ function create_player_stats_table(panel_name, all_stats)
     row = 0
 
     -- Header row
-    table_data3[vector2_to_string(Vector2(0, row))] = { text = "Player", color = Color(0.5, 0.2, 0.5, 0.9) }
-    table_data3[vector2_to_string(Vector2(1, row))] = { text = "Upgrades", color = Color(0.5, 0.2, 0.5, 0.9) }
+    table_data3[vector2_to_string(Vector2(0, row))] = { text ="{player}", color = Color(0.5, 0.2, 0.5, 0.9) }
+    table_data3[vector2_to_string(Vector2(1, row))] = { text ="{upgrades}", color = Color(0.5, 0.2, 0.5, 0.9) }
     row = row + 1
 
     -- Player rows with concatenated upgrade information
@@ -362,25 +362,25 @@ function create_player_stats_table(panel_name, all_stats)
         if stats.upgrade_levels then
             -- Map for character upgrade names
             local character_upgrade_names = {
-                [1] = "Speed",
-                [2] = "Health",
-                [3] = "Armor",
-                [4] = "Pickup Range",
-                [5] = "XP Gain",
-                [6] = "Regeneration",
-                [7] = "Dodge"
+                [1] = "{stat_speed_short}",
+                [2] = "{stat_health_short}",
+                [3] = "{stat_armor_short}",
+                [4] = "{stat_pickup_range}",
+                [5] = "{stat_xp_gain_short}",
+                [6] = "{stat_regeneration}",
+                [7] = "{stat_dodge_short}"
             }
 
             -- Map for weapon upgrade names
             local weapon_upgrade_names = {
-                [1] = "Atk Speed",
-                [2] = "Proj Size",
-                [3] = "Proj Count",
-                [4] = "Proj Speed",
-                [5] = "Penetration",
-                [6] = "Lifesteal",
-                [7] = "Knockback",
-                [8] = "Damage"
+                [1] = "{stat_atk_speed_short}",
+                [2] = "{stat_proj_size_short}",
+                [3] = "{stat_proj_count_short}",
+                [4] = "{stat_proj_speed_short}",
+                [5] = "{stat_penetration_short}",
+                [6] = "{stat_lifesteal}",
+                [7] = "{stat_knockback_short}",
+                [8] = "{stat_damage}"
             }
 
             -- Character upgrades
@@ -411,7 +411,7 @@ function create_player_stats_table(panel_name, all_stats)
 
         -- If no upgrades were found, show "No upgrades"
         if #upgrade_text == 0 then
-            upgrade_text = "No upgrades"
+            upgrade_text ="{no_upgrades}"
         end
 
         -- Player name cell
