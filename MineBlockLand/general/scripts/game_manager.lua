@@ -43,8 +43,16 @@ local NIGHT_VIGNETTE = { visible = true, strength = 1.3, radius = 0.6,
     smoothness = 0.5, color = Color(0, 0, 0, 1) }
 local NIGHT_VIGNETTE_PEAK_STRENGTH = 1.7
 local NIGHT_VIGNETTE_PEAK_RADIUS = 0.4
-local PHASE_FADE_SECONDS = 3.0   -- dusk/dawn creep in - vignette AND shadows, never a hard cut
+local PHASE_FADE_SECONDS = 3.0   -- dusk/dawn creep in - vignette, shadows AND ambience, never a hard cut
 local PHASE_FADE_STEP = 0.05
+
+-- Ambient day/night bed. See update_ambient()/start_ambient() further down for
+-- how the crossfade rides the SAME phase_fade_step timer as the vignette/shadow.
+local AMBIENT_TRACKS = { amb_day = "ambient/morning_nature", amb_night = "ambient/night" }
+local AMBIENT_VOLUME = -12  -- audible target: a quiet bed under sfx sitting at -3..-7
+local AMBIENT_SILENT = -60  -- effectively inaudible; the fade-in/out starts/ends here
+local ambient_playing = ""     -- "" | "amb_day" | "amb_night" - currently audible (or fading in)
+local ambient_fading_out = ""  -- the previous track, ramping to AMBIENT_SILENT before it is freed
 
 local phase_fade_elapsed = -1       -- < 0 = not fading
 local shadow_rgb = nil              -- captured once from the map's own shadow_color (rgb only)
@@ -107,6 +115,11 @@ local SPAWNS_PER_WAVE_LATE_DAY = 5
 local BOSS_HP_BASE = 1500
 local BOSS_MAX_LIVES = 3 -- per-player spawn rights during the boss fight, see boss_lives below
 local RESET_PANEL = "_mbl_boss_reset"
+-- Terrain audio. Every one of these is 2D and purely local: the broadcasts that
+-- carry them (gather_fx_ALL / tile_mut_ALL / boom_fx_ALL) already reach every
+-- peer, so the sound costs no traffic of its own.
+local TILE_SFX_DISTANCE = 420
+local TILE_HIT_VARIANTS = 5 -- general/sounds/tile_hit1..5.ogg
 local TEST_ITEM_COUNT = 99 -- how many of each item /testitems hands out
 
 -- Synced game state (also snapshotted to late joiners via network_mode = 1).
@@ -546,9 +559,62 @@ function phase_ALL(sender_id, new_day, new_t, night)
     end
 end
 
+-- =============================================================================
+-- Ambient day/night loop.
+--
+-- Runs on EVERY peer with zero traffic of its own: apply_phase_visuals is only
+-- ever reached through phase_ALL (dusk/dawn) or state_ALL (join/restore), both
+-- broadcasts the day/night system already sends for the vignette and shadow.
+-- The crossfade itself piggybacks on that SAME phase_fade_step timer instead of
+-- starting a second one - one 0.05s timer covers vignette, shadow AND ambience.
+--
+-- Tracks are parented to THIS entity (-gm) rather than left unparented: an
+-- unparented audio player lives under SoundManager, which set_audio_volume and
+-- destroy cannot look up by name (see set_audio_volume's stub comment) - so a
+-- track created here can later be ramped and freed by its plain name.
+-- =============================================================================
+
+local function ambient_target()
+    return is_night and "amb_night" or "amb_day"
+end
+
+local function start_ambient(track_name, start_volume)
+    set_audio({ name = track_name, parent_name = name,
+        stream_path = AMBIENT_TRACKS[track_name],
+        is_loop = true, is_2d = false, bus = "Ambient", volume = start_volume })
+end
+
+local function update_ambient(fade)
+    local want = ambient_target()
+    if want == ambient_playing then return end
+    if fade then
+        if ambient_playing ~= "" then
+            -- A fade already mid-flight when a new one starts (only reachable
+            -- through rapid host commands, e.g. /testboss racing a real dusk -
+            -- never a normal transition) would otherwise orphan the earlier
+            -- track at whatever volume it had reached, looping forever with
+            -- nothing left to finish silencing it.
+            if ambient_fading_out ~= "" then destroy(name, ambient_fading_out) end
+            ambient_fading_out = ambient_playing
+        end
+        start_ambient(want, AMBIENT_SILENT)
+    else
+        -- State restore / world reset: nothing to ride a fade on, so whatever
+        -- was playing is cut immediately and the right track snaps in at full
+        -- volume - the same treatment this function gives the vignette/shadow
+        -- in the branch below.
+        if ambient_playing ~= "" then destroy(name, ambient_playing) end
+        if ambient_fading_out ~= "" then destroy(name, ambient_fading_out) end
+        ambient_fading_out = ""
+        start_ambient(want, AMBIENT_VOLUME)
+    end
+    ambient_playing = want
+end
+
 function apply_phase_visuals(fade)
     capture_shadow_base()
     set_background_color(is_night and NIGHT_BG or DAY_BG)
+    update_ambient(fade)
     if fade then
         -- Both effects fade over PHASE_FADE_SECONDS instead of popping in/out.
         phase_fade_elapsed = 0
@@ -583,7 +649,11 @@ function apply_phase_visuals(fade)
 end
 
 -- Ramps the vignette and shadow alpha over PHASE_FADE_SECONDS (local only):
--- dusk fades the vignette in and the shadow out; dawn is the mirror image.
+-- dusk fades the vignette in and the shadow out; dawn is the mirror image. The
+-- ambient crossfade (update_ambient/start_ambient above) rides the exact same
+-- progress value - the incoming track climbs from AMBIENT_SILENT to
+-- AMBIENT_VOLUME while the outgoing one falls back the other way, and is freed
+-- the moment the window closes.
 function phase_fade_step()
     if phase_fade_elapsed < 0 then
         stop_timer("phase_fade")
@@ -600,6 +670,14 @@ function phase_fade_step()
         set_shadow({ shadow_color = Color(shadow_rgb.r, shadow_rgb.g, shadow_rgb.b,
             shadow_alpha_full * progress) })
     end
+    if ambient_playing ~= "" then
+        set_audio_volume(name, ambient_playing,
+            AMBIENT_SILENT + (AMBIENT_VOLUME - AMBIENT_SILENT) * progress)
+    end
+    if ambient_fading_out ~= "" then
+        set_audio_volume(name, ambient_fading_out,
+            AMBIENT_VOLUME + (AMBIENT_SILENT - AMBIENT_VOLUME) * progress)
+    end
     if progress >= 1.0 then
         phase_fade_elapsed = -1
         stop_timer("phase_fade")
@@ -607,6 +685,10 @@ function phase_fade_step()
             set_shadow({ visible = false })
         else
             set_vignette({ visible = false })
+        end
+        if ambient_fading_out ~= "" then
+            destroy(name, ambient_fading_out)
+            ambient_fading_out = ""
         end
     end
 end
@@ -666,12 +748,22 @@ end
 -- All changes flow through ONE broadcast so every peer's ledger matches.
 -- =============================================================================
 
-function host_mutate(x, y, kind)
-    run_network_function(name, "tile_mut_ALL", { x, y, kind })
+-- 'sfx' is "break" | "place" | nil, and rides along on the mutation broadcast
+-- that every terrain change already sends - a tile changing kind IS the event,
+-- so there is nothing to gain from a second message just to carry a sound.
+-- nil is silent on purpose: a crop quietly maturing (check_growth) is not
+-- something anyone should hear from across the island.
+function host_mutate(x, y, kind, sfx)
+    run_network_function(name, "tile_mut_ALL", { x, y, kind, sfx or "" })
 end
 
-function tile_mut_ALL(sender_id, x, y, kind)
+function tile_mut_ALL(sender_id, x, y, kind, sfx)
     run_function("-gen", "apply_mut", { x, y, kind })
+    if sfx == nil or sfx == "" then return end
+    local world = map_to_local(Vector2(math.floor(x), math.floor(y)))
+    set_audio({ stream_path = (sfx == "place") and "tile_place" or "tile_break",
+        is_2d = true, position = world, max_distance = TILE_SFX_DISTANCE,
+        volume = -3, random_pitch = 0.1 })
 end
 
 local function roll_drops(drop_table, power, x, y)
@@ -766,7 +858,7 @@ function host_gather_hit(args)
     -- A broken sapling reverts to the tilled farmland it was planted on (so the
     -- player doesn't lose the plot); trees/rock revert to bare pure-terrain ground.
     local revert_kind = (kind == K_SAPLING) and K_FARM or run_function("-gen", "ground_kind", { x, y })
-    host_mutate(x, y, revert_kind)
+    host_mutate(x, y, revert_kind, "break")
     roll_drops(drops, power, x, y)
     if stat_key then add_stat(steam_id, stat_key, 1) end
     return true
@@ -776,10 +868,13 @@ end
 -- projectiles that smack into a tree or a placed wood/stone "wall" in
 -- flight. Mirrors host_gather_hit's break logic minus the tool gating and
 -- player stat credit (nobody chopped this, a bullet did).
+-- 'args.quiet' is set by whoever is chewing through MANY cells at once (the
+-- bomb), so the crater is carved without a thud per cell.
 function host_damage_tile(args)
     if not IS_HOST then return end
     local x, y = math.floor(args.x), math.floor(args.y)
     local dmg = args.dmg or 1
+    local quiet = args.quiet == true
     local kind = run_function("-gen", "kind_at", { x, y })
     local break_hp, drops
     if kind == K_TREE then
@@ -804,7 +899,7 @@ function host_damage_tile(args)
     -- tree/rock reads the same as anything else that takes damage.
     local world = map_to_local(Vector2(x, y))
     run_function("-combat", "show_damage", { world.x, world.y, dmg, "npc" })
-    run_network_function(name, "gather_fx_ALL", { x, y, kind })
+    run_network_function(name, "gather_fx_ALL", { x, y, kind, quiet })
     local break_key = key_of(x, y)
     local hp = (breaks[break_key] or break_hp) - dmg
     if hp > 0 then
@@ -812,7 +907,7 @@ function host_damage_tile(args)
         return
     end
     breaks[break_key] = nil
-    host_mutate(x, y, run_function("-gen", "ground_kind", { x, y }))
+    host_mutate(x, y, run_function("-gen", "ground_kind", { x, y }), quiet and "" or "break")
     roll_drops(drops, 1, x, y)
 end
 
@@ -845,12 +940,22 @@ local function ensure_chip_fx()
         color = Color(247 / 255, 118 / 255, 34 / 255, 1) })
 end
 
-function gather_fx_ALL(sender_id, x, y, kind)
+-- 'silent' suppresses only the SOUND, never the puff: a bomb chews through
+-- dozens of cells in one frame (see bomb.lua's break_tiles), and thirty
+-- overlapping chips is a visual flourish while thirty overlapping thuds is a
+-- wall of noise. The blast plays one sound of its own instead - see boom_fx_ALL.
+function gather_fx_ALL(sender_id, x, y, kind, silent)
     ensure_chip_fx()
     local world = map_to_local(Vector2(x, y))
     local leafy = kind == K_TREE or kind == K_SAPLING or kind == K_CACTUS or kind == K_PALM
     local id = leafy and "mbl_chip_leaf" or "mbl_chip_stone"
     start_particle({ particle_id = id, position = world })
+    if silent then return end
+    -- One of five thuds per swing, so a long chop never repeats the same sample
+    -- twice in a row the way a single file would.
+    set_audio({ stream_path = "tile_hit" .. math.random(TILE_HIT_VARIANTS),
+        is_2d = true, position = world, max_distance = TILE_SFX_DISTANCE,
+        volume = -5, random_pitch = 0.12 })
 end
 
 -- Bomb blast felt by every peer: the puff always plays, the shake fades out
@@ -863,6 +968,8 @@ function boom_fx_ALL(sender_id, x, y)
     ensure_chip_fx()
     local at = Vector2(x, y)
     start_particle({ particle_id = "mbl_boom", position = at })
+    set_audio({ stream_path = "bomb", is_2d = true, position = at,
+        max_distance = BOOM_SHAKE_RANGE * 2, volume = 1, random_pitch = 0.06 })
     local me = get_value("", LOCAL_STEAM_ID, "position")
     if not me then return end
     local dist = distance_to(me, at)
@@ -884,10 +991,10 @@ function host_plant(args)
         return false
     end
     if item_id == "tree_seed" then
-        host_mutate(x, y, K_SAPLING)
+        host_mutate(x, y, K_SAPLING, "place")
         pending_growth[key_of(x, y)] = { when = game_time() + TREE_GROW_SECONDS, into = K_TREE }
     else
-        host_mutate(x, y, K_FARM_SEEDED)
+        host_mutate(x, y, K_FARM_SEEDED, "place")
         pending_growth[key_of(x, y)] = { when = game_time() + GROW_SECONDS, into = K_FARM_GROWN }
     end
     return true
@@ -897,7 +1004,7 @@ function host_harvest(args)
     local x, y = math.floor(args.x), math.floor(args.y)
     local kind = run_function("-gen", "kind_at", { x, y })
     if kind ~= K_FARM_GROWN then return false end
-    host_mutate(x, y, K_FARM)
+    host_mutate(x, y, K_FARM, "break")
     roll_drops(run_function("-items", "get_harvest_drops"), 0, x, y)
     return true
 end
@@ -936,7 +1043,7 @@ function host_place_block(args)
             { { steam_id = steam_id, item_id = item_id, count = 1 } }) then
         return false
     end
-    host_mutate(x, y, place_kind)
+    host_mutate(x, y, place_kind, "place")
     return true
 end
 
@@ -1110,11 +1217,26 @@ function portal_travel_HOST(sender_id, target_pid)
     local entry = portals[tostring(target_pid or "")]
     if not entry then return end
     if get_value("", sender_id, "is_dead") then return end
+    local from = get_value("", sender_id, "position")
     local world = map_to_local(Vector2(math.floor(entry.x), math.floor(entry.y)))
-    change_instantly({ entity_name = sender_id,
-        position = Vector2(world.x, world.y + PORTAL_ARRIVE_OFFSET),
-        linear_velocity = Vector2(0, 0) })
+    local to = Vector2(world.x, world.y + PORTAL_ARRIVE_OFFSET)
+    change_instantly({ entity_name = sender_id, position = to, linear_velocity = Vector2(0, 0) })
     run_network_function(sender_id, "toast_ALL", { "{arrived_at}" .. entry.label .. "." }, sender_id)
+    -- Departure AND arrival, so a friend standing at either end of the trip
+    -- hears it too, not just the traveller. No existing broadcast covers this
+    -- (toast_ALL above only reaches sender_id), hence the one new message.
+    if from then
+        run_network_function(name, "teleport_fx_ALL", { from.x, from.y, to.x, to.y })
+    end
+end
+
+local TELEPORT_SFX_DISTANCE = 360
+
+function teleport_fx_ALL(sender_id, x1, y1, x2, y2)
+    set_audio({ stream_path = "teleport", is_2d = true, position = Vector2(x1, y1),
+        max_distance = TELEPORT_SFX_DISTANCE, volume = -3, random_pitch = 0.08 })
+    set_audio({ stream_path = "teleport", is_2d = true, position = Vector2(x2, y2),
+        max_distance = TELEPORT_SFX_DISTANCE, volume = -3, random_pitch = 0.08 })
 end
 
 -- A player left for good / the world was wiped: their portals go with them.
@@ -1232,13 +1354,29 @@ function mark_dungeon_done(poi_id)
     if poi_id ~= "" then dungeon_done[poi_id] = true end
 end
 
--- Called by enemy.lua when something dies.
+local NPC_DEATH_SFX_DISTANCE = 360
+
+-- Every peer's own thud: the entity destruction itself already replicates
+-- (enemy.lua/critter.lua are DYNAMIC), but that is an engine-level RPC with no
+-- Lua callback on the receiving end - nothing else here reaches every peer, so
+-- this is the one broadcast that does.
+function npc_death_fx_ALL(sender_id, x, y)
+    set_audio({ stream_path = "dead", is_2d = true, position = Vector2(x, y),
+        max_distance = NPC_DEATH_SFX_DISTANCE, volume = -5, random_pitch = 0.1 })
+end
+
+-- Called by enemy.lua and critter.lua when something dies. 'x'/'y' are nil for
+-- a death whose position could not be read (already gone) - silent then, same
+-- as any other fx call that skips a message it has nothing to place.
 function on_enemy_killed(args)
     local killer, dungeon_id = args.killer, args.dungeon_id
     if killer and killer ~= "" and has_tag(killer, "user") then
         add_stat(killer, "kills", 1)
     end
     mark_dungeon_done(dungeon_id)
+    if args.x and args.y then
+        run_network_function(name, "npc_death_fx_ALL", { args.x, args.y })
+    end
 end
 
 -- =============================================================================
@@ -1274,7 +1412,7 @@ function on_boss_defeated(args)
     if not IS_HOST then return end
     boss_active = false
     boss_defeated = true
-    local payload = { players = {} }
+    local payload = { players = {}, x = args.x, y = args.y }
     for steam_id, entry in pairs(stats) do
         payload.players[steam_id] = { nickname = get_value("", steam_id, "nickname") or steam_id,
             stats = entry }
@@ -1287,6 +1425,12 @@ function victory_ALL(sender_id, payload)
     if nav_icon_name ~= "" then
         destroy("", nav_icon_name)
         nav_icon_name = ""
+    end
+    -- Same "dead" sound every other npc gets, just from the guardian itself -
+    -- the confetti below is a separate, purely celebratory local effect.
+    if payload.x and payload.y then
+        set_audio({ stream_path = "dead", is_2d = true, position = Vector2(payload.x, payload.y),
+            max_distance = NPC_DEATH_SFX_DISTANCE, volume = -2, random_pitch = 0.06 })
     end
     -- Confetti around the local player.
     local pos = get_value("", LOCAL_STEAM_ID, "position") or Vector2(0, 0)

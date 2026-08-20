@@ -19,7 +19,7 @@ image_name=set_image({parent_name=name,image_path="blue_bullet",scale = Vector2(
 -- Play shoot sound
 set_audio({
 no_multiple_tag=steam_id,--one user have one audio so it avoids weird sound because of too many bullets
-stream_path = "9mm",
+stream_path = "spell2",
 position = position,
 random_pitch=0.15
 })
@@ -40,6 +40,26 @@ run_function(name,"destroy_self",{},lifetime)
 -- Handle collision with entities
 function on_area_body_entered(body_name)
     if body_name == "TileMap" then -- tilemap does not have has_tag function
+        -- Burying itself in a wall is the only way this bullet ends that is
+        -- NOT a hit, so it gets the tile thud - bullet_impact is reserved for
+        -- actually damaging something (see monster.lua). The area above is set
+        -- up on clients too, so every peer runs this same collision locally and
+        -- the sound costs no network traffic at all.
+        -- no_multiple_tag for the same reason the shoot sound uses it: one
+        -- impact voice per shooter, so emptying a magazine into a wall cannot
+        -- stack a dozen overlapping thuds.
+        local hit_pos = get_value("", name, "position")
+        if hit_pos then
+            set_audio({
+                no_multiple_tag = "hit" .. steam_id,
+                stream_path = "tile_hit" .. math.random(5),
+                position = hit_pos,
+                is_2d = true,
+                max_distance = 420,
+                volume = -8,
+                random_pitch = 0.15
+            })
+        end
         destroy_self()
         return
     end

@@ -137,8 +137,36 @@ function bandit_shoot()
     end
 end
 
--- Client-side function to show damage label
-function show_damage_label_ALL(sender_id, damage_amount)
+-- Client-side function to show damage label.
+-- 'died' rides along on this same broadcast rather than costing a message of
+-- its own: take_damage subtracts the health BEFORE it calls this, so the fatal
+-- blow already knows it was fatal, and every peer needs exactly this one
+-- message to draw the number, play the hit and play the death.
+function show_damage_label_ALL(sender_id, damage_amount, died)
+    -- The hit itself. no_multiple_tag is keyed per monster so a single target
+    -- being focused by several players (or a penetrating bullet) cannot stack
+    -- its own hit sound on top of itself; separate monsters still overlap,
+    -- which is correct - they are different places on the map.
+    set_audio({
+        no_multiple_tag = "imp" .. name,
+        stream_path = "bullet_impact",
+        position = position,
+        is_2d = true,
+        max_distance = 420,
+        volume = -9,
+        random_pitch = 0.15
+    })
+    run_function("-mg", "spawn_damage_particle", {position})
+    if died then
+        set_audio({
+            stream_path = "npc_died",
+            position = position,
+            is_2d = true,
+            max_distance = 420,
+            volume = -8,
+            random_pitch = 0.12
+        })
+    end
     -- Set up the damage label
     local damage_label_config = {
         text = "-" .. tostring(math.floor(damage_amount)),
@@ -149,7 +177,7 @@ function show_damage_label_ALL(sender_id, damage_amount)
         position = position,
         size = Vector2(64, 16),
     }
-    
+
     label_name = set_label(damage_label_config)
     -- Start timer to destroy the label after 2 seconds
     start_timer({
@@ -171,9 +199,11 @@ function take_damage(damage, knockback_amount, angle, player_id)
     health = health - damage
 
 
-    -- Show damage label to all clients with the actual damage taken
+    -- Show damage label to all clients with the actual damage taken.
+    -- 'health' is already decremented above, so this doubles as "was this the
+    -- killing blow?" and carries the death sound without a second message.
     if IS_HOST then
-        run_network_function(name, "show_damage_label_ALL", {actual_damage})
+        run_network_function(name, "show_damage_label_ALL", {actual_damage, health <= 0})
         if player_id and actual_damage > 0 then
             run_function("-stats", "add_player_stat", {player_id, "damage_dealt", actual_damage})
         end

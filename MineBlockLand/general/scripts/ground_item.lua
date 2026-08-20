@@ -12,7 +12,9 @@ linear_damp = 8
 add_tag(name, "ground_item")
 
 local DESPAWN_SECONDS = 180
+local PICKUP_SOUND_DISTANCE = 300
 local picked = false
+local sound_played = false
 
 local item = run_function("-items", "get_item", { item_id })
 set_image({ parent_name = name, name = "icon", image_path = item.image,
@@ -34,8 +36,19 @@ if IS_HOST and dungeon_id == "" then
 end
 
 function on_area_body_entered(body_name)
-    if not IS_HOST or picked then return end
     if not has_tag(body_name, "alive") then return end
+    -- Every peer runs this same body_entered check locally (bodies are synced,
+    -- not just simulated on the host), so playing the sound here needs no
+    -- network call - each peer hears its own local collision.
+    if not sound_played then
+        sound_played = true
+        local pos = get_value("", name, "position")
+        if pos then
+            set_audio({ stream_path = "item_picked", is_2d = true, position = pos,
+                max_distance = PICKUP_SOUND_DISTANCE, volume = -4, random_pitch = 0.08 })
+        end
+    end
+    if not IS_HOST or picked then return end
     picked = true
     run_function("-inv", "host_pickup", { { picker = body_name, item_id = item_id, count = count } })
     if dungeon_id ~= "" then

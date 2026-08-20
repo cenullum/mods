@@ -22,7 +22,7 @@ image_name=set_image({
 -- Play shoot sound
 set_audio({
 no_multiple_tag=monster_id,
-stream_path = "9mm",
+stream_path = "spell",
 position = position,
 random_pitch=0.15
 })
@@ -44,6 +44,21 @@ run_function(name,"destroy_self",{},lifetime)
 -- Handle collision with entities
 function on_area_body_entered(body_name)
     if body_name == "TileMap" then -- tilemap does not have has_tag function
+        -- Same as the player's bullet: a wall is the one ending that is not a
+        -- hit, so it thuds rather than playing the damage sound. Local on
+        -- every peer (the area is built on clients too), so no traffic.
+        local hit_pos = get_value("", name, "position")
+        if hit_pos then
+            set_audio({
+                no_multiple_tag = "hit" .. monster_id,
+                stream_path = "tile_hit" .. math.random(5),
+                position = hit_pos,
+                is_2d = true,
+                max_distance = 420,
+                volume = -8,
+                random_pitch = 0.15
+            })
+        end
         destroy_self()
         return
     end

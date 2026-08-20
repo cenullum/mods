@@ -5,6 +5,7 @@ add_command("-cmd", "handle_restart", "restart", "{restarts_the_game_host_only}"
 add_command("-cmd", "handle_kill", "kill", "{kills_your_character}", true)
 add_command("-cmd", "show_monsters_info", "monsters", "{shows_monster_stats_and_mathematical_for}", true)
 add_command("-cmd", "skip_music", "next", "{skips_to_the_next_music_track}", true)
+add_command("-cmd", "handle_testboss", "testboss", "{cmd_testboss_desc}", true)
 
 
 
@@ -107,6 +108,16 @@ end
 function skip_music(sender_id)
     -- Call the world singleton's music skip function
     run_function("-w", "skip_to_next_music", {})
+end
+
+-- Testing shortcut: spawn the boss immediately instead of waiting BOSS_TIME
+-- out. Host only, same as restart/kill validation.
+function handle_testboss(sender_id)
+    if not IS_HOST then
+        add_to_chat("{only_the_host_can_test_the_boss}", false)
+        return
+    end
+    run_function("-bm", "force_spawn_boss")
 end
 
 function _on_chat_message_received(sender_id, nickname, message)

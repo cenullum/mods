@@ -184,7 +184,7 @@ function npc_take_damage(dmg_in, attacker, kb, angle)
         if attacker and attacker ~= "" and has_tag(attacker, "user") then
             run_function("-gm", "add_stat", { attacker, "kills", 1 })
         end
-        run_function("-gm", "on_boss_defeated", { {} })
+        run_function("-gm", "on_boss_defeated", { { x = my_pos and my_pos.x, y = my_pos and my_pos.y } })
         destroy("", name)
     end
 end

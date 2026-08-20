@@ -33,8 +33,11 @@ local WAVE_LEVELS = {
 
 -- Get level data for a specific wave
 function get_level_data(wave_number)
-    -- Calculate which level we're on (every 7 waves)
-    local level_index = math.floor((wave_number - 1) / 7) + 1
+    -- Calculate which level we're on (every 7 waves), clamped to at least 1 -
+    -- wave_number is 0 before the first wave ever starts (e.g. host uses
+    -- /testboss before anyone has visited the campfire), and WAVE_LEVELS[0]
+    -- would otherwise be a nil index below.
+    local level_index = math.max(1, math.floor((wave_number - 1) / 7) + 1)
     
     -- If we're past the defined levels, use the last level with increasing multipliers
     if level_index > #WAVE_LEVELS then
@@ -377,6 +380,36 @@ end
 --This function is not on monster lua because monster can be destroyed so timer can not run this function
 function destroy_damage_label(args)
 destroy("",args.extra_args.label_name)
+end
+
+-- Green hit puff shown on every peer when a monster takes damage (called from
+-- monster.lua's show_damage_label_ALL, which already runs on every peer).
+-- create_particle rebuilds the cached node every call, so it's created once
+-- here and only re-emitted per hit - same pattern as MineBlockLand's chip fx.
+local damage_fx_ready = false
+
+local function ensure_damage_fx()
+    if damage_fx_ready then return end
+    damage_fx_ready = true
+    create_particle({
+        particle_id = "cs_damage_hit",
+        texture_path = "white",
+        lifetime = 0.4,
+        amount = 6,
+        explosiveness = 1.0,
+        one_shot = true,
+        spread = 180,
+        initial_velocity_min = 30,
+        initial_velocity_max = 70,
+        scale_amount_min = 0.2,
+        scale_amount_max = 0.4,
+        color = Color(99 / 255, 199 / 255, 77 / 255, 1),
+    })
+end
+
+function spawn_damage_particle(hit_position)
+    ensure_damage_fx()
+    start_particle({ particle_id = "cs_damage_hit", position = hit_position })
 end
 
 

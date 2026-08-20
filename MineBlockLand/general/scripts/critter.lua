@@ -81,6 +81,9 @@ set_collision({ parent_name = name, name = "col", shape = "circle", size = SIZE 
     collision_layer = { 3 }, collision_mask = def.flying and {} or { 1 } })
 -- Read by -combat's melee hit test, so a swing that clips the body counts.
 set_value("", name, "hit_radius", SIZE / 2)
+-- ...and by -steps: a bird or a butterfly never touches the ground, so it must
+-- not drag a trail of footsteps across the island behind it.
+if def.flying then set_value("", name, "silent_steps", true) end
 
 -- =============================================================================
 -- Movement helpers (host only - clients just receive the synced position).
@@ -294,7 +297,8 @@ function host_die(attacker, pos)
             end
         end
     end
-    run_function("-gm", "on_enemy_killed", { { killer = attacker, dungeon_id = "" } })
+    run_function("-gm", "on_enemy_killed",
+        { { killer = attacker, dungeon_id = "", x = pos and pos.x, y = pos and pos.y } })
     run_function("-wild", "on_critter_died", { wkey, wgroup, wmember })
     destroy("", name)
 end

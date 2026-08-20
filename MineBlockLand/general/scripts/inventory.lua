@@ -197,6 +197,24 @@ end
 -- Held item (host validates, everyone renders).
 -- =============================================================================
 
+-- The equip click, heard by whoever is standing close enough - the held_ALL /
+-- worn_ALL broadcast that changes the sprite already reaches every peer, so
+-- there is nothing extra to send.
+--
+-- 'quiet' is what host_sync_all_to passes: a joining peer is told what every
+-- player in the lobby is holding and wearing in one burst, and that is a state
+-- restore, not a lobby full of people equipping things at the same instant.
+-- Taking something OFF ("") is silent too - only picking something up clicks.
+local EQUIP_DISTANCE = 300
+
+function equip_sound(steam_id, item_id, quiet)
+    if quiet or item_id == "" then return end
+    local pos = get_value("", steam_id, "position")
+    if not pos then return end
+    set_audio({ stream_path = "item_equiped", is_2d = true, position = pos,
+        max_distance = EQUIP_DISTANCE, volume = -4, random_pitch = 0.08 })
+end
+
 function set_held(steam_id, item_id)
     held[steam_id] = item_id
     run_network_function(name, "held_ALL", { steam_id, item_id })
@@ -210,13 +228,14 @@ function equip_HOST(sender_id, item_id)
     set_held(sender_id, item_id)
 end
 
-function held_ALL(sender_id, steam_id, item_id)
+function held_ALL(sender_id, steam_id, item_id, quiet)
     if steam_id == LOCAL_STEAM_ID then
         my_held = item_id
         if is_panel_exists(INV_PANEL) then rebuild_inventory_panel() end
     end
     if get_value("", steam_id, "name") ~= nil then -- entity may not exist yet on a joining peer
         run_function(steam_id, "set_held_visual", { item_id })
+        equip_sound(steam_id, item_id, quiet)
     end
 end
 
@@ -243,13 +262,14 @@ function wear_HOST(sender_id, item_id)
     set_worn(sender_id, item_id)
 end
 
-function worn_ALL(sender_id, steam_id, item_id)
+function worn_ALL(sender_id, steam_id, item_id, quiet)
     if steam_id == LOCAL_STEAM_ID then
         my_worn = item_id
         if is_panel_exists(INV_PANEL) then rebuild_inventory_panel() end
     end
     if get_value("", steam_id, "name") ~= nil then -- entity may not exist yet on a joining peer
         run_function(steam_id, "set_worn_visual", { item_id })
+        equip_sound(steam_id, item_id, quiet)
     end
 end
 
@@ -338,11 +358,13 @@ end
 function host_sync_all_to(steam_id)
     host_sync(steam_id)
     -- Late joiner also needs to see what everyone currently holds and wears.
+    -- Sent quiet (see equip_sound): this is a state restore, so it must not
+    -- sound like the whole lobby re-equipping at once the moment you walk in.
     for other_id, item_id in pairs(held) do
-        run_network_function(name, "held_ALL", { other_id, item_id }, steam_id)
+        run_network_function(name, "held_ALL", { other_id, item_id, true }, steam_id)
     end
     for other_id, item_id in pairs(worn) do
-        run_network_function(name, "worn_ALL", { other_id, item_id }, steam_id)
+        run_network_function(name, "worn_ALL", { other_id, item_id, true }, steam_id)
     end
 end
 

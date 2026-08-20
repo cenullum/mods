@@ -40,6 +40,7 @@ local DISCARD_POS = Vector2(80, 0)
 local PLAYED_POS = Vector2(0, -120)   -- cards sit here during the jam window
 local CARD_SIZE = Vector2(100, 140)
 local SEAT_RADIUS = 310
+local CAMERA_SEAT_PULL = 150  -- how far the camera is pulled toward my seat (world units)
 
 local WEAPONS = { "pistol_9mm", "heavy_revolver", "machine_pistol", "compact_smg", "tactical_handgun" }
 
@@ -95,6 +96,19 @@ cl_favor = nil       -- { giver, receiver }
 cl_bomb_holder = ""
 cl_bots = {}         -- bot_id -> true, so every peer can draw a bot face at that seat
 cl_zoom = 0.6        -- local camera zoom; starts fully zoomed out (see world.lua)
+
+-- Turn-arrow marker: sync_ALL only recomputes WHERE it points (position/rotation
+-- targets below); the breathing scale animates every frame in _process so it
+-- doesn't depend on a network state change to keep moving. Turns always advance
+-- seat-index-ascending here (Operation Detonate has no reverse card).
+cl_marker_visible = false
+cl_marker_pos = Vector2(0, 0)
+cl_marker_rot = 0.0
+local ARROW_SIZE = 68
+local ARROW_BREATH_PERIOD = 1.4 -- seconds per full breathe in/out cycle
+local breath_t = 0.0
+local marker_sprite_made = false -- image_path only needs to be sent once
+local marker_last_visible = false
 
 -- ---------- HOST: bots ----------
 -- A bot is an ordinary seat with no peer behind it, so its id is a plain "bot1"
@@ -187,6 +201,33 @@ function _process(delta, inputs)
         bot_process(delta)
         bot_jam_process(delta)
     end
+
+    -- Breathing turn-arrow: purely cosmetic, so it runs locally every frame
+    -- instead of waiting on the next network sync_ALL.
+    if cl_marker_visible then
+        breath_t = breath_t + delta
+        local t = (breath_t % ARROW_BREATH_PERIOD) / ARROW_BREATH_PERIOD
+        local factor = 0.95 - 0.05 * math.cos(t * math.pi * 2) -- oscillates 0.90 .. 1.00
+        local cfg = {
+            name = "od_turn_marker",
+            position = cl_marker_pos,
+            rotation = cl_marker_rot,
+            scale = Vector2(ARROW_SIZE * factor, ARROW_SIZE * factor),
+            modulate = Color(1, 0.55, 0.15, 1),
+            visible = true,
+            z_index = 50,
+        }
+        if not marker_sprite_made then
+            cfg.image_path = "turn_arrow"
+            marker_sprite_made = true
+        end
+        set_image(cfg)
+        marker_last_visible = true
+    elseif marker_last_visible then
+        set_image({ name = "od_turn_marker", visible = false })
+        marker_last_visible = false
+    end
+
     return inputs
 end
 
@@ -1205,34 +1246,48 @@ function sync_ALL(sender_id, state)
     -- positions travel the wire), so every peer computes their OWN angle here
     -- and then counter-rotates their own world-space visuals (cards, seat
     -- avatars/names, turn marker) by the SAME amount so those stay upright.
+    local my_seat_angle = math.pi / 2
     if my_seat > 0 and (cl_phase == "playing" or cl_phase == "roundend") then
-        local angle = math.pi / 2 + (my_seat - 1) * (2 * math.pi / math.max(count, 1))
-        cl_local_rot = angle - math.pi / 2
+        my_seat_angle = math.pi / 2 + (my_seat - 1) * (2 * math.pi / math.max(count, 1))
+        cl_local_rot = my_seat_angle - math.pi / 2
     else
         cl_local_rot = 0.0
     end
     set_camera_rotation(cl_local_rot)
     card_set_world_rotation(cl_local_rot)
 
-    -- Turn marker dot in front of the active seat.
-    local marker_visible = cl_phase == "playing" and cl_turn ~= ""
-    local marker_pos = Vector2(0, 0)
-    for i, id in ipairs(cl_seated) do
-        if id == cl_turn then
-            local angle = math.pi / 2 + (i - 1) * (2 * math.pi / math.max(count, 1))
-            marker_pos = Vector2(math.cos(angle) * (SEAT_RADIUS - 62), math.sin(angle) * (SEAT_RADIUS - 62))
+    -- Pull the camera toward MY seat (not a fixed world direction), since the
+    -- view above is rotated per-seat - a static Vector2(0, y) would only read
+    -- as "down" for the seat at the bottom of the circle and would drift
+    -- sideways/diagonal for every other seat. This keeps the local avatar
+    -- clear of the hand fan for whichever seat we're actually in.
+    set_camera_position(Vector2(math.cos(my_seat_angle), math.sin(my_seat_angle)) * CAMERA_SEAT_PULL)
+
+    -- Turn marker: an arrow at the active seat, pointing toward whoever plays
+    -- next (skipping eliminated seats, same as advance_turn on the host).
+    -- Position/rotation targets only; the breathing scale animates every
+    -- frame in _process, independent of this network-driven update.
+    cl_marker_visible = cl_phase == "playing" and cl_turn ~= "" and count > 0
+    cl_marker_pos = Vector2(0, 0)
+    cl_marker_rot = 0.0
+    if cl_marker_visible then
+        for i, id in ipairs(cl_seated) do
+            if id == cl_turn then
+                local angle_cur = math.pi / 2 + (i - 1) * (2 * math.pi / count)
+                cl_marker_pos = Vector2(math.cos(angle_cur) * (SEAT_RADIUS - 132), math.sin(angle_cur) * (SEAT_RADIUS - 132))
+                local next_idx = i
+                for _ = 1, count do
+                    next_idx = (next_idx % count) + 1
+                    local next_id = cl_seated[next_idx]
+                    if next_idx == i or cl_alive[next_id] then break end
+                end
+                local angle_next = math.pi / 2 + (next_idx - 1) * (2 * math.pi / count)
+                local next_x = math.cos(angle_next) * SEAT_RADIUS
+                local next_y = math.sin(angle_next) * SEAT_RADIUS
+                cl_marker_rot = math.atan(next_y - cl_marker_pos.y, next_x - cl_marker_pos.x)
+            end
         end
     end
-    set_image({
-        name = "od_turn_marker",
-        image_path = "cursor",
-        position = marker_pos,
-        rotation = cl_local_rot,
-        scale = Vector2(34, 34),
-        modulate = Color(1, 0.55, 0.15, 1),
-        visible = marker_visible,
-        z_index = 50,
-    })
 
     refresh_hud()
     update_table_buttons()
@@ -1419,7 +1474,7 @@ function zoom_in_click(args)
 end
 
 function zoom_out_click(args)
-    cl_zoom = math.max(cl_zoom - 0.2, 0.6)
+    cl_zoom = math.max(cl_zoom - 0.2, 0.45)  -- floor lowered 25% below the 0.6 starting zoom
     set_camera_zoom(Vector2(cl_zoom, cl_zoom))
 end
 

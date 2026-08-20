@@ -25,7 +25,11 @@ local TABLE_IMAGE = "ce_table"
 set_input_display_name("stick_2","{mouse}")
 
 set_background_color(Color(0.09, 0.10, 0.14, 1))
-set_camera_position(Vector2(0, 0))
+-- Straight-down fallback for before we're seated/rotated; once seated,
+-- ce_manager's sync_ALL recomputes this pulled toward our actual seat angle
+-- (see CAMERA_SEAT_PULL there - a fixed world offset would only read as
+-- "down" for one particular seat once the camera starts rotating per-seat).
+set_camera_position(Vector2(0, 150))
 -- Start fully zoomed OUT so the whole table is visible; players zoom in from
 -- here (Zoom In). Keep this in sync with ce_manager's cl_zoom init / zoom floor.
 set_camera_zoom(Vector2(0.6, 0.6))

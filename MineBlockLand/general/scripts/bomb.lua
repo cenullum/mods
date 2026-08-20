@@ -107,7 +107,11 @@ function break_tiles(pos)
         for tx = cx - reach, cx + reach do
             local world = map_to_local(Vector2(tx, ty))
             if distance_to(pos, world) <= radius then
-                run_function("-gm", "host_damage_tile", { x = tx, y = ty, dmg = TILE_DAMAGE })
+                -- quiet: a blast clears dozens of cells in one frame, and the
+                -- boom itself (host_blast's boom_fx_ALL) is the sound of it -
+                -- not thirty tile thuds stacked on the same millisecond.
+                run_function("-gm", "host_damage_tile",
+                    { x = tx, y = ty, dmg = TILE_DAMAGE, quiet = true })
             end
         end
     end

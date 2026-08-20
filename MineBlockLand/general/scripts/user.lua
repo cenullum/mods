@@ -117,6 +117,13 @@ local FISH_LINE_BITE = Color(254 / 255, 231 / 255, 97 / 255, 1)    -- Light
 local fish_cast = ""        -- host: id of the cast in flight ("" = not fishing)
 local fish_bite_until = -1  -- host: clock time the catch window closes
 local fish_counter = 0
+-- Every peer: line is re-drawn every frame from the live position (see
+-- update_fish_line), the same way Hook Up's update_hook_line follows its
+-- owner - a line set once at cast time went stale the moment you took a
+-- step, since set_line was never called again after that.
+local fish_line_active = false
+local fish_line_target = Vector2(0, 0)
+local fish_line_color = FISH_LINE_IDLE
 local DEAD_TINT = Color(0.4, 0.4, 0.5, 0.5)
 
 -- Local "you got hit" feedback: quick shake + a red flash that fades back out
@@ -373,6 +380,7 @@ function _process(delta, inputs)
         regen_stamina(delta)
     end
     water_ripple() -- every peer, every player: purely local, see the function
+    update_fish_line() -- every peer, every player: same reason as water_ripple
     if IS_HOST and not is_dead then relay_aim(inputs) end
 
     if not IS_LOCAL then return nil end
@@ -687,15 +695,31 @@ end
 
 local FISH_LINE_SECONDS = 30 -- safety net: the line never outlives a lost cast
 
-function fish_line_ALL(sender_id, x, y, biting)
-    local line_name = "fish" .. name
+-- Redraws the line every frame from the live position, so it follows the
+-- rod's owner around instead of freezing where they stood at cast time.
+function update_fish_line()
+    if not fish_line_active then return end
     local live_pos = get_value("", name, "position")
     if not live_pos then return end
-    set_line({ name = line_name, start_position = live_pos,
-        end_position = Vector2(x, y),
-        color = biting and FISH_LINE_BITE or FISH_LINE_IDLE,
+    set_line({ name = "fish" .. name, start_position = live_pos,
+        end_position = fish_line_target, color = fish_line_color,
         width = 1, z_index = 40 })
-    run_function(name, "clear_fish_line", { line_name }, FISH_LINE_SECONDS)
+end
+
+local FISHING_SFX_DISTANCE = 300
+
+function fish_line_ALL(sender_id, x, y, biting)
+    fish_line_active = true
+    fish_line_target = Vector2(x, y)
+    fish_line_color = biting and FISH_LINE_BITE or FISH_LINE_IDLE
+    run_function(name, "clear_fish_line", { "fish" .. name }, FISH_LINE_SECONDS)
+    -- Only the CAST gets the splash - the bite (biting = true, same broadcast,
+    -- just a re-color of the line) is silent, or every peer near a bitten line
+    -- would hear a second, unexplained splash with nothing new landing in the water.
+    if not biting then
+        set_audio({ stream_path = "fishing", is_2d = true, position = Vector2(x, y),
+            max_distance = FISHING_SFX_DISTANCE, volume = -3, random_pitch = 0.1 })
+    end
 end
 
 function fish_line_off_ALL(sender_id)
@@ -703,6 +727,7 @@ function fish_line_off_ALL(sender_id)
 end
 
 function clear_fish_line(line_name)
+    fish_line_active = false
     if line_exists(line_name) then destroy_line(line_name) end
 end
 
@@ -789,7 +814,10 @@ function use_HOST(sender_id, aim_x, aim_y)
             w = shape.w and shape.w * MELEE_HURTBOX_SCALE or nil,
             h = shape.h and shape.h * MELEE_HURTBOX_SCALE or nil,
             angle = angle, windup = MELEE_WINDUP, dmg = damage,
-            targets = "all", attacker = name, kb = 40 }
+            targets = "all", attacker = name, kb = 40,
+            -- The swing whooshes even into empty air; landing it is a separate
+            -- sound the telegraph plays when it resolves (see -combat).
+            sfx = "melee_swing" }
         run_function("-combat", "start_telegraph", { cfg })
     end
     last_use = clock
@@ -1149,9 +1177,16 @@ function toast_ALL(sender_id, text)
     run_function("-gm", "banner_local", { text }) -- already on screen; no need to spam the chat too
 end
 
+local DEATH_SFX_DISTANCE = 360
+
 function died_ALL(sender_id, death_info)
     is_dead = true
     set_image({ parent_name = name, name = "body", modulate = DEAD_TINT })
+    local live_pos = get_value("", name, "position")
+    if live_pos then
+        set_audio({ stream_path = "dead", is_2d = true, position = live_pos,
+            max_distance = DEATH_SFX_DISTANCE, volume = -2, random_pitch = 0.06 })
+    end
     if IS_LOCAL then
         local msg = "{you_died_respawning_at_the_camp}"
         -- death_info is only set for a boss-fight death (see -gm's

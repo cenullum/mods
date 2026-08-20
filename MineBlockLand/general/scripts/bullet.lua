@@ -36,6 +36,17 @@ set_value("", name, "linear_velocity",
 
 run_function(name, "destroy_self", {}, life)
 
+-- The cast, heard the instant the bolt appears - no broadcast needed for this
+-- either: spawn_entity_host already sent the ONE message that created this
+-- entity on every peer, so each peer's own local copy plays it the moment its
+-- own top-level script (this file) runs, same as bomb.lua's blink starting
+-- itself on every peer with no host guard.
+local spawn_pos = get_value("", name, "position")
+if spawn_pos then
+    set_audio({ stream_path = "spell", is_2d = true, position = spawn_pos,
+        max_distance = 420, volume = -3, random_pitch = 0.1 })
+end
+
 -- The area reports the TileMap hit while the bullet's *centre* is often still in
 -- the empty cell in front of the wall (the area has a radius, and a fast bullet
 -- moves a good chunk of a tile per physics step). Mapping the raw position then
@@ -54,6 +65,14 @@ function solid_tile_ahead(pos)
     end
     return nil
 end
+
+-- Every peer simulates this bolt's flight itself (see the file header), so the
+-- impact is heard everywhere without a single message: whoever is close enough
+-- ran the very same collision a frame ago. bullet_impact is a DAMAGE sound,
+-- not a generic "stopped somewhere" sound, so a bolt burying itself in a wall
+-- or a tree - no host_take_damage call, just a tile hit - stays silent here;
+-- only actually hurting the player gets it.
+local IMPACT_DISTANCE = 420
 
 function on_area_body_entered(body_name)
     if hit_something then return end
@@ -74,6 +93,11 @@ function on_area_body_entered(body_name)
     end
     if has_tag(body_name, "alive") then
         hit_something = true
+        local pos = get_value("", name, "position")
+        if pos then
+            set_audio({ stream_path = "bullet_impact", is_2d = true, position = pos,
+                max_distance = IMPACT_DISTANCE, volume = -4, random_pitch = 0.12 })
+        end
         if IS_HOST then
             run_function(body_name, "host_take_damage", { dmg, "" })
         end

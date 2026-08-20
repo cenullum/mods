@@ -5,9 +5,10 @@ network_mode = 0
 -- Campfire Survivors - boss director + shared telegraph service.
 --
 -- Thirty minutes into a run the Guardian wakes up, the arena doubles in size
--- and the fight is on. Kill it and you get confetti, a congratulations panel
--- and the arena back at its normal size; wipe instead and wave_manager's
--- game_over path resets everything the same way.
+-- and the fight is on - three phases of it, see boss.lua. Empty its bar three
+-- times and you get confetti, a congratulations panel and the arena back at
+-- its normal size; wipe instead and wave_manager's game_over path resets
+-- everything the same way.
 --
 -- TELEGRAPHS are the "red zone fills up, then the hit lands" warning used by
 -- the boss slam and its meteors. The host sends ONE message when an attack
@@ -17,7 +18,10 @@ network_mode = 0
 -- =============================================================================
 
 BOSS_TIME = 1800                -- seconds of survival before the Guardian shows up (30 min)
-local BOSS_HP_PER_PLAYER = 2500 -- multiplied by the party size AND the wave level index
+-- Multiplied by the party size AND the wave level index. This is the TOTAL
+-- pool: boss.lua splits it across its three phases (20/30/40%), so no single
+-- phase is as long as the old one-bar fight.
+local BOSS_HP_PER_PLAYER = 2500
 local BOSS_MAP_SCALE = 2        -- arena is this much bigger while the boss is alive
 
 local ZONE_COLOR = Color(0.62, 0.16, 0.21, 0.42)
@@ -30,6 +34,21 @@ boss_entity = ""
 local nav_icon_name = ""
 local tg_counter = 0
 local active_tg = {}            -- id -> {w, h, windup, elapsed, zone_name, fill_name}
+
+-- The telegraph decals are CHILDREN of this singleton, so their position is
+-- local to it - and "-bm" is placed by the map editor, not at the origin
+-- (general/maps/square/0_0.json puts it at ~(388, 191)). Without rebasing,
+-- every red zone was drawn that far from where the damage actually lands,
+-- which is why the meteors looked like they missed the boss entirely.
+-- (MineBlockLand's "-combat" is an auto-created singleton and happens to sit
+-- at 0,0, so the same code looked correct there.)
+local self_origin = nil
+local function to_local(x, y)
+    if not self_origin then
+        self_origin = get_value("", name, "position") or Vector2(0, 0)
+    end
+    return Vector2(x - self_origin.x, y - self_origin.y)
+end
 
 -- =============================================================================
 -- Telegraph API - call start_telegraph on the HOST only.
@@ -70,7 +89,7 @@ function tg_show_ALL(sender_id, cfg)
     local zone_name = "tgz" .. cfg.id
     local fill_name = "tgf" .. cfg.id
     local base = { parent_name = name, image_path = "white",
-        position = Vector2(cfg.x, cfg.y), rotation = cfg.angle }
+        position = to_local(cfg.x, cfg.y), rotation = cfg.angle }
     -- z 0/1 keeps the decal above the tiles but below the player bodies.
     base.name = zone_name
     base.scale = Vector2(cfg.w, cfg.h)
@@ -179,6 +198,20 @@ function spawn_boss()
     local center = run_function("-mg", "get_map_center")
     boss_entity = spawn_entity_host({ t = "boss", p = center, h = hp, wl = level_index })
     run_network_function(name, "boss_arrived_ALL", { boss_entity })
+end
+
+-- Testing shortcut: skip straight to the boss fight without waiting BOSS_TIME
+-- out, and without needing a wave ever started at the campfire first. Wipes
+-- any leftover boss (a stale stuck state, or one already alive) so the
+-- command is always safe to run cold or spam repeatedly while testing, then
+-- reuses spawn_boss() so the arena scale/HP/sync path is identical to the
+-- real thing.
+function force_spawn_boss()
+    if not IS_HOST then return end
+    destroy_entities_by_tag("boss")
+    reset_boss_state()
+    boss_defeated = false
+    spawn_boss()
 end
 
 -- Every peer: nav icon, warning banner and a growl.

@@ -1678,6 +1678,19 @@ function open_profile(steam_id) end
 ---@return string Audio player identifier (name), or "" on error.
 function set_audio(config) end
 
+--- Update the volume of an ALREADY-PLAYING audio player WITHOUT restarting it.
+--- set_audio() always restarts playback from the beginning, even when reusing
+--- an existing player by name - fine for a one-shot sound effect, but it means
+--- set_audio can never smoothly fade a continuous looping track (each call
+--- would snap it back to the start). Use this instead once the player already
+--- exists (created via set_audio with an explicit name/parent_name) to ramp
+--- its volume over several calls, e.g. for a day/night ambience crossfade.
+---@param parent_name string Entity the audio player is attached to (same value passed as set_audio's parent_name).
+---@param entity_name string The audio player's name (same value passed as set_audio's name).
+---@param volume_db number New volume in decibels.
+---@return boolean True if a matching, currently-alive audio player was found and updated.
+function set_audio_volume(parent_name, entity_name, volume_db) end
+
 --- Add an audio effect to a bus.
 --- Config parameters:
 ---   - bus_name (string, optional): Audio bus name (auto-formatted). Default: "Effect".

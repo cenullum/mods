@@ -46,6 +46,9 @@ set_collision({ parent_name = name, name = "col", shape = "circle", size = size 
 -- clipped the zombie's body but missed its exact centre point counted as a
 -- miss (the check only knew the victim's position, not how big it is).
 set_value("", name, "hit_radius", size / 2)
+-- Read by -steps: the ghost drifts through walls and over water, so it gets no
+-- footsteps either - the silence is half of what makes it read as a ghost.
+if phasing then set_value("", name, "silent_steps", true) end
 
 -- =============================================================================
 -- Host AI.
@@ -131,7 +134,8 @@ function npc_take_damage(dmg_in, attacker, kb, angle)
                 end
             end
         end
-        run_function("-gm", "on_enemy_killed", { { killer = attacker, dungeon_id = dungeon_id } })
+        run_function("-gm", "on_enemy_killed", { { killer = attacker, dungeon_id = dungeon_id,
+            x = my_pos and my_pos.x, y = my_pos and my_pos.y } })
         destroy("", name)
     end
 end

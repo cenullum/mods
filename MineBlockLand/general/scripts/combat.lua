@@ -27,6 +27,12 @@ local DAMAGE_LABEL_JITTER = 10  -- pixels; keeps repeated hits from stacking exa
 local TRACER_SECONDS = 0.12
 local TRACER_COLOR = Color(234 / 255, 212 / 255, 170 / 255, 0.9) -- Birch
 local ARROW_RANGE = 320
+-- Shared by every landed hit: a melee swing connecting sounds the same as an
+-- arrow or bolt connecting - one generic "thwack", reused everywhere instead
+-- of a dedicated melee sample.
+local IMPACT_DISTANCE = 420
+-- The swing itself carries less far than the hit it may or may not land.
+local SWING_DISTANCE = 320
 
 local tg_counter = 0
 local active_tg = {}   -- id -> {x, y, w, h, angle, windup, elapsed, fill_name, zone_name}
@@ -42,6 +48,11 @@ local dmg_counter = 0
 --   targets       "players" | "npcs" | "all"
 --   attacker      entity name excluded from the victims (and credited stats)
 --   kb            optional knockback applied to npc victims
+--   sfx           optional sound played on every peer as the zone appears -
+--                 i.e. the swing itself, NOT the hit (that is tg_done_ALL's
+--                 bullet_impact). Opt-in per caller on purpose: a player's
+--                 sword should whoosh, a bomb's blast circle and the boss's
+--                 slam/meteor should not.
 -- }
 -- =============================================================================
 
@@ -59,7 +70,7 @@ function start_telegraph(cfg)
     end
     run_network_function(name, "tg_show_ALL", {
         { id = id, x = cfg.x, y = cfg.y, shape = cfg.shape, w = w, h = h,
-            angle = cfg.angle or 0, windup = cfg.windup },
+            angle = cfg.angle or 0, windup = cfg.windup, sfx = cfg.sfx or "" },
     })
     start_timer({ timer_id = "tg_resolve" .. id, entity_name = name,
         function_name = "tg_resolve", wait_time = cfg.windup, duration = cfg.windup,
@@ -93,6 +104,13 @@ function tg_show_ALL(sender_id, cfg)
     set_shader({ parent_name = name, image_name = fill_name, shader_name = shader })
     active_tg[cfg.id] = { w = cfg.w, h = cfg.h, windup = cfg.windup, elapsed = 0,
         zone_name = zone_name, fill_name = fill_name }
+    -- The swing, heard the moment the zone goes up - it plays whether or not
+    -- anything is standing there, which is the whole point: swinging at thin
+    -- air still makes a noise. Whether it CONNECTED is tg_done_ALL's business.
+    if cfg.sfx and cfg.sfx ~= "" then
+        set_audio({ stream_path = cfg.sfx, is_2d = true, position = Vector2(cfg.x, cfg.y),
+            max_distance = SWING_DISTANCE, volume = -6, random_pitch = 0.14 })
+    end
 end
 
 -- Local per-frame fill animation (no network traffic).
@@ -116,8 +134,15 @@ function remove_tg(id)
     active_tg[id] = nil
 end
 
-function tg_done_ALL(sender_id, id)
+-- 'hit' + the zone centre ride along on the SAME cleanup message tg_resolve
+-- already sends when the windup ends - a swing that connects and a swing that
+-- whiffs both fire this exactly once, so there is nothing to gain from a
+-- second broadcast just for the sound.
+function tg_done_ALL(sender_id, id, hit, x, y)
     remove_tg(id)
+    if not hit then return end
+    set_audio({ stream_path = "bullet_impact", is_2d = true, position = Vector2(x, y),
+        max_distance = IMPACT_DISTANCE, volume = -4, random_pitch = 0.12 })
 end
 
 -- Shape-vs-circle test (rect is centred and rotated by 'angle'). 'radius' is
@@ -158,21 +183,24 @@ end
 function tg_resolve(args)
     local cfg = args.extra_args
     if not IS_HOST or not cfg then return end
-    run_network_function(name, "tg_done_ALL", { cfg.id })
     local ff = get_value("", "-gm", "friendly_fire") or false
     local attacker_is_player = cfg.attacker ~= nil and cfg.attacker ~= "" and has_tag(cfg.attacker, "user")
+    local hit_any = false
     if cfg.targets == "players" or cfg.targets == "all" then
         each_victim(cfg, "alive", function(victim, pos)
             if attacker_is_player and not ff then return end
             run_function(victim, "host_take_damage", { cfg.dmg, cfg.attacker })
+            hit_any = true
         end)
     end
     if cfg.targets == "npcs" or cfg.targets == "all" then
         each_victim(cfg, "npc", function(victim, pos)
             local angle = math.atan(pos.y - cfg.y, pos.x - cfg.x)
             run_function(victim, "npc_take_damage", { cfg.dmg, cfg.attacker, cfg.kb, angle })
+            hit_any = true
         end)
     end
+    run_network_function(name, "tg_done_ALL", { cfg.id, hit_any, cfg.x, cfg.y })
 end
 
 -- =============================================================================
@@ -226,27 +254,50 @@ function host_arrow(shooter, aim_x, aim_y, dmg)
     local mask = ff and { 1, 2, 3 } or { 1, 3 }
     local hit = raycast({ from = from, direction = dir, length = ARROW_RANGE,
         collision_mask = mask, exclude = { shooter } })
-    run_network_function(name, "tracer_ALL", { from.x, from.y, hit.position.x, hit.position.y })
     -- collision_mask includes layer 1 (tiles), so a miss often means the arrow
     -- hit the TileMap itself - not a registered entity. has_tag() errors if
     -- asked about a name that isn't a real entity, so skip it in that case.
-    if not hit.hit or hit.collider == "" or hit.collider == "TileMap" then return end
-    if has_tag(hit.collider, "npc") then
-        local angle = math.atan(dir.y, dir.x)
-        run_function(hit.collider, "npc_take_damage", { dmg, shooter, 60, angle })
-    elseif ff and has_tag(hit.collider, "alive") then
-        run_function(hit.collider, "host_take_damage", { dmg, shooter })
+    local damaged = false
+    if hit.hit and hit.collider ~= "" and hit.collider ~= "TileMap" then
+        if has_tag(hit.collider, "npc") then
+            local angle = math.atan(dir.y, dir.x)
+            run_function(hit.collider, "npc_take_damage", { dmg, shooter, 60, angle })
+            damaged = true
+        elseif ff and has_tag(hit.collider, "alive") then
+            run_function(hit.collider, "host_take_damage", { dmg, shooter })
+            damaged = true
+        end
     end
+    -- 'damaged' (not just hit.hit): an arrow that stops in a wall or a tree
+    -- still lands somewhere, but the impact thud is a DAMAGE sound - it only
+    -- plays when the shot actually hurt something.
+    run_network_function(name, "tracer_ALL",
+        { from.x, from.y, hit.position.x, hit.position.y, damaged })
 end
 
 local tracer_counter = 0
+local SHOT_DISTANCE = 480    -- a bow carries further than a footstep does
 
-function tracer_ALL(sender_id, x1, y1, x2, y2)
+-- The tracer is the shot: one broadcast already tells every peer where the
+-- arrow left from and where it stopped, so both ends of the sound ride along
+-- with it instead of costing messages of their own. 'landed' is false when the
+-- ray simply ran out of range - an arrow lost in the grass makes no thud.
+-- 'damaged' - NOT just "the arrow stopped somewhere" - is true only when the
+-- shot actually hurt someone (see host_arrow); an arrow that lodges in a wall
+-- or a tree gets its tracer line but no impact thud.
+function tracer_ALL(sender_id, x1, y1, x2, y2, damaged)
     tracer_counter = tracer_counter + 1
     local line_name = "trc" .. LOCAL_STEAM_ID .. "_" .. tracer_counter
     set_line({ name = line_name, start_position = Vector2(x1, y1),
         end_position = Vector2(x2, y2), color = TRACER_COLOR, width = 2, z_index = 50 })
     run_function(name, "clear_tracer", { line_name }, TRACER_SECONDS)
+    set_audio({ stream_path = "bow_shoot", is_2d = true, position = Vector2(x1, y1),
+        max_distance = SHOT_DISTANCE, volume = -2, random_pitch = 0.1 })
+    if damaged then
+        set_audio({ stream_path = "bullet_impact", is_2d = true,
+            position = Vector2(x2, y2), max_distance = IMPACT_DISTANCE,
+            volume = -4, random_pitch = 0.12 })
+    end
 end
 
 function clear_tracer(line_name)
