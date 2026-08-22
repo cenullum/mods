@@ -1,0 +1,6 @@
+Katkıda bulunmak istersen modun GitHub sayfasına göz atabilirsin:
+https://github.com/cenullum/mods 
+
+Bu, yalnızca sunucu sahibinin açabildiği bir moderasyon paneli eklentisidir.
+
+Kullanmak için sohbete /moderation yaz.

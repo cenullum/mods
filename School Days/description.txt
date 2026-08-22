@@ -2,20 +2,32 @@ School Days - a co-op visual novel you play by voting.
 
 One school year, told from a single point of view - but every decision is made
 TOGETHER. Whenever a choice appears, the whole lobby votes; the option with the
-most votes wins (a 60-second timer keeps things moving, and some quiet moments
-have no clock at all). Between choices the story just flows - anyone can press
+most votes wins (a 60-second timer keeps things moving, and the big moments have
+no clock at all). Between choices the story just flows - anyone can press
 Continue when everyone's done reading.
 
-Live your last year at Pinar High: partner up for the big project, fall for the
-quiet artist Aylin, keep up with your loud best friend Kerem, stay on the right
-side of Ms. Deniz - and decide what you do when an exam-answer scandal tears the
-class apart. Kindness, ambition, courage and cowardice all quietly add up: the
-year branches through four chapters into SIX different endings, from a golden
+Live your last year at Pinar High across eight chapters and three seasons. Pick
+a partner for the autumn project and you pick whose story you get: Aylin, who
+draws better than anyone in the school and has been apologising for it since she
+was nine; Kerem, who is loud because loud people don't get asked things; Emre,
+who is eleventh in the year and still can't pay the fees; Zeynep, who knows
+everything about everyone and has never once been in one of her own stories; and
+Ms. Deniz, who tells you in September that she punishes lies and not mistakes,
+and who has been losing that argument with herself since 1998.
+
+Then the exam leaks, the class fails together, and every one of them turns out to
+have been carrying something. There is a winter of quiet Saturdays where you can
+only go and see some of them, a spring week where one teacher has one evening and
+three references to write, and a hearing in March where the room asks you one
+question and you can answer it six different ways - the widest answers only open
+to a lobby that spent the year collecting the truth instead of protecting itself.
+Kindness, ambition, courage, cowardice, guilt and how much you actually know all
+quietly add up, and the year branches into NINETEEN endings, from a golden
 romance to a lonely honour roll to a long, guilty shadow.
 
 This is a reference example for the Visual Novel runtime. The whole story -
 characters, dialog, branches, hidden choices, variables and every ending - lives
-in story/school_days.json, the exact format the Online Asset Editor's Visual
+in general/school_days.json, the exact format the Online Asset Editor's Visual
 Novel tab exports. All the presentation (background, character sprite, name box,
 dialog, the voting HUD) is ordinary Lua you can read in general/scripts, so you
 can see precisely how to turn an exported story into a playable game.

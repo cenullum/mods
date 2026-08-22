@@ -1,0 +1,23 @@
+MineBlockLand — yukarıdan bakışlı, ortak oynanan bir hayatta kalma adası.
+
+Her dünya bir tohumdan üretilir: çiçekli çayırlar, palmiyeli kumsallar, kaktüs
+çölleri, kayalık tepeler, tarlalar, içinden yürüyebileceğin sığ bir deniz ve
+geçemeyeceğin bir derin deniz. Ağaç kes, kaya kaz, alet yap (daha iyi takım daha
+hızlı çalışır, seni daha az yorar ve daha nadir taşlar bulur), kavun yetiştir ve
+kampın doğusundaki taş zindanı yağmala — odaların köşelerindeki kil testiler
+dâhil; bazılarının içinde hiçbir şey yoktur.
+
+Ada canlıdır. Yengeçler ve kaplumbağalar kıyıda gezinir, tavşanlar, tilkiler ve
+maymunlar çayırlarda sürü hâlinde dolaşır, deve kuşları kumulların üstünde koşar
+ve şanslıysan yoluna bir tek boynuzlu at çıkar. Birine vurursan kaçar. Bir
+gergedana ya da file vurursan, sürünün her bir üyesi peşine düşer — aranıza
+yeterince mesafe koyana kadar.
+
+Geceleri ölüler yürür, hayaletler duvarlarının içinden süzülür ve cadılar
+karanlıktan yıldırım savurur. Altı gece hayatta kal — 7. günün akşamında Ada'nın
+Muhafızı ayağa kalkar ve göğü mermiyle doldurur. Konfeti, skor tablosu ve şan
+için onu öldür. Dünya sunucuda kaydedilir, yani günler sonra dönüp kaldığın
+yerden devam edebilirsin.
+
+Komutlar: /friendlyfire (sunucu), /newworld (sunucu), /seed, /stats, /openallmap
+Test: /testboss (sunucu), /testitems (sunucu)

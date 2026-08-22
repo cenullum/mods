@@ -1,0 +1,13 @@
+Katkıda bulunmak istersen modun GitHub sayfasına göz atabilirsin:
+https://github.com/cenullum/mods 
+
+Campfire Survivors, giderek zorlaşan düşmanlara karşı savunma yaptığın dalga tabanlı bir hayatta kalma oyunudur.
+
+- Dalgalar 60-120 saniye sürer, aralarında 30 saniyelik dinlenme olur
+- Düşmanlar gruplar hâlinde belirir
+- 6 düşman türü: Hayalet, Kurt, Haydut, Zombi, Kaktüs ve Yılan
+- Her düşmanın kendine özgü can, hasar ve hız değerleri vardır
+- Düşmanlar her 7 dalgada bir evrilir; canları ve hasarları artar
+- Haydutlar, dalga seviyesine göre hasar veren mermiler atar
+- Oyuncular düşmanlara mermi ateşleyebilir
+- Tüm oyuncular yenildiğinde oyun biter

@@ -31,7 +31,7 @@ singleton_name = "sd_manager"
 -- a clean classic-VN presentation as a reference example.
 -- =============================================================================
 
-local STORY_PATH = "story/school_days.json"
+local STORY_PATH = "general/school_days.json"
 local VOTE_TIME = 60      -- seconds to vote on a timed choice
 local READ_TIME = 30      -- auto-advance fallback for narration nodes
 local NOTIMER_TAG = "notimer"
@@ -42,6 +42,11 @@ local CHAPTERS = {
     chapter2 = "{chapter2_title}",
     chapter3 = "{chapter3_title}",
     chapter4 = "{chapter4_title}",
+    chapter5 = "{chapter5_title}",
+    chapter6 = "{chapter6_title}",
+    chapter7 = "{chapter7_title}",
+    chapter8 = "{chapter8_title}",
+    ending = "{chapter_ending_title}",
 }
 
 -- Loaded once on every peer; vn callbacks come back to THIS entity.
@@ -86,7 +91,6 @@ end
 local function chapter_for(tags)
     for _, tag in ipairs(tags or {}) do
         if CHAPTERS[tag] then return CHAPTERS[tag] end
-        if tag == "ending" then return "Ending" end
     end
     return cl_chapter -- unchanged if this node carries no chapter tag
 end

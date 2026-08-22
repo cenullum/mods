@@ -1,0 +1,34 @@
+School Days — oy vererek oynadığın ortak bir görsel roman.
+
+Tek bir bakış açısından anlatılan bir okul yılı — ama her karar BİRLİKTE
+veriliyor. Bir seçim çıktığında bütün lobi oy verir; en çok oyu alan seçenek
+kazanır (60 saniyelik sayaç işleri akıtır, büyük anlarda ise hiç süre yoktur).
+Seçimlerin arasında hikâye akıp gider — herkes okumayı bitirince kim isterse
+Devam'a basabilir.
+
+Pınar Lisesi'ndeki son yılını sekiz bölüm ve üç mevsim boyunca yaşa. Güz
+projesi için bir eş seç, kimin hikâyesini alacağını da seçmiş ol: okuldaki
+herkesten iyi çizen ve dokuz yaşından beri bunun için özür dileyen Aylin;
+yüksek sesli, çünkü yüksek sesli insanlara bir şey sorulmaz diye düşünen Kerem;
+dönem on birincisi olup hâlâ taksitleri ödeyemeyen Emre; herkes hakkında her
+şeyi bilen ama bir kez olsun kendi hikâyelerinden birinde yer almamış Zeynep;
+ve eylülde sana yalanları cezalandırdığını, hataları cezalandırmadığını söyleyen,
+1998'den beri bu tartışmayı kendisine karşı kaybeden Deniz Öğretmen.
+
+Sonra sınav sızar, sınıf hep birlikte kalır ve her birinin bir şey taşıdığı
+ortaya çıkar. Yalnızca bazılarını görmeye gidebildiğin, sessiz cumartesilerden
+oluşan bir kış vardır; bir öğretmenin bir akşamı ve yazacak üç referansı olduğu
+bir bahar haftası vardır; ve martta, odanın sana tek bir soru sorduğu ve buna
+altı ayrı biçimde cevap verebileceğin bir duruşma vardır — en geniş cevaplar
+yalnızca yılı kendini korumak yerine gerçeği toplayarak geçiren bir lobiye
+açılır. Nezaket, hırs, cesaret, korkaklık, suçluluk ve gerçekte ne kadar
+bildiğin sessizce birikir ve yıl, altın bir aşktan yalnız bir takdir belgesine,
+oradan uzun ve suçlu bir gölgeye uzanan ON DOKUZ sona ayrılır.
+
+Bu, Görsel Roman çalışma zamanı için bir referans örnektir. Hikâyenin tamamı —
+karakterler, diyaloglar, dallar, gizli seçimler, değişkenler ve her son —
+general/school_days.json içindedir; Çevrimiçi Varlık Editörü'nün Görsel Roman
+sekmesinin dışa aktardığı biçimin tıpatıp aynısı. Tüm sunum (arka plan, karakter
+görseli, isim kutusu, diyalog, oylama arayüzü) general/scripts içinde
+okuyabileceğin sıradan Lua'dır; böylece dışa aktarılmış bir hikâyeyi oynanabilir
+bir oyuna nasıl dönüştüreceğini tam olarak görebilirsin.

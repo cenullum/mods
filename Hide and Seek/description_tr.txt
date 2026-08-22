@@ -1,0 +1,20 @@
+Hide and Seek — kılık değiştirme ve kovalamaca üzerine, yukarıdan bakışlı bir ortak oyun.
+
+Sunucu sahibinin seçtiği bir tohumdan rastgele bir mağara (odalar, koridorlar ve
+dağınık eşyalar) üretilir; böylece herkes tıpatıp aynı haritayı oynar. Oyuncular
+iki takıma ayrılır ve ilk turdan sonra taraf değiştirir.
+
+SAKLANANLAR, çevrelerindeki eşyalara karışmak için kendi 32x32 bedenlerini
+boyar. "Boyama Modu"na bas; donarsın ve boyama paneli açılır (fırça 1-32,
+damlalık rengi doğrudan dünyadan alabilir). İlham için diğer saklananlara bakmak
+üzere Önceki/Sonraki/Kendin düğmelerini kullan. Ne kadar geç yakalanırsan — ya da
+hayatta kalırsan — o kadar çok puan alırsın.
+
+ARAYANLAR, saklananlar dağılırken bir dakika boyunca bir odaya kapatılır; sonra
+oda açılır ve av başlar. Sol tıkla imlecine doğru kısa bir ışın gönder (2 sn
+bekleme, duvarlar engeller). Bir saklananı ne kadar hızlı yakalarsan o kadar çok
+puan kazanırsın. Arayanlar Steam avatarlarını gösterir ve isterlerse bedenlerini
+onlar da boyayabilir.
+
+Puan iki tur boyunca birikir, sonunda bir tablo gösterilir ve herkes sonraki
+harita için oy verir. Aynı tohum = her seferinde aynı mağara.

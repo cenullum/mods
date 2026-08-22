@@ -1,0 +1,6 @@
+如果你想出一份力，可以看看模組的 GitHub 頁面：
+https://github.com/cenullum/mods 
+
+這是一個只有房主才能開啟的管理面板附加元件。
+
+在聊天中輸入 /moderation 即可使用。

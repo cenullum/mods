@@ -1,0 +1,13 @@
+Draw The Word — ortak çiz ve tahmin et parti oyunu.
+
+Oyuncular sırayla ortak bir tahtaya gizli bir kelime çizer; geri kalan herkes
+sohbette onu tahmin etmeye çalışır. Cevap asla ele verilmez: doğru tahmin
+kelime gösterilmeden isimle duyurulur, kıl payı kaçan tahmin ise yalnızca sana
+fısıldanır.
+Hızlı bilen daha çok puan alır; çizen de bilen her oyuncu için bonus kazanır.
+Puan karşılığında harf ipuçlarını açabilir, haksızlık yapan çizeri bildirip
+sırasını atlatabilirsin; herkesin sırası geçtiğinde ilk 3 kürsüye çıkar. Tam
+rehber için sohbete /rules yaz.
+
+En az 2 oyuncu. Motorun boyanabilir tuval sistemi üzerine kuruludur: tahtayı
+yalnızca sıradaki çizen boyayabilir (sunucu yetkili), diğer herkes izler.

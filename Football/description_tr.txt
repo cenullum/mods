@@ -1,0 +1,16 @@
+Katkıda bulunmak istersen modun GitHub sayfasına göz atabilirsin:
+https://github.com/cenullum/mods 
+
+Football, iki takımın gol atmak için yarıştığı çok oyunculu bir takım oyunudur.
+
+- İki takım: Kırmızı ve Mavi
+- Şut gücü için basılı tut, bırakınca topa vur
+- Sekme ve sürtünmeli top fiziği
+- Skor tablosu bireysel gol ve asistleri tutar
+- Maç süre sınırıyla oynanabilir (1-90 dakika veya sınırsız)
+- Oyuncular takımlar arasında taşınabilir veya izleyici yapılabilir
+- Sunucu sahibinin skor tablosu panelinden her iki takıma da ekleyebildiği
+  yapay zekâ botları (yalnızca kaleci / yalnızca oyuncu / ikisi de), kolay,
+  normal veya zor seviyede. Kadro büyüklüğüne göre mevki seçer, pas verir,
+  top sürer, kalenin boş tarafını hedefler ve savunmaya geri döner — hem de
+  seninkiyle aynı hız ve şut gücüyle

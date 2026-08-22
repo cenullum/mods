@@ -1,0 +1,6 @@
+協力していただける方は、MOD の GitHub ページをご覧ください:
+https://github.com/cenullum/mods 
+
+ホストだけが開けるモデレーションパネルのアドオンです。
+
+チャットに /moderation と入力すると使えます。

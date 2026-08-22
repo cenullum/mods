@@ -5,7 +5,7 @@ singleton_name = "w"
 --
 -- This is a classic visual novel driven by the engine's Visual Novel runtime
 -- (vn_* functions). The STORY itself (characters, dialog, branches, variables,
--- multiple endings) lives in story/school_days.json - the exact format the
+-- multiple endings) lives in general/school_days.json - the exact format the
 -- Online Asset Editor's Visual Novel tab exports. All the presentation you see
 -- (background, character sprite, name box, dialog, choice buttons) is ordinary
 -- HUD built here + in sd_manager.lua; the engine only tracks the story graph.

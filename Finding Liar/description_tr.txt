@@ -1,0 +1,7 @@
+Katkıda bulunmak istersen modun GitHub sayfasına göz atabilirsin:
+https://github.com/cenullum/mods 
+
+Finding Liar: 3+ oyunculu bir sosyal çıkarım oyunu — yalancı dışında herkes kelimeyi bilir.
+- Şüphelileri elemek için oylama sistemi
+- Farklı kelime kategorileri
+- Yandan görünümlü 2B sahne

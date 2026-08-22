@@ -1,0 +1,7 @@
+如果你想出一份力，可以看看模组的 GitHub 页面：
+https://github.com/cenullum/mods 
+
+Finding Liar：3 人以上的社交推理游戏，除了骗子以外所有人都知道那个词。
+- 投票淘汰嫌疑人
+- 多种词语分类
+- 横向卷动的 2D 画面

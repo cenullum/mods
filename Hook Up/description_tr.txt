@@ -1,0 +1,11 @@
+Katkıda bulunmak istersen modun GitHub sayfasına göz atabilirsin:
+https://github.com/cenullum/mods 
+
+Kancanı kullanarak zorlu bölümlerde savrul. Karakterinin doğrudan hareketi yoktur — dünyada ilerlemenin tek yolu kancadır.
+Amaç: En tepedeki altın bayrağa ulaşmak!
+
+- Kanca tabanlı hareket sistemi
+- İlerleme çubuğuyla ayarlanabilir kanca gücü
+- Yandan görünümlü, yerçekimine dayalı oynanış
+- Zorlayıcı kanca ve savrulma mekanikleri
+- Farklı yerlerden (deniz, göl, mağara, vaha vb.) çeşitli balık türleri içeren balıkçılık sistemi

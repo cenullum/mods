@@ -1,0 +1,10650 @@
+{
+	"kind": "vn",
+	"v": 1,
+	"start": "start",
+	"vars": {
+		"affection": 0.0,
+		"trust": 0.0,
+		"d_bond": 0.0,
+		"z_bond": 0.0,
+		"e_bond": 0.0,
+		"grades": 0.0,
+		"courage": 0.0,
+		"reputation": 0.0,
+		"empathy": 0.0,
+		"truth": 0.0,
+		"guilt": 0.0,
+		"suspicion": 0.0,
+		"aylin_art": 0.0,
+		"kerem_path": 0.0
+	},
+	"chars": {
+		"aylin": {
+			"name": "{sd_char_aylin}",
+			"color": "(0.95, 0.55, 0.70, 1)",
+			"moods": {
+				"neutral": "aylin_neutral",
+				"happy": "aylin_happy",
+				"sad": "aylin_sad",
+				"angry": "aylin_angry",
+				"blush": "aylin_blush"
+			}
+		},
+		"kerem": {
+			"name": "{sd_char_kerem}",
+			"color": "(0.30, 0.72, 0.70, 1)",
+			"moods": {
+				"neutral": "kerem_neutral",
+				"happy": "kerem_happy",
+				"smug": "kerem_smug",
+				"angry": "kerem_angry",
+				"hurt": "kerem_hurt"
+			}
+		},
+		"deniz": {
+			"name": "{sd_char_deniz}",
+			"color": "(0.92, 0.72, 0.30, 1)",
+			"moods": {
+				"neutral": "deniz_neutral",
+				"stern": "deniz_stern",
+				"kind": "deniz_kind",
+				"disappointed": "deniz_disappointed"
+			}
+		},
+		"zeynep": {
+			"name": "{sd_char_zeynep}",
+			"color": "(0.70, 0.45, 0.90, 1)",
+			"moods": {
+				"neutral": "zeynep_neutral",
+				"excited": "zeynep_excited",
+				"sly": "zeynep_sly",
+				"angry": "zeynep_angry",
+				"sad": "zeynep_sad"
+			}
+		},
+		"emre": {
+			"name": "{sd_char_emre}",
+			"color": "(0.85, 0.38, 0.35, 1)",
+			"moods": {
+				"neutral": "emre_neutral",
+				"smug": "emre_smug",
+				"angry": "emre_angry",
+				"happy": "emre_happy",
+				"sad": "emre_sad"
+			}
+		}
+	},
+	"nodes": {
+		"start": {
+			"pos": [
+				0.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_start}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [
+				"chapter1"
+			],
+			"set": [],
+			"next": "start2",
+			"choices": []
+		},
+		"start2": {
+			"pos": [
+				340.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_start2}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "first_step",
+			"choices": []
+		},
+		"first_step": {
+			"pos": [
+				680.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_first_step}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "fs_bold",
+					"text": "{sd_first_step_c0}",
+					"tags": [
+						"brave"
+					],
+					"next": "fs_bold_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "fs_quiet",
+					"text": "{sd_first_step_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "fs_quiet_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "fs_early",
+					"text": "{sd_first_step_c2}",
+					"tags": [
+						"studious"
+					],
+					"next": "fs_early_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"fs_bold_n": {
+			"pos": [
+				1020.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_fs_bold_n}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "corridor",
+			"choices": []
+		},
+		"fs_quiet_n": {
+			"pos": [
+				1020.0,
+				210.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_fs_quiet_n}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "corridor",
+			"choices": []
+		},
+		"fs_early_n": {
+			"pos": [
+				1020.0,
+				420.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_fs_early_n}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "corridor",
+			"choices": []
+		},
+		"corridor": {
+			"pos": [
+				1360.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_corridor}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "zeynep_intro",
+			"choices": []
+		},
+		"zeynep_intro": {
+			"pos": [
+				1700.0,
+				0.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_zeynep_intro}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "z_listen",
+					"text": "{sd_zeynep_intro_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "zeynep_listen",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "z_trade",
+					"text": "{sd_zeynep_intro_c1}",
+					"tags": [
+						"curious"
+					],
+					"next": "zeynep_trade",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "z_brush",
+					"text": "{sd_zeynep_intro_c2}",
+					"tags": [
+						"cold"
+					],
+					"next": "zeynep_brush",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"zeynep_listen": {
+			"pos": [
+				2040.0,
+				0.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_zeynep_listen}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "intro2",
+			"choices": []
+		},
+		"zeynep_trade": {
+			"pos": [
+				2040.0,
+				210.0
+			],
+			"char": "zeynep",
+			"mood": "sly",
+			"text": "{sd_zeynep_trade}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "intro2",
+			"choices": []
+		},
+		"zeynep_brush": {
+			"pos": [
+				2040.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_zeynep_brush}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "intro2",
+			"choices": []
+		},
+		"intro2": {
+			"pos": [
+				2380.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_intro2}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "meet_kerem",
+			"choices": []
+		},
+		"meet_kerem": {
+			"pos": [
+				2720.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_meet_kerem}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "k_warm",
+					"text": "{sd_meet_kerem_c0}",
+					"tags": [
+						"friendly"
+					],
+					"next": "kerem_warm",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "k_cool",
+					"text": "{sd_meet_kerem_c1}",
+					"tags": [
+						"studious"
+					],
+					"next": "kerem_cool",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "k_shrug",
+					"text": "{sd_meet_kerem_c2}",
+					"tags": [
+						"cold"
+					],
+					"next": "kerem_cool",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "sub",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"kerem_warm": {
+			"pos": [
+				3060.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_kerem_warm}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "kerem_paper",
+			"choices": []
+		},
+		"kerem_cool": {
+			"pos": [
+				3060.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "hurt",
+			"text": "{sd_kerem_cool}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "kerem_paper",
+			"choices": []
+		},
+		"kerem_paper": {
+			"pos": [
+				3400.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_kerem_paper}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "kp_ask",
+					"text": "{sd_kerem_paper_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "kerem_paper_ask",
+					"cond": [],
+					"set": [
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "kp_ignore",
+					"text": "{sd_kerem_paper_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "aylin_enters",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"kerem_paper_ask": {
+			"pos": [
+				3740.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "smug",
+			"text": "{sd_kerem_paper_ask}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "aylin_enters",
+			"choices": []
+		},
+		"aylin_enters": {
+			"pos": [
+				4080.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_aylin_enters}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "aylin_first",
+			"choices": []
+		},
+		"aylin_first": {
+			"pos": [
+				4420.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_aylin_first}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "af_look",
+					"text": "{sd_aylin_first_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "aylin_look",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "af_greet",
+					"text": "{sd_aylin_first_c1}",
+					"tags": [
+						"friendly"
+					],
+					"next": "aylin_greet",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "af_none",
+					"text": "{sd_aylin_first_c2}",
+					"tags": [
+						"quiet"
+					],
+					"next": "emre_intro",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"aylin_look": {
+			"pos": [
+				4760.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_aylin_look}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "aylin_book",
+			"choices": []
+		},
+		"aylin_book": {
+			"pos": [
+				5100.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "blush",
+			"text": "{sd_aylin_book}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "emre_intro",
+			"choices": []
+		},
+		"aylin_greet": {
+			"pos": [
+				4760.0,
+				210.0
+			],
+			"char": "aylin",
+			"mood": "blush",
+			"text": "{sd_aylin_greet}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "emre_intro",
+			"choices": []
+		},
+		"emre_intro": {
+			"pos": [
+				5440.0,
+				0.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_emre_intro}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "e_impress",
+					"text": "{sd_emre_intro_c0}",
+					"tags": [
+						"curious"
+					],
+					"next": "emre_impress",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "e_needle",
+					"text": "{sd_emre_intro_c1}",
+					"tags": [
+						"blunt"
+					],
+					"next": "emre_needle",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "e_bond",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "e_note",
+					"text": "{sd_emre_intro_c2}",
+					"tags": [
+						"quiet"
+					],
+					"next": "emre_note",
+					"cond": [],
+					"set": [
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"emre_impress": {
+			"pos": [
+				5780.0,
+				0.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_emre_impress}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "deniz_intro",
+			"choices": []
+		},
+		"emre_needle": {
+			"pos": [
+				5780.0,
+				210.0
+			],
+			"char": "emre",
+			"mood": "smug",
+			"text": "{sd_emre_needle}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "deniz_intro",
+			"choices": []
+		},
+		"emre_note": {
+			"pos": [
+				5780.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_emre_note}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "deniz_intro",
+			"choices": []
+		},
+		"deniz_intro": {
+			"pos": [
+				6120.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_deniz_intro}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "deniz_rule",
+			"choices": []
+		},
+		"deniz_rule": {
+			"pos": [
+				6460.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_deniz_rule}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "first_bell",
+			"choices": []
+		},
+		"first_bell": {
+			"pos": [
+				6800.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_first_bell}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "walk_home",
+			"choices": []
+		},
+		"walk_home": {
+			"pos": [
+				7140.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_walk_home}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "w_kerem",
+					"text": "{sd_walk_home_c0}",
+					"tags": [
+						"friendship"
+					],
+					"next": "walk_kerem",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "w_aylin",
+					"text": "{sd_walk_home_c1}",
+					"tags": [
+						"romance"
+					],
+					"next": "walk_aylin",
+					"cond": [
+						{
+							"var": "affection",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "w_zeynep",
+					"text": "{sd_walk_home_c2}",
+					"tags": [
+						"kind"
+					],
+					"next": "walk_zeynep",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "w_alone",
+					"text": "{sd_walk_home_c3}",
+					"tags": [
+						"quiet"
+					],
+					"next": "walk_alone",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"walk_kerem": {
+			"pos": [
+				7480.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_walk_kerem}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch1_end",
+			"choices": []
+		},
+		"walk_aylin": {
+			"pos": [
+				7480.0,
+				210.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_walk_aylin}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch1_end",
+			"choices": []
+		},
+		"walk_zeynep": {
+			"pos": [
+				7480.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_walk_zeynep}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch1_end",
+			"choices": []
+		},
+		"walk_alone": {
+			"pos": [
+				7480.0,
+				630.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_walk_alone}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch1_end",
+			"choices": []
+		},
+		"ch1_end": {
+			"pos": [
+				7820.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch1_end}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_open",
+			"choices": []
+		},
+		"ch2_open": {
+			"pos": [
+				8760.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_ch2_open}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"chapter2"
+			],
+			"set": [],
+			"next": "choose_partner",
+			"choices": []
+		},
+		"choose_partner": {
+			"pos": [
+				9100.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_choose_partner}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "p_aylin",
+					"text": "{sd_choose_partner_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "partner_aylin",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "p_kerem",
+					"text": "{sd_choose_partner_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "partner_kerem",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "p_emre",
+					"text": "{sd_choose_partner_c2}",
+					"tags": [
+						"curious"
+					],
+					"next": "partner_emre",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "p_alone",
+					"text": "{sd_choose_partner_c3}",
+					"tags": [
+						"studious"
+					],
+					"next": "partner_alone",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "trust",
+							"op": "sub",
+							"value": 1
+						},
+						{
+							"var": "reputation",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"partner_aylin": {
+			"pos": [
+				9440.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "blush",
+			"text": "{sd_partner_aylin}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "a_lib1",
+			"choices": []
+		},
+		"a_lib1": {
+			"pos": [
+				9780.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_a_lib1}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "a_praise",
+					"text": "{sd_a_lib1_c0}",
+					"tags": [
+						"romance",
+						"kind"
+					],
+					"next": "a_praise_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "a_back",
+					"text": "{sd_a_lib1_c1}",
+					"tags": [
+						"curious"
+					],
+					"next": "a_back_n",
+					"cond": [
+						{
+							"var": "truth",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "a_work",
+					"text": "{sd_a_lib1_c2}",
+					"tags": [
+						"studious"
+					],
+					"next": "a_lib2",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"a_praise_n": {
+			"pos": [
+				10120.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "happy",
+			"text": "{sd_a_praise_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "a_lib2",
+			"choices": []
+		},
+		"a_back_n": {
+			"pos": [
+				10120.0,
+				210.0
+			],
+			"char": "aylin",
+			"mood": "blush",
+			"text": "{sd_a_back_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "a_lib2",
+			"choices": []
+		},
+		"a_lib2": {
+			"pos": [
+				10460.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "sad",
+			"text": "{sd_a_lib2}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "a_home",
+					"text": "{sd_a_lib2_c0}",
+					"tags": [
+						"kind",
+						"romance"
+					],
+					"next": "a_home_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "a_cover",
+					"text": "{sd_a_lib2_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "a_cover_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "a_push",
+					"text": "{sd_a_lib2_c2}",
+					"tags": [
+						"blunt"
+					],
+					"next": "a_push_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "affection",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"a_home_n": {
+			"pos": [
+				10800.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_a_home_n}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "a_finish",
+			"choices": []
+		},
+		"a_cover_n": {
+			"pos": [
+				10800.0,
+				210.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_a_cover_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "a_finish",
+			"choices": []
+		},
+		"a_push_n": {
+			"pos": [
+				10800.0,
+				420.0
+			],
+			"char": "aylin",
+			"mood": "angry",
+			"text": "{sd_a_push_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "a_finish",
+			"choices": []
+		},
+		"a_finish": {
+			"pos": [
+				11140.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_a_finish}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_close",
+			"choices": []
+		},
+		"partner_kerem": {
+			"pos": [
+				9440.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_partner_kerem}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "k_p1",
+			"choices": []
+		},
+		"k_p1": {
+			"pos": [
+				9780.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_k_p1}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "k_push",
+					"text": "{sd_k_p1_c0}",
+					"tags": [
+						"studious"
+					],
+					"next": "k_push_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "k_coast",
+					"text": "{sd_k_p1_c1}",
+					"tags": [
+						"lazy"
+					],
+					"next": "k_coast_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "grades",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"k_push_n": {
+			"pos": [
+				10120.0,
+				420.0
+			],
+			"char": "kerem",
+			"mood": "smug",
+			"text": "{sd_k_push_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "k_p2",
+			"choices": []
+		},
+		"k_coast_n": {
+			"pos": [
+				10120.0,
+				630.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_k_coast_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "k_p2",
+			"choices": []
+		},
+		"k_p2": {
+			"pos": [
+				10460.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_k_p2}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "k_read",
+					"text": "{sd_k_p2_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "k_read_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "k_press",
+					"text": "{sd_k_p2_c1}",
+					"tags": [
+						"blunt"
+					],
+					"next": "k_press_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "k_solo",
+					"text": "{sd_k_p2_c2}",
+					"tags": [
+						"studious"
+					],
+					"next": "k_solo_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "trust",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"k_read_n": {
+			"pos": [
+				10800.0,
+				630.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_k_read_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "k_finish",
+			"choices": []
+		},
+		"k_press_n": {
+			"pos": [
+				10800.0,
+				840.0
+			],
+			"char": "kerem",
+			"mood": "hurt",
+			"text": "{sd_k_press_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "k_finish",
+			"choices": []
+		},
+		"k_solo_n": {
+			"pos": [
+				10800.0,
+				1050.0
+			],
+			"char": "kerem",
+			"mood": "hurt",
+			"text": "{sd_k_solo_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "k_finish",
+			"choices": []
+		},
+		"k_finish": {
+			"pos": [
+				11140.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_k_finish}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_close",
+			"choices": []
+		},
+		"partner_emre": {
+			"pos": [
+				9440.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_partner_emre}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "e_p1",
+			"choices": []
+		},
+		"e_p1": {
+			"pos": [
+				9780.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_e_p1}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "e_car",
+					"text": "{sd_e_p1_c0}",
+					"tags": [
+						"blunt"
+					],
+					"next": "e_car_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "e_stay",
+					"text": "{sd_e_p1_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "e_stay_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "e_work",
+					"text": "{sd_e_p1_c2}",
+					"tags": [
+						"quiet"
+					],
+					"next": "e_work_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"e_car_n": {
+			"pos": [
+				10120.0,
+				840.0
+			],
+			"char": "emre",
+			"mood": "smug",
+			"text": "{sd_e_car_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "e_p2",
+			"choices": []
+		},
+		"e_stay_n": {
+			"pos": [
+				10120.0,
+				1050.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_e_stay_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "e_p2",
+			"choices": []
+		},
+		"e_work_n": {
+			"pos": [
+				10120.0,
+				1260.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_e_work_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "e_p2",
+			"choices": []
+		},
+		"e_p2": {
+			"pos": [
+				10460.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_e_p2}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "e_ask",
+					"text": "{sd_e_p2_c0}",
+					"tags": [
+						"curious"
+					],
+					"next": "e_ask_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "e_deaf",
+					"text": "{sd_e_p2_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "e_deaf_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"e_ask_n": {
+			"pos": [
+				10800.0,
+				1260.0
+			],
+			"char": "emre",
+			"mood": "angry",
+			"text": "{sd_e_ask_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "e_finish",
+			"choices": []
+		},
+		"e_deaf_n": {
+			"pos": [
+				10800.0,
+				1470.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_e_deaf_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "e_finish",
+			"choices": []
+		},
+		"e_finish": {
+			"pos": [
+				11140.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_e_finish}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_close",
+			"choices": []
+		},
+		"partner_alone": {
+			"pos": [
+				9440.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_partner_alone}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "s_p1",
+			"choices": []
+		},
+		"s_p1": {
+			"pos": [
+				9780.0,
+				630.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_s_p1}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "s_grind",
+					"text": "{sd_s_p1_c0}",
+					"tags": [
+						"studious"
+					],
+					"next": "s_grind_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "s_seek",
+					"text": "{sd_s_p1_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "s_seek_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"s_grind_n": {
+			"pos": [
+				10120.0,
+				1470.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_s_grind_n}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "s_p2",
+			"choices": []
+		},
+		"s_seek_n": {
+			"pos": [
+				10120.0,
+				1680.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_s_seek_n}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "s_p2",
+			"choices": []
+		},
+		"s_p2": {
+			"pos": [
+				10460.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_s_p2}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "s_why",
+					"text": "{sd_s_p2_c0}",
+					"tags": [
+						"curious"
+					],
+					"next": "s_why_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "s_proud",
+					"text": "{sd_s_p2_c1}",
+					"tags": [
+						"studious"
+					],
+					"next": "s_proud_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "d_bond",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "s_honest",
+					"text": "{sd_s_p2_c2}",
+					"tags": [
+						"honest"
+					],
+					"next": "s_honest_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"s_why_n": {
+			"pos": [
+				10800.0,
+				1680.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_s_why_n}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "s_finish",
+			"choices": []
+		},
+		"s_proud_n": {
+			"pos": [
+				10800.0,
+				1890.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_s_proud_n}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "s_finish",
+			"choices": []
+		},
+		"s_honest_n": {
+			"pos": [
+				10800.0,
+				2100.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_s_honest_n}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "s_finish",
+			"choices": []
+		},
+		"s_finish": {
+			"pos": [
+				11140.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_s_finish}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_close",
+			"choices": []
+		},
+		"ch2_close": {
+			"pos": [
+				11480.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch2_close}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_roof",
+			"choices": []
+		},
+		"ch2_roof": {
+			"pos": [
+				11820.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch2_roof}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "r_aylin",
+					"text": "{sd_ch2_roof_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "roof_aylin",
+					"cond": [
+						{
+							"var": "affection",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "r_kerem",
+					"text": "{sd_ch2_roof_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "roof_kerem",
+					"cond": [
+						{
+							"var": "trust",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "r_emre",
+					"text": "{sd_ch2_roof_c2}",
+					"tags": [
+						"curious"
+					],
+					"next": "roof_emre",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "r_zeynep",
+					"text": "{sd_ch2_roof_c3}",
+					"tags": [
+						"kind"
+					],
+					"next": "roof_zeynep",
+					"cond": [
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "r_alone",
+					"text": "{sd_ch2_roof_c4}",
+					"tags": [
+						"quiet"
+					],
+					"next": "roof_alone",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"roof_aylin": {
+			"pos": [
+				12160.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "happy",
+			"text": "{sd_roof_aylin}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch2_end",
+			"choices": []
+		},
+		"roof_kerem": {
+			"pos": [
+				12160.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_roof_kerem}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_end",
+			"choices": []
+		},
+		"roof_emre": {
+			"pos": [
+				12160.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_roof_emre}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_end",
+			"choices": []
+		},
+		"roof_zeynep": {
+			"pos": [
+				12160.0,
+				630.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_roof_zeynep}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch2_end",
+			"choices": []
+		},
+		"roof_alone": {
+			"pos": [
+				12160.0,
+				840.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_roof_alone}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch2_end",
+			"choices": []
+		},
+		"ch2_end": {
+			"pos": [
+				12500.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch2_end}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch3_open",
+			"choices": []
+		},
+		"ch3_open": {
+			"pos": [
+				13440.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch3_open}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"chapter3"
+			],
+			"set": [],
+			"next": "ch3_list",
+			"choices": []
+		},
+		"ch3_list": {
+			"pos": [
+				13780.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch3_list}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "cl_kerem",
+					"text": "{sd_ch3_list_c0}",
+					"tags": [
+						"friendship"
+					],
+					"next": "ch3_kerem",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "cl_look",
+					"text": "{sd_ch3_list_c1}",
+					"tags": [
+						"curious"
+					],
+					"next": "ch3_names",
+					"cond": [],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "cl_away",
+					"text": "{sd_ch3_list_c2}",
+					"tags": [
+						"quiet"
+					],
+					"next": "midweek",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"ch3_kerem": {
+			"pos": [
+				14120.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "smug",
+			"text": "{sd_ch3_kerem}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "kk_sit",
+					"text": "{sd_ch3_kerem_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "ch3_kerem_sit",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "kk_help",
+					"text": "{sd_ch3_kerem_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "ch3_kerem_help",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "kk_joke",
+					"text": "{sd_ch3_kerem_c2}",
+					"tags": [
+						"quiet"
+					],
+					"next": "ch3_kerem_joke",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"ch3_kerem_sit": {
+			"pos": [
+				14460.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "hurt",
+			"text": "{sd_ch3_kerem_sit}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "midweek",
+			"choices": []
+		},
+		"ch3_kerem_help": {
+			"pos": [
+				14460.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_ch3_kerem_help}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "midweek",
+			"choices": []
+		},
+		"ch3_kerem_joke": {
+			"pos": [
+				14460.0,
+				420.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_ch3_kerem_joke}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "midweek",
+			"choices": []
+		},
+		"ch3_names": {
+			"pos": [
+				14120.0,
+				210.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_ch3_names}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "midweek",
+			"choices": []
+		},
+		"midweek": {
+			"pos": [
+				14800.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_midweek}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "l_aylin",
+					"text": "{sd_midweek_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "lunch_aylin",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "l_kerem",
+					"text": "{sd_midweek_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "lunch_kerem",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "l_zeynep",
+					"text": "{sd_midweek_c2}",
+					"tags": [
+						"kind"
+					],
+					"next": "lunch_zeynep",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "l_emre",
+					"text": "{sd_midweek_c3}",
+					"tags": [
+						"curious"
+					],
+					"next": "lunch_emre",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "l_study",
+					"text": "{sd_midweek_c4}",
+					"tags": [
+						"studious"
+					],
+					"next": "lunch_study",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"lunch_aylin": {
+			"pos": [
+				15140.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "blush",
+			"text": "{sd_lunch_aylin}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "la_open",
+					"text": "{sd_lunch_aylin_c0}",
+					"tags": [
+						"romance",
+						"vulnerable"
+					],
+					"next": "lunch_aylin2",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "la_art",
+					"text": "{sd_lunch_aylin_c1}",
+					"tags": [
+						"romance"
+					],
+					"next": "lunch_aylin_art",
+					"cond": [
+						{
+							"var": "aylin_art",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "la_light",
+					"text": "{sd_lunch_aylin_c2}",
+					"tags": [
+						"friendly"
+					],
+					"next": "week_bridge",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"lunch_aylin2": {
+			"pos": [
+				15480.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "happy",
+			"text": "{sd_lunch_aylin2}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "affection",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "empathy",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_aylin_art": {
+			"pos": [
+				15480.0,
+				210.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_lunch_aylin_art}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_kerem": {
+			"pos": [
+				15140.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "hurt",
+			"text": "{sd_lunch_kerem}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "lk_support",
+					"text": "{sd_lunch_kerem_c0}",
+					"tags": [
+						"friendship",
+						"kind"
+					],
+					"next": "lunch_kerem2",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "lk_push",
+					"text": "{sd_lunch_kerem_c1}",
+					"tags": [
+						"blunt"
+					],
+					"next": "lunch_kerem_push",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "lk_shop",
+					"text": "{sd_lunch_kerem_c2}",
+					"tags": [
+						"honest"
+					],
+					"next": "lunch_kerem_shop",
+					"cond": [],
+					"set": [
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "lk_deflect",
+					"text": "{sd_lunch_kerem_c3}",
+					"tags": [
+						"cold"
+					],
+					"next": "week_bridge",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"lunch_kerem2": {
+			"pos": [
+				15480.0,
+				420.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_lunch_kerem2}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "trust",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_kerem_push": {
+			"pos": [
+				15480.0,
+				630.0
+			],
+			"char": "kerem",
+			"mood": "angry",
+			"text": "{sd_lunch_kerem_push}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_kerem_shop": {
+			"pos": [
+				15480.0,
+				840.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_lunch_kerem_shop}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_zeynep": {
+			"pos": [
+				15140.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_lunch_zeynep}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "lz_ask",
+					"text": "{sd_lunch_zeynep_c0}",
+					"tags": [
+						"blunt",
+						"kind"
+					],
+					"next": "lunch_zeynep2",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "lz_normal",
+					"text": "{sd_lunch_zeynep_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "lunch_zeynep_normal",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "lz_use",
+					"text": "{sd_lunch_zeynep_c2}",
+					"tags": [
+						"curious"
+					],
+					"next": "lunch_zeynep_use",
+					"cond": [],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "z_bond",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"lunch_zeynep2": {
+			"pos": [
+				15480.0,
+				1050.0
+			],
+			"char": "zeynep",
+			"mood": "sad",
+			"text": "{sd_lunch_zeynep2}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_zeynep_normal": {
+			"pos": [
+				15480.0,
+				1260.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_lunch_zeynep_normal}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_zeynep_use": {
+			"pos": [
+				15480.0,
+				1470.0
+			],
+			"char": "zeynep",
+			"mood": "sly",
+			"text": "{sd_lunch_zeynep_use}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_emre": {
+			"pos": [
+				15140.0,
+				630.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_lunch_emre}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "le_stay",
+					"text": "{sd_lunch_emre_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "lunch_emre2",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "le_food",
+					"text": "{sd_lunch_emre_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "lunch_emre_food",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "le_go",
+					"text": "{sd_lunch_emre_c2}",
+					"tags": [
+						"quiet"
+					],
+					"next": "week_bridge",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"lunch_emre2": {
+			"pos": [
+				15480.0,
+				1680.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_lunch_emre2}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_emre_food": {
+			"pos": [
+				15480.0,
+				1890.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_lunch_emre_food}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"lunch_study": {
+			"pos": [
+				15140.0,
+				840.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_lunch_study}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "grades",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "week_bridge",
+			"choices": []
+		},
+		"week_bridge": {
+			"pos": [
+				15820.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_week_bridge}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "rumor",
+			"choices": []
+		},
+		"rumor": {
+			"pos": [
+				16160.0,
+				0.0
+			],
+			"char": "zeynep",
+			"mood": "sly",
+			"text": "{sd_rumor}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "r_decline",
+					"text": "{sd_rumor_c0}",
+					"tags": [
+						"honest"
+					],
+					"next": "rumor_decline",
+					"cond": [],
+					"set": [
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "r_curious",
+					"text": "{sd_rumor_c1}",
+					"tags": [
+						"curious"
+					],
+					"next": "rumor_curious",
+					"cond": [],
+					"set": [
+						{
+							"var": "suspicion",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "r_source",
+					"text": "{sd_rumor_c2}",
+					"tags": [
+						"honest"
+					],
+					"next": "rumor_source",
+					"cond": [
+						{
+							"var": "truth",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "r_tempt",
+					"text": "{sd_rumor_c3}",
+					"tags": [
+						"cheat"
+					],
+					"next": "rumor_tempted",
+					"cond": [
+						{
+							"var": "grades",
+							"cmp": "<=",
+							"value": 0
+						}
+					],
+					"set": [
+						{
+							"var": "suspicion",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": true
+				}
+			]
+		},
+		"rumor_decline": {
+			"pos": [
+				16500.0,
+				0.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_rumor_decline}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"rumor_source": {
+			"pos": [
+				16500.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "angry",
+			"text": "{sd_rumor_source}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "rumor_source2",
+			"choices": []
+		},
+		"rumor_source2": {
+			"pos": [
+				16840.0,
+				1050.0
+			],
+			"char": "zeynep",
+			"mood": "sad",
+			"text": "{sd_rumor_source2}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "rs_together",
+					"text": "{sd_rumor_source2_c0}",
+					"tags": [
+						"honest",
+						"brave"
+					],
+					"next": "rumor_report",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "rs_keep",
+					"text": "{sd_rumor_source2_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "rumor_keepquiet",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "guilt",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "rs_blame",
+					"text": "{sd_rumor_source2_c2}",
+					"tags": [
+						"blunt"
+					],
+					"next": "rumor_blame",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "sub",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"rumor_report": {
+			"pos": [
+				17180.0,
+				420.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_rumor_report}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 2
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"rumor_keepquiet": {
+			"pos": [
+				17180.0,
+				630.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_rumor_keepquiet}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"rumor_blame": {
+			"pos": [
+				17180.0,
+				840.0
+			],
+			"char": "zeynep",
+			"mood": "angry",
+			"text": "{sd_rumor_blame}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"rumor_curious": {
+			"pos": [
+				16500.0,
+				210.0
+			],
+			"char": "emre",
+			"mood": "smug",
+			"text": "{sd_rumor_curious}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "c_report",
+					"text": "{sd_rumor_curious_c0}",
+					"tags": [
+						"honest"
+					],
+					"next": "emre_threat",
+					"cond": [],
+					"set": [
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "c_why",
+					"text": "{sd_rumor_curious_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "emre_why",
+					"cond": [
+						{
+							"var": "empathy",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "c_walk",
+					"text": "{sd_rumor_curious_c2}",
+					"tags": [
+						"neutral"
+					],
+					"next": "rumor_walk",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "c_buy",
+					"text": "{sd_rumor_curious_c3}",
+					"tags": [
+						"cheat"
+					],
+					"next": "rumor_tempted",
+					"cond": [],
+					"set": [
+						{
+							"var": "suspicion",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "guilt",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"emre_threat": {
+			"pos": [
+				16840.0,
+				210.0
+			],
+			"char": "emre",
+			"mood": "angry",
+			"text": "{sd_emre_threat}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "suspicion",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"emre_why": {
+			"pos": [
+				16840.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_emre_why}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "emre_why2",
+			"choices": []
+		},
+		"emre_why2": {
+			"pos": [
+				17180.0,
+				210.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_emre_why2}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "ew_stop",
+					"text": "{sd_emre_why2_c0}",
+					"tags": [
+						"kind",
+						"brave"
+					],
+					"next": "emre_stop",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "ew_deniz",
+					"text": "{sd_emre_why2_c1}",
+					"tags": [
+						"honest"
+					],
+					"next": "emre_deniz",
+					"cond": [
+						{
+							"var": "d_bond",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "ew_none",
+					"text": "{sd_emre_why2_c2}",
+					"tags": [
+						"honest"
+					],
+					"next": "emre_none",
+					"cond": [],
+					"set": [
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"emre_stop": {
+			"pos": [
+				17520.0,
+				0.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_emre_stop}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"emre_deniz": {
+			"pos": [
+				17520.0,
+				210.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_emre_deniz}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"emre_none": {
+			"pos": [
+				17520.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_emre_none}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"rumor_walk": {
+			"pos": [
+				16840.0,
+				630.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_rumor_walk}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"rumor_tempted": {
+			"pos": [
+				16840.0,
+				840.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_rumor_tempted}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "grades",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "rumor_after",
+			"choices": []
+		},
+		"rumor_after": {
+			"pos": [
+				16840.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_rumor_after}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch3_end",
+			"choices": []
+		},
+		"ch3_end": {
+			"pos": [
+				17180.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_ch3_end}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch4_open",
+			"choices": []
+		},
+		"ch4_open": {
+			"pos": [
+				18460.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_ch4_open}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"chapter4"
+			],
+			"set": [],
+			"next": "ch4_open2",
+			"choices": []
+		},
+		"ch4_open2": {
+			"pos": [
+				18800.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch4_open2}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "scandal_day",
+			"choices": []
+		},
+		"scandal_day": {
+			"pos": [
+				19140.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_scandal_day}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "s_accuse",
+					"text": "{sd_scandal_day_c0}",
+					"tags": [
+						"honest",
+						"brave"
+					],
+					"next": "confront_emre",
+					"cond": [
+						{
+							"var": "courage",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "s_whole",
+					"text": "{sd_scandal_day_c1}",
+					"tags": [
+						"honest",
+						"brave"
+					],
+					"next": "whole_truth",
+					"cond": [
+						{
+							"var": "truth",
+							"cmp": ">=",
+							"value": 6
+						}
+					],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "s_shield",
+					"text": "{sd_scandal_day_c2}",
+					"tags": [
+						"kind",
+						"brave"
+					],
+					"next": "shield_emre",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "s_silent",
+					"text": "{sd_scandal_day_c3}",
+					"tags": [
+						"coward"
+					],
+					"next": "silence",
+					"cond": [],
+					"set": [
+						{
+							"var": "reputation",
+							"op": "sub",
+							"value": 1
+						},
+						{
+							"var": "guilt",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "s_confess",
+					"text": "{sd_scandal_day_c4}",
+					"tags": [
+						"honest",
+						"sacrifice"
+					],
+					"next": "confess_self",
+					"cond": [
+						{
+							"var": "guilt",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "guilt",
+							"op": "sub",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": true
+				}
+			]
+		},
+		"confront_emre": {
+			"pos": [
+				19480.0,
+				0.0
+			],
+			"char": "emre",
+			"mood": "angry",
+			"text": "{sd_confront_emre}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "ce_kerem",
+					"text": "{sd_confront_emre_c0}",
+					"tags": [
+						"friendship"
+					],
+					"next": "kerem_backs",
+					"cond": [
+						{
+							"var": "trust",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "ce_zeynep",
+					"text": "{sd_confront_emre_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "zeynep_backs",
+					"cond": [
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "ce_alone",
+					"text": "{sd_confront_emre_c2}",
+					"tags": [
+						"brave"
+					],
+					"next": "stand_alone",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"kerem_backs": {
+			"pos": [
+				19820.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "angry",
+			"text": "{sd_kerem_backs}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "trust",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "emre_falls",
+			"choices": []
+		},
+		"zeynep_backs": {
+			"pos": [
+				19820.0,
+				210.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_zeynep_backs}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 2
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "emre_falls",
+			"choices": []
+		},
+		"stand_alone": {
+			"pos": [
+				19820.0,
+				420.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_stand_alone}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "courage",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "emre_falls",
+			"choices": []
+		},
+		"emre_falls": {
+			"pos": [
+				20160.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_emre_falls}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"whole_truth": {
+			"pos": [
+				19480.0,
+				210.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_whole_truth}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "whole_truth2",
+			"choices": []
+		},
+		"whole_truth2": {
+			"pos": [
+				19820.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_whole_truth2}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "",
+			"choices": [
+				{
+					"id": "wt_all",
+					"text": "{sd_whole_truth2_c0}",
+					"tags": [
+						"honest",
+						"brave"
+					],
+					"next": "whole_all",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wt_boy",
+					"text": "{sd_whole_truth2_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "whole_boy",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "guilt",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wt_you",
+					"text": "{sd_whole_truth2_c2}",
+					"tags": [
+						"sacrifice"
+					],
+					"next": "whole_you",
+					"cond": [
+						{
+							"var": "guilt",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "sub",
+							"value": 1
+						},
+						{
+							"var": "guilt",
+							"op": "sub",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"whole_all": {
+			"pos": [
+				20160.0,
+				210.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_whole_all}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"whole_boy": {
+			"pos": [
+				20160.0,
+				420.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_whole_boy}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"whole_you": {
+			"pos": [
+				20160.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_whole_you}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 2
+				}
+			],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"shield_emre": {
+			"pos": [
+				19480.0,
+				420.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_shield_emre}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "shield_emre2",
+			"choices": []
+		},
+		"shield_emre2": {
+			"pos": [
+				19820.0,
+				840.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_shield_emre2}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "",
+			"choices": [
+				{
+					"id": "sh_stand",
+					"text": "{sd_shield_emre2_c0}",
+					"tags": [
+						"brave"
+					],
+					"next": "shield_stand",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "sh_sit",
+					"text": "{sd_shield_emre2_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "shield_sit",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"shield_stand": {
+			"pos": [
+				20160.0,
+				840.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_shield_stand}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "emre_suspend",
+			"choices": []
+		},
+		"shield_sit": {
+			"pos": [
+				20160.0,
+				1050.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_shield_sit}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "emre_suspend",
+			"choices": []
+		},
+		"emre_suspend": {
+			"pos": [
+				20500.0,
+				210.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_emre_suspend}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"silence": {
+			"pos": [
+				19480.0,
+				630.0
+			],
+			"char": "aylin",
+			"mood": "sad",
+			"text": "{sd_silence}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [
+				{
+					"var": "affection",
+					"op": "sub",
+					"value": 1
+				},
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "",
+			"choices": [
+				{
+					"id": "sil_ownit",
+					"text": "{sd_silence_c0}",
+					"tags": [
+						"honest"
+					],
+					"next": "late_truth",
+					"cond": [
+						{
+							"var": "courage",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "guilt",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "sil_deniz",
+					"text": "{sd_silence_c1}",
+					"tags": [
+						"honest"
+					],
+					"next": "late_office",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "guilt",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "sil_bury",
+					"text": "{sd_silence_c2}",
+					"tags": [
+						"coward"
+					],
+					"next": "cover_up",
+					"cond": [],
+					"set": [
+						{
+							"var": "suspicion",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "guilt",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"late_truth": {
+			"pos": [
+				19820.0,
+				1050.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_late_truth}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "affection",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "late_result",
+			"choices": []
+		},
+		"late_office": {
+			"pos": [
+				19820.0,
+				1260.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_late_office}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "late_result",
+			"choices": []
+		},
+		"late_result": {
+			"pos": [
+				20160.0,
+				1260.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_late_result}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"cover_up": {
+			"pos": [
+				19820.0,
+				1470.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_cover_up}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "sub",
+					"value": 1
+				},
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "suspicion",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"confess_self": {
+			"pos": [
+				19480.0,
+				840.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_confess_self}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "confess2",
+			"choices": []
+		},
+		"confess2": {
+			"pos": [
+				19820.0,
+				1680.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_confess2}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "cf_name",
+					"text": "{sd_confess2_c0}",
+					"tags": [
+						"honest"
+					],
+					"next": "confess_name",
+					"cond": [],
+					"set": [
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "e_bond",
+							"op": "sub",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "cf_hold",
+					"text": "{sd_confess2_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "confess_hold",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "guilt",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "cf_why",
+					"text": "{sd_confess2_c2}",
+					"tags": [
+						"kind"
+					],
+					"next": "confess_why",
+					"cond": [
+						{
+							"var": "truth",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"confess_name": {
+			"pos": [
+				20160.0,
+				1470.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_confess_name}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "grades",
+					"op": "sub",
+					"value": 1
+				}
+			],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"confess_hold": {
+			"pos": [
+				20160.0,
+				1680.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_confess_hold}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "grades",
+					"op": "sub",
+					"value": 1
+				}
+			],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"confess_why": {
+			"pos": [
+				20160.0,
+				1890.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_confess_why}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 2
+				},
+				{
+					"var": "grades",
+					"op": "sub",
+					"value": 1
+				}
+			],
+			"next": "ch4_office",
+			"choices": []
+		},
+		"ch4_office": {
+			"pos": [
+				20500.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_ch4_office}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "deniz_past",
+			"choices": []
+		},
+		"deniz_past": {
+			"pos": [
+				20840.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_deniz_past}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "dp_right",
+					"text": "{sd_deniz_past_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "deniz_past_right",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "dp_wrong",
+					"text": "{sd_deniz_past_c1}",
+					"tags": [
+						"blunt"
+					],
+					"next": "deniz_past_wrong",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "dp_rule",
+					"text": "{sd_deniz_past_c2}",
+					"tags": [
+						"honest"
+					],
+					"next": "deniz_past_rule",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"deniz_past_right": {
+			"pos": [
+				21180.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_deniz_past_right}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch4_end",
+			"choices": []
+		},
+		"deniz_past_wrong": {
+			"pos": [
+				21180.0,
+				210.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_deniz_past_wrong}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch4_end",
+			"choices": []
+		},
+		"deniz_past_rule": {
+			"pos": [
+				21180.0,
+				420.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_deniz_past_rule}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch4_end",
+			"choices": []
+		},
+		"ch4_end": {
+			"pos": [
+				21520.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch4_end}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_open",
+			"choices": []
+		},
+		"ch5_open": {
+			"pos": [
+				22460.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch5_open}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"chapter5"
+			],
+			"set": [],
+			"next": "ch5_open2",
+			"choices": []
+		},
+		"ch5_open2": {
+			"pos": [
+				22800.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch5_open2}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_hub1",
+			"choices": []
+		},
+		"winter_hub1": {
+			"pos": [
+				23140.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_winter_hub1}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "h1_aylin",
+					"text": "{sd_winter_hub1_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "w1_aylin",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h1_kerem",
+					"text": "{sd_winter_hub1_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "w1_kerem",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h1_zeynep",
+					"text": "{sd_winter_hub1_c2}",
+					"tags": [
+						"kind"
+					],
+					"next": "w1_zeynep",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h1_deniz",
+					"text": "{sd_winter_hub1_c3}",
+					"tags": [
+						"studious"
+					],
+					"next": "w1_deniz",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h1_emre",
+					"text": "{sd_winter_hub1_c4}",
+					"tags": [
+						"curious"
+					],
+					"next": "w1_emre",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h1_alone",
+					"text": "{sd_winter_hub1_c5}",
+					"tags": [
+						"studious"
+					],
+					"next": "w1_alone",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w1_aylin": {
+			"pos": [
+				23480.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "sad",
+			"text": "{sd_w1_aylin}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "w1_aylin2",
+			"choices": []
+		},
+		"w1_aylin2": {
+			"pos": [
+				23820.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "sad",
+			"text": "{sd_w1_aylin2}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "",
+			"choices": [
+				{
+					"id": "wa_paints",
+					"text": "{sd_w1_aylin2_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "w1_aylin_paints",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wa_name",
+					"text": "{sd_w1_aylin2_c1}",
+					"tags": [
+						"honest"
+					],
+					"next": "w1_aylin_name",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wa_pencil",
+					"text": "{sd_w1_aylin2_c2}",
+					"tags": [
+						"blunt"
+					],
+					"next": "w1_aylin_pencil",
+					"cond": [],
+					"set": [
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w1_aylin_paints": {
+			"pos": [
+				24160.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "angry",
+			"text": "{sd_w1_aylin_paints}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_aylin_name": {
+			"pos": [
+				24160.0,
+				210.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_w1_aylin_name}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_aylin_pencil": {
+			"pos": [
+				24160.0,
+				420.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_w1_aylin_pencil}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_kerem": {
+			"pos": [
+				23480.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_w1_kerem}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "w1_kerem2",
+			"choices": []
+		},
+		"w1_kerem2": {
+			"pos": [
+				23820.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "hurt",
+			"text": "{sd_w1_kerem2}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "",
+			"choices": [
+				{
+					"id": "wk_good",
+					"text": "{sd_w1_kerem2_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "w1_kerem_good",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wk_both",
+					"text": "{sd_w1_kerem2_c1}",
+					"tags": [
+						"honest"
+					],
+					"next": "w1_kerem_both",
+					"cond": [],
+					"set": [
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wk_resit",
+					"text": "{sd_w1_kerem2_c2}",
+					"tags": [
+						"blunt"
+					],
+					"next": "w1_kerem_resit",
+					"cond": [],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w1_kerem_good": {
+			"pos": [
+				24160.0,
+				630.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_w1_kerem_good}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_kerem_both": {
+			"pos": [
+				24160.0,
+				840.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_w1_kerem_both}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_kerem_resit": {
+			"pos": [
+				24160.0,
+				1050.0
+			],
+			"char": "kerem",
+			"mood": "angry",
+			"text": "{sd_w1_kerem_resit}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "sub",
+					"value": 1
+				}
+			],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_zeynep": {
+			"pos": [
+				23480.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "sad",
+			"text": "{sd_w1_zeynep}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "w1_zeynep2",
+			"choices": []
+		},
+		"w1_zeynep2": {
+			"pos": [
+				23820.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "angry",
+			"text": "{sd_w1_zeynep2}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "wz_public",
+					"text": "{sd_w1_zeynep2_c0}",
+					"tags": [
+						"kind",
+						"brave"
+					],
+					"next": "w1_zeynep_public",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "reputation",
+							"op": "sub",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wz_stop",
+					"text": "{sd_w1_zeynep2_c1}",
+					"tags": [
+						"honest"
+					],
+					"next": "w1_zeynep_stop",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wz_truth",
+					"text": "{sd_w1_zeynep2_c2}",
+					"tags": [
+						"curious"
+					],
+					"next": "w1_zeynep_truth",
+					"cond": [],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 3
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w1_zeynep_public": {
+			"pos": [
+				24160.0,
+				1260.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_w1_zeynep_public}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_zeynep_stop": {
+			"pos": [
+				24160.0,
+				1470.0
+			],
+			"char": "zeynep",
+			"mood": "sad",
+			"text": "{sd_w1_zeynep_stop}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_zeynep_truth": {
+			"pos": [
+				24160.0,
+				1680.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_w1_zeynep_truth}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_deniz": {
+			"pos": [
+				23480.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_w1_deniz}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "w1_deniz2",
+			"choices": []
+		},
+		"w1_deniz2": {
+			"pos": [
+				23820.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_w1_deniz2}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "",
+			"choices": [
+				{
+					"id": "wd_sign",
+					"text": "{sd_w1_deniz2_c0}",
+					"tags": [
+						"brave"
+					],
+					"next": "w1_deniz_sign",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wd_why",
+					"text": "{sd_w1_deniz2_c1}",
+					"tags": [
+						"curious"
+					],
+					"next": "w1_deniz_why",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wd_rule",
+					"text": "{sd_w1_deniz2_c2}",
+					"tags": [
+						"honest",
+						"blunt"
+					],
+					"next": "w1_deniz_rule",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w1_deniz_sign": {
+			"pos": [
+				24160.0,
+				1890.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_w1_deniz_sign}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_deniz_why": {
+			"pos": [
+				24160.0,
+				2100.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_w1_deniz_why}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_deniz_rule": {
+			"pos": [
+				24160.0,
+				2310.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_w1_deniz_rule}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_emre": {
+			"pos": [
+				23480.0,
+				840.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_w1_emre}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "w1_emre2",
+			"choices": []
+		},
+		"w1_emre2": {
+			"pos": [
+				23820.0,
+				840.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_w1_emre2}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "",
+			"choices": [
+				{
+					"id": "we_come",
+					"text": "{sd_w1_emre2_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "w1_emre_come",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "we_fight",
+					"text": "{sd_w1_emre2_c1}",
+					"tags": [
+						"brave"
+					],
+					"next": "w1_emre_fight",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "we_mother",
+					"text": "{sd_w1_emre2_c2}",
+					"tags": [
+						"honest"
+					],
+					"next": "w1_emre_mother",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w1_emre_come": {
+			"pos": [
+				24160.0,
+				2520.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_w1_emre_come}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_emre_fight": {
+			"pos": [
+				24160.0,
+				2730.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_w1_emre_fight}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_emre_mother": {
+			"pos": [
+				24160.0,
+				2940.0
+			],
+			"char": "emre",
+			"mood": "angry",
+			"text": "{sd_w1_emre_mother}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"w1_alone": {
+			"pos": [
+				23480.0,
+				1050.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_w1_alone}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "grades",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "winter_bridge",
+			"choices": []
+		},
+		"winter_bridge": {
+			"pos": [
+				24500.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_winter_bridge}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "winter_hub2",
+			"choices": []
+		},
+		"winter_hub2": {
+			"pos": [
+				24840.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_winter_hub2}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "h2_aylin",
+					"text": "{sd_winter_hub2_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "w2_aylin",
+					"cond": [
+						{
+							"var": "affection",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h2_kerem",
+					"text": "{sd_winter_hub2_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "w2_kerem",
+					"cond": [
+						{
+							"var": "trust",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h2_zeynep",
+					"text": "{sd_winter_hub2_c2}",
+					"tags": [
+						"curious"
+					],
+					"next": "w2_zeynep",
+					"cond": [
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h2_deniz",
+					"text": "{sd_winter_hub2_c3}",
+					"tags": [
+						"studious"
+					],
+					"next": "w2_deniz",
+					"cond": [
+						{
+							"var": "d_bond",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h2_emre",
+					"text": "{sd_winter_hub2_c4}",
+					"tags": [
+						"kind"
+					],
+					"next": "w2_emre",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h2_alone",
+					"text": "{sd_winter_hub2_c5}",
+					"tags": [
+						"studious"
+					],
+					"next": "w2_alone",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w2_aylin": {
+			"pos": [
+				25180.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_w2_aylin}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "wa2_true",
+					"text": "{sd_w2_aylin_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "w2_aylin_true",
+					"cond": [],
+					"set": [
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wa2_say",
+					"text": "{sd_w2_aylin_c1}",
+					"tags": [
+						"brave"
+					],
+					"next": "w2_aylin_say",
+					"cond": [],
+					"set": [
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wa2_deniz",
+					"text": "{sd_w2_aylin_c2}",
+					"tags": [
+						"studious"
+					],
+					"next": "w2_aylin_deniz",
+					"cond": [
+						{
+							"var": "d_bond",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
+					"set": [
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w2_aylin_true": {
+			"pos": [
+				25520.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_w2_aylin_true}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_aylin_say": {
+			"pos": [
+				25520.0,
+				210.0
+			],
+			"char": "aylin",
+			"mood": "angry",
+			"text": "{sd_w2_aylin_say}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_aylin_deniz": {
+			"pos": [
+				25520.0,
+				420.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_w2_aylin_deniz}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_kerem": {
+			"pos": [
+				25180.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "hurt",
+			"text": "{sd_w2_kerem}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "wk2_read",
+					"text": "{sd_w2_kerem_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "w2_kerem_read",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wk2_ask",
+					"text": "{sd_w2_kerem_c1}",
+					"tags": [
+						"honest"
+					],
+					"next": "w2_kerem_ask",
+					"cond": [],
+					"set": [
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wk2_shop",
+					"text": "{sd_w2_kerem_c2}",
+					"tags": [
+						"blunt"
+					],
+					"next": "w2_kerem_shop",
+					"cond": [],
+					"set": [
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w2_kerem_read": {
+			"pos": [
+				25520.0,
+				630.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_w2_kerem_read}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_kerem_ask": {
+			"pos": [
+				25520.0,
+				840.0
+			],
+			"char": "kerem",
+			"mood": "angry",
+			"text": "{sd_w2_kerem_ask}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_kerem_shop": {
+			"pos": [
+				25520.0,
+				1050.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_w2_kerem_shop}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_zeynep": {
+			"pos": [
+				25180.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "sly",
+			"text": "{sd_w2_zeynep}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "wz2_go",
+					"text": "{sd_w2_zeynep_c0}",
+					"tags": [
+						"brave"
+					],
+					"next": "w2_zeynep_go",
+					"cond": [],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "suspicion",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wz2_ask",
+					"text": "{sd_w2_zeynep_c1}",
+					"tags": [
+						"honest"
+					],
+					"next": "w2_zeynep_ask",
+					"cond": [],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wz2_no",
+					"text": "{sd_w2_zeynep_c2}",
+					"tags": [
+						"blunt"
+					],
+					"next": "w2_zeynep_no",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w2_zeynep_go": {
+			"pos": [
+				25520.0,
+				1260.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_w2_zeynep_go}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_zeynep_ask": {
+			"pos": [
+				25520.0,
+				1470.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_w2_zeynep_ask}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_zeynep_no": {
+			"pos": [
+				25520.0,
+				1680.0
+			],
+			"char": "zeynep",
+			"mood": "sad",
+			"text": "{sd_w2_zeynep_no}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_deniz": {
+			"pos": [
+				25180.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_w2_deniz}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "wd2_all",
+					"text": "{sd_w2_deniz_c0}",
+					"tags": [
+						"brave"
+					],
+					"next": "w2_deniz_all",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wd2_safe",
+					"text": "{sd_w2_deniz_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "w2_deniz_safe",
+					"cond": [],
+					"set": [
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "wd2_ask",
+					"text": "{sd_w2_deniz_c2}",
+					"tags": [
+						"honest"
+					],
+					"next": "w2_deniz_ask",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w2_deniz_all": {
+			"pos": [
+				25520.0,
+				1890.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_w2_deniz_all}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_deniz_safe": {
+			"pos": [
+				25520.0,
+				2100.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_w2_deniz_safe}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_deniz_ask": {
+			"pos": [
+				25520.0,
+				2310.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_w2_deniz_ask}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_emre": {
+			"pos": [
+				25180.0,
+				840.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_w2_emre}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "we2_ledger",
+					"text": "{sd_w2_emre_c0}",
+					"tags": [
+						"blunt"
+					],
+					"next": "w2_emre_ledger",
+					"cond": [],
+					"set": [
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "we2_fees",
+					"text": "{sd_w2_emre_c1}",
+					"tags": [
+						"kind",
+						"brave"
+					],
+					"next": "w2_emre_fees",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "we2_face",
+					"text": "{sd_w2_emre_c2}",
+					"tags": [
+						"honest"
+					],
+					"next": "w2_emre_face",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"w2_emre_ledger": {
+			"pos": [
+				25520.0,
+				2520.0
+			],
+			"char": "emre",
+			"mood": "angry",
+			"text": "{sd_w2_emre_ledger}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_emre_fees": {
+			"pos": [
+				25520.0,
+				2730.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_w2_emre_fees}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_emre_face": {
+			"pos": [
+				25520.0,
+				2940.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_w2_emre_face}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"w2_alone": {
+			"pos": [
+				25180.0,
+				1050.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_w2_alone}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "grades",
+					"op": "add",
+					"value": 2
+				}
+			],
+			"next": "ch5_end",
+			"choices": []
+		},
+		"ch5_end": {
+			"pos": [
+				25860.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch5_end}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch6_open",
+			"choices": []
+		},
+		"ch6_open": {
+			"pos": [
+				26800.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_ch6_open}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [
+				"chapter6"
+			],
+			"set": [],
+			"next": "ch6_pressure",
+			"choices": []
+		},
+		"ch6_pressure": {
+			"pos": [
+				27140.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch6_pressure}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "reference_choice",
+			"choices": []
+		},
+		"reference_choice": {
+			"pos": [
+				27480.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_reference_choice}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "ref_aylin",
+					"text": "{sd_reference_choice_c0}",
+					"tags": [
+						"romance",
+						"kind"
+					],
+					"next": "ref_aylin_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "ref_kerem",
+					"text": "{sd_reference_choice_c1}",
+					"tags": [
+						"friendship",
+						"kind"
+					],
+					"next": "ref_kerem_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "ref_self",
+					"text": "{sd_reference_choice_c2}",
+					"tags": [
+						"studious"
+					],
+					"next": "ref_self_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "ref_all",
+					"text": "{sd_reference_choice_c3}",
+					"tags": [
+						"brave",
+						"kind"
+					],
+					"next": "ref_all_n",
+					"cond": [
+						{
+							"var": "d_bond",
+							"cmp": ">=",
+							"value": 5
+						}
+					],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "aylin_art",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "kerem_path",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"ref_aylin_n": {
+			"pos": [
+				27820.0,
+				0.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_ref_aylin_n}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ref_aylin_cost",
+			"choices": []
+		},
+		"ref_aylin_cost": {
+			"pos": [
+				28160.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "hurt",
+			"text": "{sd_ref_aylin_cost}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "trust",
+					"op": "sub",
+					"value": 1
+				}
+			],
+			"next": "deputy_offer",
+			"choices": []
+		},
+		"ref_kerem_n": {
+			"pos": [
+				27820.0,
+				210.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_ref_kerem_n}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ref_kerem_cost",
+			"choices": []
+		},
+		"ref_kerem_cost": {
+			"pos": [
+				28160.0,
+				210.0
+			],
+			"char": "aylin",
+			"mood": "sad",
+			"text": "{sd_ref_kerem_cost}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "sub",
+					"value": 1
+				}
+			],
+			"next": "deputy_offer",
+			"choices": []
+		},
+		"ref_self_n": {
+			"pos": [
+				27820.0,
+				420.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_ref_self_n}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ref_self_cost",
+			"choices": []
+		},
+		"ref_self_cost": {
+			"pos": [
+				28160.0,
+				420.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ref_self_cost}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "sub",
+					"value": 1
+				},
+				{
+					"var": "kerem_path",
+					"op": "sub",
+					"value": 1
+				},
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "deputy_offer",
+			"choices": []
+		},
+		"ref_all_n": {
+			"pos": [
+				27820.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_ref_all_n}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ref_all_cost",
+			"choices": []
+		},
+		"ref_all_cost": {
+			"pos": [
+				28160.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_ref_all_cost}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "deputy_offer",
+			"choices": []
+		},
+		"deputy_offer": {
+			"pos": [
+				28500.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_deputy_offer}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "deputy_offer2",
+			"choices": []
+		},
+		"deputy_offer2": {
+			"pos": [
+				28840.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_deputy_offer2}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "",
+			"choices": [
+				{
+					"id": "do_refuse",
+					"text": "{sd_deputy_offer2_c0}",
+					"tags": [
+						"brave",
+						"honest"
+					],
+					"next": "deputy_refuse",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "do_accept",
+					"text": "{sd_deputy_offer2_c1}",
+					"tags": [
+						"coward"
+					],
+					"next": "deputy_accept",
+					"cond": [],
+					"set": [
+						{
+							"var": "guilt",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "reputation",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "do_play",
+					"text": "{sd_deputy_offer2_c2}",
+					"tags": [
+						"curious"
+					],
+					"next": "deputy_play",
+					"cond": [],
+					"set": [
+						{
+							"var": "suspicion",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "do_name",
+					"text": "{sd_deputy_offer2_c3}",
+					"tags": [
+						"brave"
+					],
+					"next": "deputy_named",
+					"cond": [
+						{
+							"var": "truth",
+							"cmp": ">=",
+							"value": 8
+						}
+					],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "suspicion",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"deputy_refuse": {
+			"pos": [
+				29180.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_deputy_refuse}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "march_hub",
+			"choices": []
+		},
+		"deputy_accept": {
+			"pos": [
+				29180.0,
+				210.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_deputy_accept}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "march_hub",
+			"choices": []
+		},
+		"deputy_play": {
+			"pos": [
+				29180.0,
+				420.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_deputy_play}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "march_hub",
+			"choices": []
+		},
+		"deputy_named": {
+			"pos": [
+				29180.0,
+				630.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_deputy_named}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "march_hub",
+			"choices": []
+		},
+		"march_hub": {
+			"pos": [
+				29520.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_march_hub}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "m_aylin",
+					"text": "{sd_march_hub_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "m_aylin_n",
+					"cond": [
+						{
+							"var": "aylin_art",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "m_kerem",
+					"text": "{sd_march_hub_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "m_kerem_n",
+					"cond": [
+						{
+							"var": "trust",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "m_zeynep",
+					"text": "{sd_march_hub_c2}",
+					"tags": [
+						"kind"
+					],
+					"next": "m_zeynep_n",
+					"cond": [
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "m_emre",
+					"text": "{sd_march_hub_c3}",
+					"tags": [
+						"kind"
+					],
+					"next": "m_emre_n",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "m_deniz",
+					"text": "{sd_march_hub_c4}",
+					"tags": [
+						"studious"
+					],
+					"next": "m_deniz_n",
+					"cond": [
+						{
+							"var": "d_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "m_alone",
+					"text": "{sd_march_hub_c5}",
+					"tags": [
+						"quiet"
+					],
+					"next": "m_alone_n",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"m_aylin_n": {
+			"pos": [
+				29860.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "blush",
+			"text": "{sd_m_aylin_n}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "m_aylin_2",
+			"choices": []
+		},
+		"m_aylin_2": {
+			"pos": [
+				30200.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "happy",
+			"text": "{sd_m_aylin_2}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "affection",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch6_end",
+			"choices": []
+		},
+		"m_kerem_n": {
+			"pos": [
+				29860.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_m_kerem_n}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "m_kerem_2",
+			"choices": []
+		},
+		"m_kerem_2": {
+			"pos": [
+				30200.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_m_kerem_2}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "trust",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch6_end",
+			"choices": []
+		},
+		"m_zeynep_n": {
+			"pos": [
+				29860.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "sad",
+			"text": "{sd_m_zeynep_n}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "m_zeynep_2",
+			"choices": []
+		},
+		"m_zeynep_2": {
+			"pos": [
+				30200.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_m_zeynep_2}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "courage",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch6_end",
+			"choices": []
+		},
+		"m_emre_n": {
+			"pos": [
+				29860.0,
+				630.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_m_emre_n}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "m_emre_2",
+			"choices": []
+		},
+		"m_emre_2": {
+			"pos": [
+				30200.0,
+				630.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_m_emre_2}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 2
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch6_end",
+			"choices": []
+		},
+		"m_deniz_n": {
+			"pos": [
+				29860.0,
+				840.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_m_deniz_n}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "m_deniz_2",
+			"choices": []
+		},
+		"m_deniz_2": {
+			"pos": [
+				30200.0,
+				840.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_m_deniz_2}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 2
+				}
+			],
+			"next": "ch6_end",
+			"choices": []
+		},
+		"m_alone_n": {
+			"pos": [
+				29860.0,
+				1050.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_m_alone_n}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "m_alone_2",
+			"choices": []
+		},
+		"m_alone_2": {
+			"pos": [
+				30200.0,
+				1050.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_m_alone_2}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "courage",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch6_end",
+			"choices": []
+		},
+		"ch6_end": {
+			"pos": [
+				30540.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch6_end}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch7_open",
+			"choices": []
+		},
+		"ch7_open": {
+			"pos": [
+				31480.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch7_open}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"chapter7"
+			],
+			"set": [],
+			"next": "ch7_wait",
+			"choices": []
+		},
+		"ch7_wait": {
+			"pos": [
+				31820.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch7_wait}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "hw_emre",
+					"text": "{sd_ch7_wait_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "wait_emre",
+					"cond": [],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "hw_zeynep",
+					"text": "{sd_ch7_wait_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "wait_zeynep",
+					"cond": [],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "hw_deniz",
+					"text": "{sd_ch7_wait_c2}",
+					"tags": [
+						"curious"
+					],
+					"next": "wait_deniz",
+					"cond": [],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "hw_still",
+					"text": "{sd_ch7_wait_c3}",
+					"tags": [
+						"quiet"
+					],
+					"next": "wait_still",
+					"cond": [],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"wait_emre": {
+			"pos": [
+				32160.0,
+				0.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_wait_emre}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "hearing_open",
+			"choices": []
+		},
+		"wait_zeynep": {
+			"pos": [
+				32160.0,
+				210.0
+			],
+			"char": "zeynep",
+			"mood": "sad",
+			"text": "{sd_wait_zeynep}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "hearing_open",
+			"choices": []
+		},
+		"wait_deniz": {
+			"pos": [
+				32160.0,
+				420.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_wait_deniz}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "hearing_open",
+			"choices": []
+		},
+		"wait_still": {
+			"pos": [
+				32160.0,
+				630.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_wait_still}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "courage",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "hearing_open",
+			"choices": []
+		},
+		"hearing_open": {
+			"pos": [
+				32500.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_hearing_open}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "hearing_you",
+			"choices": []
+		},
+		"hearing_you": {
+			"pos": [
+				32840.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_hearing_you}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer",
+				"finale"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "h_short",
+					"text": "{sd_hearing_you_c0}",
+					"tags": [
+						"honest"
+					],
+					"next": "hear_short",
+					"cond": [],
+					"set": [
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "e_bond",
+							"op": "sub",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h_fees",
+					"text": "{sd_hearing_you_c1}",
+					"tags": [
+						"kind",
+						"brave"
+					],
+					"next": "hear_fees",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "empathy",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h_keys",
+					"text": "{sd_hearing_you_c2}",
+					"tags": [
+						"brave"
+					],
+					"next": "hear_keys",
+					"cond": [
+						{
+							"var": "truth",
+							"cmp": ">=",
+							"value": 6
+						}
+					],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h_whole",
+					"text": "{sd_hearing_you_c3}",
+					"tags": [
+						"brave",
+						"honest"
+					],
+					"next": "hear_whole",
+					"cond": [
+						{
+							"var": "truth",
+							"cmp": ">=",
+							"value": 9
+						}
+					],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h_deputy",
+					"text": "{sd_hearing_you_c4}",
+					"tags": [
+						"brave",
+						"honest"
+					],
+					"next": "hear_deputy",
+					"cond": [
+						{
+							"var": "truth",
+							"cmp": ">=",
+							"value": 11
+						},
+						{
+							"var": "courage",
+							"cmp": ">=",
+							"value": 6
+						}
+					],
+					"set": [
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 4
+						},
+						{
+							"var": "truth",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "reputation",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "h_nothing",
+					"text": "{sd_hearing_you_c5}",
+					"tags": [
+						"coward"
+					],
+					"next": "hear_nothing",
+					"cond": [],
+					"set": [
+						{
+							"var": "guilt",
+							"op": "add",
+							"value": 3
+						},
+						{
+							"var": "reputation",
+							"op": "sub",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"hear_short": {
+			"pos": [
+				33180.0,
+				0.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_hear_short}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "verdict_short",
+			"choices": []
+		},
+		"verdict_short": {
+			"pos": [
+				33520.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_verdict_short}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch7_after",
+			"choices": []
+		},
+		"hear_fees": {
+			"pos": [
+				33180.0,
+				210.0
+			],
+			"char": "emre",
+			"mood": "sad",
+			"text": "{sd_hear_fees}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "verdict_fees",
+			"choices": []
+		},
+		"verdict_fees": {
+			"pos": [
+				33520.0,
+				210.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_verdict_fees}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 2
+				}
+			],
+			"next": "ch7_after",
+			"choices": []
+		},
+		"hear_keys": {
+			"pos": [
+				33180.0,
+				420.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_hear_keys}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "verdict_keys",
+			"choices": []
+		},
+		"verdict_keys": {
+			"pos": [
+				33520.0,
+				420.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_verdict_keys}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch7_after",
+			"choices": []
+		},
+		"hear_whole": {
+			"pos": [
+				33180.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "stern",
+			"text": "{sd_hear_whole}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "verdict_whole",
+			"choices": []
+		},
+		"verdict_whole": {
+			"pos": [
+				33520.0,
+				630.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_verdict_whole}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 2
+				},
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch7_after",
+			"choices": []
+		},
+		"hear_deputy": {
+			"pos": [
+				33180.0,
+				840.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_hear_deputy}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "hear_deputy2",
+			"choices": []
+		},
+		"hear_deputy2": {
+			"pos": [
+				33520.0,
+				840.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_hear_deputy2}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "truth",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "verdict_deputy",
+			"choices": []
+		},
+		"verdict_deputy": {
+			"pos": [
+				33860.0,
+				210.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_verdict_deputy}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "reputation",
+					"op": "add",
+					"value": 2
+				},
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 2
+				},
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch7_after",
+			"choices": []
+		},
+		"hear_nothing": {
+			"pos": [
+				33180.0,
+				1050.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_hear_nothing}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "verdict_nothing",
+			"choices": []
+		},
+		"verdict_nothing": {
+			"pos": [
+				33520.0,
+				1050.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_verdict_nothing}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "guilt",
+					"op": "add",
+					"value": 2
+				}
+			],
+			"next": "ch7_after",
+			"choices": []
+		},
+		"ch7_after": {
+			"pos": [
+				33860.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch7_after}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch7_hub",
+			"choices": []
+		},
+		"ch7_hub": {
+			"pos": [
+				34200.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch7_hub}",
+			"bg": "bg_hall",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "a_emre",
+					"text": "{sd_ch7_hub_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "after_emre",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "a_deniz",
+					"text": "{sd_ch7_hub_c1}",
+					"tags": [
+						"studious"
+					],
+					"next": "after_deniz",
+					"cond": [
+						{
+							"var": "d_bond",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "a_zeynep",
+					"text": "{sd_ch7_hub_c2}",
+					"tags": [
+						"kind"
+					],
+					"next": "after_zeynep",
+					"cond": [
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "a_kerem",
+					"text": "{sd_ch7_hub_c3}",
+					"tags": [
+						"friendship"
+					],
+					"next": "after_kerem",
+					"cond": [],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "a_aylin",
+					"text": "{sd_ch7_hub_c4}",
+					"tags": [
+						"romance"
+					],
+					"next": "after_aylin",
+					"cond": [],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"after_emre": {
+			"pos": [
+				34540.0,
+				0.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_after_emre}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch7_end",
+			"choices": []
+		},
+		"after_deniz": {
+			"pos": [
+				34540.0,
+				210.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_after_deniz}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch7_end",
+			"choices": []
+		},
+		"after_zeynep": {
+			"pos": [
+				34540.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_after_zeynep}",
+			"bg": "bg_yard",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch7_end",
+			"choices": []
+		},
+		"after_kerem": {
+			"pos": [
+				34540.0,
+				630.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_after_kerem}",
+			"bg": "bg_class",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch7_end",
+			"choices": []
+		},
+		"after_aylin": {
+			"pos": [
+				34540.0,
+				840.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_after_aylin}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "affection",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch7_end",
+			"choices": []
+		},
+		"ch7_end": {
+			"pos": [
+				34880.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch7_end}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "ch8_open",
+			"choices": []
+		},
+		"ch8_open": {
+			"pos": [
+				35820.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch8_open}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [
+				"chapter8"
+			],
+			"set": [],
+			"next": "ch8_prep",
+			"choices": []
+		},
+		"ch8_prep": {
+			"pos": [
+				36160.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch8_prep}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "pr_aylin",
+					"text": "{sd_ch8_prep_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "prep_aylin",
+					"cond": [
+						{
+							"var": "aylin_art",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pr_kerem",
+					"text": "{sd_ch8_prep_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "prep_kerem",
+					"cond": [
+						{
+							"var": "kerem_path",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pr_zeynep",
+					"text": "{sd_ch8_prep_c2}",
+					"tags": [
+						"kind"
+					],
+					"next": "prep_zeynep",
+					"cond": [
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pr_deniz",
+					"text": "{sd_ch8_prep_c3}",
+					"tags": [
+						"studious"
+					],
+					"next": "prep_deniz",
+					"cond": [
+						{
+							"var": "d_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "d_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pr_emre",
+					"text": "{sd_ch8_prep_c4}",
+					"tags": [
+						"kind"
+					],
+					"next": "prep_emre",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pr_none",
+					"text": "{sd_ch8_prep_c5}",
+					"tags": [
+						"studious"
+					],
+					"next": "prep_none",
+					"cond": [],
+					"set": [
+						{
+							"var": "grades",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				}
+			]
+		},
+		"prep_aylin": {
+			"pos": [
+				36500.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "happy",
+			"text": "{sd_prep_aylin}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "prep_aylin2",
+			"choices": []
+		},
+		"prep_aylin2": {
+			"pos": [
+				36840.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "blush",
+			"text": "{sd_prep_aylin2}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "aylin_art",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "affection",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch8_evening",
+			"choices": []
+		},
+		"prep_kerem": {
+			"pos": [
+				36500.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "smug",
+			"text": "{sd_prep_kerem}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "prep_kerem2",
+			"choices": []
+		},
+		"prep_kerem2": {
+			"pos": [
+				36840.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_prep_kerem2}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "kerem_path",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "trust",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch8_evening",
+			"choices": []
+		},
+		"prep_zeynep": {
+			"pos": [
+				36500.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_prep_zeynep}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "prep_zeynep2",
+			"choices": []
+		},
+		"prep_zeynep2": {
+			"pos": [
+				36840.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_prep_zeynep2}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "z_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch8_evening",
+			"choices": []
+		},
+		"prep_deniz": {
+			"pos": [
+				36500.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "neutral",
+			"text": "{sd_prep_deniz}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "prep_deniz2",
+			"choices": []
+		},
+		"prep_deniz2": {
+			"pos": [
+				36840.0,
+				630.0
+			],
+			"char": "deniz",
+			"mood": "kind",
+			"text": "{sd_prep_deniz2}",
+			"bg": "bg_office",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch8_evening",
+			"choices": []
+		},
+		"prep_emre": {
+			"pos": [
+				36500.0,
+				840.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_prep_emre}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "prep_emre2",
+			"choices": []
+		},
+		"prep_emre2": {
+			"pos": [
+				36840.0,
+				840.0
+			],
+			"char": "emre",
+			"mood": "happy",
+			"text": "{sd_prep_emre2}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "e_bond",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch8_evening",
+			"choices": []
+		},
+		"prep_none": {
+			"pos": [
+				36500.0,
+				1050.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_prep_none}",
+			"bg": "bg_library",
+			"sound": "",
+			"tags": [],
+			"set": [
+				{
+					"var": "grades",
+					"op": "add",
+					"value": 1
+				}
+			],
+			"next": "ch8_evening",
+			"choices": []
+		},
+		"ch8_evening": {
+			"pos": [
+				37180.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ch8_evening}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "predate_hub",
+			"choices": []
+		},
+		"predate_hub": {
+			"pos": [
+				37520.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_predate_hub}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [
+				"decision"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "pd_aylin",
+					"text": "{sd_predate_hub_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "date_aylin",
+					"cond": [
+						{
+							"var": "affection",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 2
+						},
+						{
+							"var": "courage",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pd_kerem",
+					"text": "{sd_predate_hub_c1}",
+					"tags": [
+						"friendship"
+					],
+					"next": "date_kerem",
+					"cond": [
+						{
+							"var": "trust",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pd_zeynep",
+					"text": "{sd_predate_hub_c2}",
+					"tags": [
+						"kind"
+					],
+					"next": "date_zeynep",
+					"cond": [
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pd_emre",
+					"text": "{sd_predate_hub_c3}",
+					"tags": [
+						"kind"
+					],
+					"next": "date_emre",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 2
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pd_all",
+					"text": "{sd_predate_hub_c4}",
+					"tags": [
+						"friendship"
+					],
+					"next": "date_all",
+					"cond": [
+						{
+							"var": "trust",
+							"cmp": ">=",
+							"value": 3
+						},
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 3
+						},
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [
+						{
+							"var": "trust",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "z_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "e_bond",
+							"op": "add",
+							"value": 1
+						},
+						{
+							"var": "affection",
+							"op": "add",
+							"value": 1
+						}
+					],
+					"hidden": false
+				},
+				{
+					"id": "pd_solo",
+					"text": "{sd_predate_hub_c5}",
+					"tags": [
+						"quiet"
+					],
+					"next": "date_solo",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"date_aylin": {
+			"pos": [
+				37860.0,
+				0.0
+			],
+			"char": "aylin",
+			"mood": "happy",
+			"text": "{sd_date_aylin}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "festival_roof",
+			"choices": []
+		},
+		"date_kerem": {
+			"pos": [
+				37860.0,
+				210.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_date_kerem}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "festival_roof",
+			"choices": []
+		},
+		"date_zeynep": {
+			"pos": [
+				37860.0,
+				420.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_date_zeynep}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "festival_roof",
+			"choices": []
+		},
+		"date_emre": {
+			"pos": [
+				37860.0,
+				630.0
+			],
+			"char": "emre",
+			"mood": "happy",
+			"text": "{sd_date_emre}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "festival_roof",
+			"choices": []
+		},
+		"date_all": {
+			"pos": [
+				37860.0,
+				840.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_date_all}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "festival_roof",
+			"choices": []
+		},
+		"date_solo": {
+			"pos": [
+				37860.0,
+				1050.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_date_solo}",
+			"bg": "bg_festival",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "festival_roof",
+			"choices": []
+		},
+		"festival_roof": {
+			"pos": [
+				38200.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_festival_roof}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [],
+			"set": [],
+			"next": "finale_hub",
+			"choices": []
+		},
+		"finale_hub": {
+			"pos": [
+				38540.0,
+				0.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_finale_hub}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer",
+				"finale"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "fin_all",
+					"text": "{sd_finale_hub_c0}",
+					"tags": [
+						"friendship"
+					],
+					"next": "fin_all_n",
+					"cond": [
+						{
+							"var": "trust",
+							"cmp": ">=",
+							"value": 4
+						},
+						{
+							"var": "affection",
+							"cmp": ">=",
+							"value": 4
+						},
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 4
+						},
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fin_aylin",
+					"text": "{sd_finale_hub_c1}",
+					"tags": [
+						"romance"
+					],
+					"next": "fin_aylin_n",
+					"cond": [
+						{
+							"var": "affection",
+							"cmp": ">=",
+							"value": 6
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fin_kerem",
+					"text": "{sd_finale_hub_c2}",
+					"tags": [
+						"friendship"
+					],
+					"next": "fin_kerem_n",
+					"cond": [
+						{
+							"var": "trust",
+							"cmp": ">=",
+							"value": 6
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fin_zeynep",
+					"text": "{sd_finale_hub_c3}",
+					"tags": [
+						"kind"
+					],
+					"next": "fin_zeynep_n",
+					"cond": [
+						{
+							"var": "z_bond",
+							"cmp": ">=",
+							"value": 6
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fin_emre",
+					"text": "{sd_finale_hub_c4}",
+					"tags": [
+						"kind"
+					],
+					"next": "fin_emre_n",
+					"cond": [
+						{
+							"var": "e_bond",
+							"cmp": ">=",
+							"value": 6
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fin_alone",
+					"text": "{sd_finale_hub_c5}",
+					"tags": [
+						"quiet"
+					],
+					"next": "fin_alone_n",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"fin_all_n": {
+			"pos": [
+				38880.0,
+				0.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_fin_all_n}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "fa_promise",
+					"text": "{sd_fin_all_n_c0}",
+					"tags": [
+						"friendship"
+					],
+					"next": "ending_class",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fa_thanks",
+					"text": "{sd_fin_all_n_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "ending_together",
+					"cond": [
+						{
+							"var": "courage",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fa_quiet",
+					"text": "{sd_fin_all_n_c2}",
+					"tags": [
+						"quiet"
+					],
+					"next": "ending_lastlight",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"fin_aylin_n": {
+			"pos": [
+				38880.0,
+				210.0
+			],
+			"char": "aylin",
+			"mood": "blush",
+			"text": "{sd_fin_aylin_n}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "fy_love",
+					"text": "{sd_fin_aylin_n_c0}",
+					"tags": [
+						"romance"
+					],
+					"next": "ending_golden",
+					"cond": [
+						{
+							"var": "courage",
+							"cmp": ">=",
+							"value": 3
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fy_go",
+					"text": "{sd_fin_aylin_n_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "ending_paper",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fy_stay",
+					"text": "{sd_fin_aylin_n_c2}",
+					"tags": [
+						"quiet"
+					],
+					"next": "ending_smaller",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"fin_kerem_n": {
+			"pos": [
+				38880.0,
+				420.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_fin_kerem_n}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "fk_toast",
+					"text": "{sd_fin_kerem_n_c0}",
+					"tags": [
+						"friendship"
+					],
+					"next": "ending_brothers",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fk_true",
+					"text": "{sd_fin_kerem_n_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "ending_longway",
+					"cond": [
+						{
+							"var": "kerem_path",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fk_visit",
+					"text": "{sd_fin_kerem_n_c2}",
+					"tags": [
+						"friendship"
+					],
+					"next": "ending_saturday",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"fin_zeynep_n": {
+			"pos": [
+				38880.0,
+				630.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_fin_zeynep_n}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "fz_here",
+					"text": "{sd_fin_zeynep_n_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "ending_zeynep",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fz_ask",
+					"text": "{sd_fin_zeynep_n_c1}",
+					"tags": [
+						"kind"
+					],
+					"next": "ending_firsttable",
+					"cond": [
+						{
+							"var": "empathy",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fz_number",
+					"text": "{sd_fin_zeynep_n_c2}",
+					"tags": [
+						"friendship"
+					],
+					"next": "ending_calling",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"fin_emre_n": {
+			"pos": [
+				38880.0,
+				840.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_fin_emre_n}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "fe_even",
+					"text": "{sd_fin_emre_n_c0}",
+					"tags": [
+						"kind"
+					],
+					"next": "ending_secondchance",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fe_owe",
+					"text": "{sd_fin_emre_n_c1}",
+					"tags": [
+						"honest"
+					],
+					"next": "ending_ledger",
+					"cond": [
+						{
+							"var": "empathy",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fe_friend",
+					"text": "{sd_fin_emre_n_c2}",
+					"tags": [
+						"friendship"
+					],
+					"next": "ending_accounts",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"fin_alone_n": {
+			"pos": [
+				38880.0,
+				1050.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_fin_alone_n}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"decision",
+				"notimer"
+			],
+			"set": [],
+			"next": "",
+			"choices": [
+				{
+					"id": "fl_open",
+					"text": "{sd_fin_alone_n_c0}",
+					"tags": [
+						"studious"
+					],
+					"next": "ending_honors",
+					"cond": [
+						{
+							"var": "grades",
+							"cmp": ">=",
+							"value": 6
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fl_watch",
+					"text": "{sd_fin_alone_n_c1}",
+					"tags": [
+						"quiet"
+					],
+					"next": "ending_alone",
+					"cond": [],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fl_leave",
+					"text": "{sd_fin_alone_n_c2}",
+					"tags": [
+						"coward"
+					],
+					"next": "ending_shadow",
+					"cond": [
+						{
+							"var": "guilt",
+							"cmp": ">=",
+							"value": 4
+						}
+					],
+					"set": [],
+					"hidden": false
+				},
+				{
+					"id": "fl_count",
+					"text": "{sd_fin_alone_n_c3}",
+					"tags": [
+						"honest"
+					],
+					"next": "ending_ashes",
+					"cond": [
+						{
+							"var": "guilt",
+							"cmp": ">=",
+							"value": 6
+						},
+						{
+							"var": "suspicion",
+							"cmp": ">=",
+							"value": 2
+						}
+					],
+					"set": [],
+					"hidden": false
+				}
+			]
+		},
+		"ending_class": {
+			"pos": [
+				39220.0,
+				0.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_ending_class}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_together": {
+			"pos": [
+				39220.0,
+				210.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_ending_together}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_lastlight": {
+			"pos": [
+				39220.0,
+				420.0
+			],
+			"char": "aylin",
+			"mood": "happy",
+			"text": "{sd_ending_lastlight}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_golden": {
+			"pos": [
+				39220.0,
+				630.0
+			],
+			"char": "aylin",
+			"mood": "happy",
+			"text": "{sd_ending_golden}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_paper": {
+			"pos": [
+				39220.0,
+				840.0
+			],
+			"char": "aylin",
+			"mood": "neutral",
+			"text": "{sd_ending_paper}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_smaller": {
+			"pos": [
+				39220.0,
+				1050.0
+			],
+			"char": "aylin",
+			"mood": "sad",
+			"text": "{sd_ending_smaller}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_brothers": {
+			"pos": [
+				39220.0,
+				1260.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_ending_brothers}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_longway": {
+			"pos": [
+				39220.0,
+				1470.0
+			],
+			"char": "kerem",
+			"mood": "neutral",
+			"text": "{sd_ending_longway}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_saturday": {
+			"pos": [
+				39220.0,
+				1680.0
+			],
+			"char": "kerem",
+			"mood": "happy",
+			"text": "{sd_ending_saturday}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_zeynep": {
+			"pos": [
+				39220.0,
+				1890.0
+			],
+			"char": "zeynep",
+			"mood": "neutral",
+			"text": "{sd_ending_zeynep}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_firsttable": {
+			"pos": [
+				39220.0,
+				2100.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_ending_firsttable}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_calling": {
+			"pos": [
+				39220.0,
+				2310.0
+			],
+			"char": "zeynep",
+			"mood": "excited",
+			"text": "{sd_ending_calling}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_secondchance": {
+			"pos": [
+				39220.0,
+				2520.0
+			],
+			"char": "emre",
+			"mood": "happy",
+			"text": "{sd_ending_secondchance}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_ledger": {
+			"pos": [
+				39220.0,
+				2730.0
+			],
+			"char": "emre",
+			"mood": "neutral",
+			"text": "{sd_ending_ledger}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_accounts": {
+			"pos": [
+				39220.0,
+				2940.0
+			],
+			"char": "emre",
+			"mood": "happy",
+			"text": "{sd_ending_accounts}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_honors": {
+			"pos": [
+				39220.0,
+				3150.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ending_honors}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_alone": {
+			"pos": [
+				39220.0,
+				3360.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ending_alone}",
+			"bg": "bg_rooftop",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_shadow": {
+			"pos": [
+				39220.0,
+				3570.0
+			],
+			"char": "",
+			"mood": "",
+			"text": "{sd_ending_shadow}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		},
+		"ending_ashes": {
+			"pos": [
+				39220.0,
+				3780.0
+			],
+			"char": "deniz",
+			"mood": "disappointed",
+			"text": "{sd_ending_ashes}",
+			"bg": "bg_gate",
+			"sound": "",
+			"tags": [
+				"ending"
+			],
+			"set": [],
+			"next": "",
+			"choices": []
+		}
+	}
+}

@@ -1,0 +1,30 @@
+Operation: Detonate — 2-5 ajan için şansını zorlayan bir sabotaj kart oyunu.
+
+Gizli görev ekibisin ve ortak bir ikmal destesinden ekipman çekiyorsun... ama o
+destede her rakip için bir Saatli Bomba saklı. Etkisizleştirme Kitin yokken bomba
+çekersen görevden çıkarsın — ayakta kalan son ajan kazanır.
+
+Sabotaj araçları: Pusu (sıradaki ajan iki tur borçlanır), Geri Çekil (kart
+çekmeden turunu bitir), İkmal Talebi (seçtiğin ajan KENDİ seçtiği bir kartı
+vermek zorunda), Görev Karıştırma, Keşif Dronu (üstteki 3 karta bak) ve Sinyal
+Bozucu — herhangi bir eylemden sonraki 3,5 saniyelik "bozma penceresinde"
+oynanan tepkisel bir karşı koz; bozucular bozucuları bozabilir. Aynı silahlardan
+topla: bir çift rastgele bir kart çalar, üçlü ise istediğin kartı adıyla
+istemene izin verir.
+
+Masa oyunu sunumu: yuvarlak masaya otur, kameran senin koltuğuna döner. Elin
+yalnızca SENİN ekranının altında durur — izleyiciler dâhil herkes yalnızca kart
+arkalarını ve sayıları görür (sunucu zorunlu kılar, deste sırası sunucudan hiç
+çıkmaz). Geç katılanlar canlı fare imleçleriyle izler ve tek tıkla sonraki
+göreve sıraya girer.
+
+Kart yüzleri motorun "cards" JSON'undan üretilir (çevrimiçi görsel editörün dışa
+aktardığı biçimin aynısı) ve İngilizce + Türkçe yerelleştirme yerleşiktir;
+general/images içindeki PNG'ler düz yer tutuculardır — gönlünce yeniden boya.
+
+Masada hâlihazırda iki bot oturuyor, böylece tek başına da oynayabilirsin:
+sunucu sahibi masanın kenarında Bot ekle / Bot çıkar düğmelerini görür ve dört
+tanesine kadar oturtabilir. Kurallara harfiyen uyarlar (bir botun hamlesi de
+oyuncununki gibi sunucu tarafında doğrulanır), hangi kartı oynamaya değeceğini
+tartarlar, bombayı en can yakacak yere saklarlar ve hatta Sinyal Bozucuyla
+karşılık verirler — masayı takip edebilesin diye hep bir iki saniye düşünerek.

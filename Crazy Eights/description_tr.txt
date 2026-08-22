@@ -1,0 +1,24 @@
+Crazy Eights — 2-8 oyuncu için hızlı bir masa kart oyunu.
+
+Cesur, renkli kart yüzleri (kocaman rakamlar, dört renk — mor, turkuaz, turuncu
+ve yeşil) ve klasik Crazy Eights kuralları: üstteki kartı renk ya da değerle
+eşle, sekizler jokerdir (sonraki rengi sen seçersin), pas / yön değiştir / +2
+masayı hareketli tutar. Elini ilk bitiren eli kazanır.
+
+Yuvarlak masaya otur, kameran senin koltuğuna döner — deste ve ıskarta yığını
+gerçek bir masadaki gibi ortada paylaşılır. Kartların yalnızca SENİN ekranının
+altındaki el çubuğunda durur: herkes (oyuncular da izleyiciler de) sadece kart
+arkalarını ve el sayılarını görür; bunu sunucu zorunlu kılar (sunucu yetkili,
+paket dinlemek işe yaramaz). El ortasında katılırsan bir sonraki el başlayana
+kadar herkesin canlı fare imleçleriyle izlersin — "Masaya otur"a bir tıkla sıraya
+girersin.
+
+Motorun kart sistemi üzerine kuruludur (çevrimiçi görsel editörün dışa aktardığı
+aynı "cards" JSON'u), yani deste görselini yeniden kaplamak kolaydır.
+
+Masada hâlihazırda iki bot oturuyor, böylece tek başına da oynayabilirsin:
+sunucu sahibi masanın kenarında Bot ekle / Bot çıkar düğmelerini görür ve altı
+tanesine kadar oturtabilir. Kurallara harfiyen uyarlar (bir botun hamlesi de
+oyuncununki gibi sunucu tarafında doğrulanır), ellerini en iyi karttan en kötüye
+doğru tartarlar ve masayı takip edebilesin diye hamleler arasında bir iki saniye
+beklerler.
