@@ -1087,7 +1087,10 @@ function host_take_damage(dmg, attacker)
     end
     local live_pos = get_value("", name, "position")
     if live_pos then
-        run_function("-combat", "show_damage", { live_pos.x, live_pos.y, dmg, "player" })
+        -- 'name' makes the body flash white, squash and wobble on every peer, so
+        -- a teammate getting mauled reads at a glance (see hit_fx.lua). Nothing
+        -- here knows which side the blow came from, so the wobble leans right.
+        run_function("-combat", "show_damage", { live_pos.x, live_pos.y, dmg, "player", name, 1 })
     end
     run_network_function(name, "hp_ALL", { hp }, name)
     if hp <= 0 then

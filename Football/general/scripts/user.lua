@@ -15,7 +15,6 @@ is_dash_input_last = false
 image_name = ""
 nickname_label_name = ""
 hit_progres_bar_name = ""
-interact_label_name = ""
 
 --general values
 hit_value = 0
@@ -52,9 +51,8 @@ function delete_visuals()
         destroy(name, nickname_label_name)
         nickname_label_name = ""
     end
-    if interact_label_name ~= "" then
-        destroy("", interact_label_name)
-        interact_label_name = ""
+    if IS_LOCAL then
+        set_value("", "_hit_ball_prompt", "visible", false)
     end
     if image_name ~= "" then
         destroy(name, image_name)
@@ -116,7 +114,6 @@ function change_team_ALL(sender_id, _team)
         config = { parent_name = name, name = hit_progres_bar_name, position = Vector2(-64, 48), modulate = Color(1, 1, 0,
             1), size = Vector2(128, 16) }
         hit_progres_bar_name = set_progress_bar(config)
-        interact_label_name = set_label({ position = Vector2(0, 16), name = interact_label_name })
     end
 end
 
@@ -124,7 +121,7 @@ function _process(delta, inputs)
     if team == 0 then
         return
     end
-    is_hit_ball_input_new = inputs["key_6"]
+    is_hit_ball_input_new = inputs["key_8"]
     if is_hit_ball_input_new then --while pressing
         hit_value = math.min(hit_value + 100 * delta, 100)
     end
@@ -134,13 +131,9 @@ function _process(delta, inputs)
         set_progress_bar(config)
 
         if is_ball_interactable then
-            ball_pos = get_value("", "*ball", "position")
-            interaction_config = { text ="{press_key_6}", position = ball_pos + Vector2(-64, 32), name =
-            interact_label_name }
-            set_label(interaction_config)
+            set_label({ text = "{press_key_8}", visible = true, name = "_hit_ball_prompt" })
         else
-            interaction_config = { text = "", name = interact_label_name }
-            set_label(interaction_config)
+            set_label({ text = "", visible = false, name = "_hit_ball_prompt" })
         end
     end
 
@@ -224,3 +217,5 @@ end
 
 function on_body_body_exited(body_name)
 end
+
+

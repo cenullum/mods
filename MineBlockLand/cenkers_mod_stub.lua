@@ -358,6 +358,16 @@ function freeze_entity(entity_name, all) end
 ---@param all? boolean Also unfreeze on all clients (Host only). Default: true.
 function unfreeze_entity(entity_name, all) end
 
+--- Check whether an entity (or one of its children) is still in the world,
+--- WITHOUT logging an error when it is not. get_value() and every other lookup
+--- push an error for a missing entity, which is what you want for a typo but
+--- not for an effect that can outlive its target - e.g. a per-frame hit flash
+--- on a monster that the killing blow just destroyed.
+---@param entity_name string Entity (or child node) name to look for.
+---@param parent_name? string Parent entity name when checking a child such as an image or a label. Default: "".
+---@return boolean True if the entity exists right now.
+function entity_exists(entity_name, parent_name) end
+
 ---------------------------------------------------
 -- ENTITY TAGS
 ---------------------------------------------------
@@ -398,7 +408,7 @@ function get_nearest_entity_by_tag(entity_name, tag, excluded_entities) end
 --- Config parameters:
 ---   - parent_name (string, required): Parent entity name.
 ---   - name (string, optional): Image node name. Default: auto-generated.
----   - image_path (string, optional): Path to image in mod/general/images/ (without .png extension). If empty and creating new sprite, uses default icon. Default: "".
+---   - image_path (string, optional): Path to image in mod/general/images/ (without .png extension). If empty and creating new sprite, uses default icon. Also accepts "card:<card_id>:front" or "card:<card_id>:back" to show a live-rendered (localized) card face instead of a plain file. Default: "".
 ---   - position (Vector2, optional): Position offset from parent. Default: Vector2(0, 0).
 ---   - scale (Vector2, optional): Scale the image to this pixel size (based on texture size). Cannot use with 'size'. Default: none.
 ---   - size (Vector2, optional): Direct scale multiplier. Cannot use with 'scale'. Default: none.
@@ -690,6 +700,27 @@ function set_button(config) end
 ---   - parent_name (string, required): Parent entity name.
 ---   - shader_name (string, optional): Shader file name (without .gdshader extension) from res://shaders/. If empty or omitted, removes the shader. Default: "".
 ---   - Additional shader-specific parameters can be added and will be passed to the shader as uniforms.
+---
+--- HIT FEEDBACK ("hit_flash", and the same uniforms inside "circle"):
+--- an impact effect for a sprite - a solid colour flash, an area-preserving
+--- squash & stretch (wider, shorter) and a decaying elastic wobble. All of it
+--- is driven by ONE uniform, so the whole hit costs a single float per frame:
+--- set `hit = 1.0` at the moment of impact and fade it to 0.0 over ~0.25 s.
+--- At hit = 0.0 nothing is applied, so the shader is free when nobody is hurt.
+--- "circle" carries the identical uniforms because a sprite has only one
+--- material - use it instead of "hit_flash" on anything already outlined.
+---   - hit (number): 0..1 effect strength. 1 = the frame of impact.
+---   - hit_dir (number): sign of the wobble. Pass cos(hit angle) so the sprite
+---       tips away from the blow. Default: 1.0.
+---   - hit_color (Color): the flash colour. Default: white.
+---   - hit_squash (number): peak horizontal stretch, vertical is 1/x. Default: 0.35.
+---   - hit_spin (number): peak rotation in radians. Default: 0.3.
+---   - hit_wobbles (number): oscillations over the life of the effect. Default: 2.5.
+---   - hit_flash_start / hit_flash_full (number): the flash is a HOLD, not a
+---       fade - solid colour while hit is above hit_flash_full, gone below
+---       hit_flash_start. Defaults: 0.6 / 0.75.
+--- Only RGB is flashed, so transparent pixels stay transparent. The uniforms
+--- stay on the material, so a per-frame update only needs `hit`.
 ---@param config table Shader configuration dictionary.
 function set_shader(config) end
 
@@ -1011,7 +1042,7 @@ function screenshake(duration, intensity) end
 --   _on_card_peek(deck_name, ids)                 -- only on the peeking peer
 --   _on_player_left_cards(steam_id, uids)         -- HOST only, before cleanup
 
---- Load a card set JSON exported by the online image editor's Card tool.
+--- Load a card set JSON exported by the Online Asset Editor's Card editor.
 --- The path is relative to your mod folder and sandboxed (no "..").
 ---@param relative_path string e.g. "cards/my_set.cards.json"
 ---@return string Set id ("" on failure).
@@ -1026,6 +1057,15 @@ function load_cards_from_json_data(json_string, set_id) end
 --- Load a card set from a Lua table using the same structure as the JSON
 --- format (kind="cards", card_w, card_h, cards={...} etc.). The easiest way
 --- to generate decks procedurally.
+---
+--- LOCALIZATION: never put card text in Lua. Give a text cell a `loc_key` and
+--- write the same key as a `{keyword}` in its `text`, then translate it in your
+--- mod's general/language/<mod>_<code>.json like every other string; a card's
+--- `name` can be a `{keyword}` too, so panels/chat printing it translate as
+--- well. Faces render live, so each peer sees the deck in its own language and
+--- they re-render when the language changes. A `loc_key` resolves against your
+--- mod's language files first, then the set's own optional `localization`
+--- table (what the Card Editor exports), then the cell's plain `text`.
 ---@param data table Card set table.
 ---@param set_id string|nil Optional set id override.
 ---@return string Set id ("" on failure).
@@ -1035,7 +1075,7 @@ function load_cards_from_data(data, set_id) end
 --- load_cards_from_json/from_data (which render live, so the shadow gets
 --- baked in at load and the text can react to language changes), a PNG sheet
 --- is a flat image prepared ahead of time — export it from the online image
---- editor's Card tool with the shadow you want already in the pixels.
+--- editor's Card editor with the shadow you want already in the pixels.
 ---
 --- Localization for PNG sheets works by FILE NAME (same convention as the
 --- image_localizer tool): given front_sheet = "cards.png", this also looks for
@@ -1125,6 +1165,15 @@ function card_draw(deck_name, target_steam_id) end
 ---@param count integer How many cards from the top.
 ---@param target_steam_id string Peeking player's Steam id string.
 function card_peek(deck_name, count, target_steam_id) end
+
+--- HOST ONLY: same information as card_peek(), returned synchronously instead
+--- of via the _on_card_peek callback. Use this for host-side logic that has no
+--- client peer to call that back on (e.g. bot AI reacting to its own "see the
+--- future" card) - a bot has no screen, so nothing is ever sent over the wire.
+---@param deck_name string Deck identifier.
+---@param count integer How many cards from the top.
+---@return table Array of card ids, index 1 = top of the deck.
+function card_peek_host(deck_name, count) end
 
 --- HOST ONLY: put a card (from a hand or the table) back into a deck.
 ---@param uid string Card uid.

@@ -105,16 +105,6 @@ local DIFFICULTY = {
 -- translates on-screen along with everything else.
 local DIFF_TOKENS = { "{bot_diff_easy}", "{bot_diff_normal}", "{bot_diff_hard}" }
 
--- DEBUG ONLY: human-readable label for what the man on the ball decided to do,
--- shown under a bot's nickname (see bot.lua's debug_label).  act: 1 shoot,
--- 2 pass, 3 clear, 4 dribble.  Delete along with the debug label when done.
-local ON_BALL_REASON = {
-	[1] = "shooting",
-	[2] = "passing",
-	[3] = "clearing",
-	[4] = "dribbling",
-}
-
 -- Bot brains offered in the panel.
 local TYPE_BOTH  = 0 -- can be given any role, keeper included
 local TYPE_GK    = 1 -- keeper only, never leaves its box
@@ -124,7 +114,7 @@ local TYPE_FIELD = 2 -- outfield only, never plays in goal
 bots        = {} -- [entity_name] = { team, btype, label, role, lane, stuck, ... }
 bot_order   = {} -- insertion order, so role assignment does not flip around
 bot_seq     = 0
-difficulty  = 2
+difficulty  = 3
 geo         = nil -- measured pitch: bounds + both goals
 ball_damp   = 0.5
 coach_on    = false
@@ -1146,10 +1136,8 @@ local function plan_team(team, players, bx, by, now)
 				-- the ball is right there and we are going nowhere: belt it
 				cmd = panic_hit(p.x, p.y, bx, by)
 				cmd.tx, cmd.ty, cmd.speed = bx, by, p.speed
-				cmd.reason = "STUCK: panic hit"
 			else
 				cmd = { act = 0, tx = b.escape_x, ty = b.escape_y, speed = p.speed }
-				cmd.reason = "STUCK: escaping"
 			end
 		elseif chaser ~= nil and p.n == chaser.n then
 			-- Hysteresis around "am I on the ball yet".  Bots now carry momentum
@@ -1185,7 +1173,7 @@ local function plan_team(team, players, bx, by, now)
 				end
 				-- chase: this target is the ball, not a spot to park on - bot.lua
 				-- must run THROUGH it rather than easing to a halt on top of it.
-				cmd = { act = 0, tx = ix, ty = iy, speed = p.speed, chase = true, reason = "chasing the ball" }
+				cmd = { act = 0, tx = ix, ty = iy, speed = p.speed, chase = true }
 				st.action = nil -- the ball is loose again: re-decide on arrival
 			elseif st.ball_jam and dist(p.x, p.y, bx, by) < 70.0 then
 				-- Nothing has moved the ball in seconds and we are on it: stop
@@ -1195,7 +1183,7 @@ local function plan_team(team, players, bx, by, now)
 				local decided = panic_hit(p.x, p.y, bx, by)
 				st.action, st.action_at, st.action_for = decided, now, p.n
 				cmd = { act = decided.act, tx = bx, ty = by, ax = decided.ax, ay = decided.ay,
-					power = decided.power, speed = p.speed, reason = "jam: forcing it free" }
+					power = decided.power, speed = p.speed }
 			else
 				local decided = st.action
 				if decided == nil or now - (st.action_at or -99) >= ACTION_COOLDOWN or st.action_for ~= p.n then
@@ -1223,36 +1211,33 @@ local function plan_team(team, players, bx, by, now)
 					st.action, st.action_at, st.action_for = decided, now, p.n
 				end
 				cmd = { act = decided.act, tx = bx, ty = by, ax = decided.ax, ay = decided.ay,
-					power = decided.power, speed = p.speed, reason = ON_BALL_REASON[decided.act] or "on the ball" }
+					power = decided.power, speed = p.speed }
 			end
 		elseif role == "GK" or role == "GK2" then
 			local gx, gy = gk_target(team, b, bx, by, dist(bx, by, mg.cx, mg.cy))
-			cmd = { act = 0, tx = gx, ty = gy, speed = p.speed, reason = "keeper: holding line" }
+			cmd = { act = 0, tx = gx, ty = gy, speed = p.speed }
 		elseif marker ~= nil and p.n == marker.n then
 			local dx, dy = mg.cx - danger.x, mg.cy - danger.y
 			local dl = vlen(dx, dy)
 			if dl < 1.0 then dl = 1.0 end
-			cmd = { act = 0, tx = danger.x + dx / dl * 62.0, ty = danger.y + dy / dl * 62.0, speed = p.speed, reason = "marking the danger man" }
+			cmd = { act = 0, tx = danger.x + dx / dl * 62.0, ty = danger.y + dy / dl * 62.0, speed = p.speed }
 		elseif second ~= nil and p.n == second.n then
 			local d, l
-			local reason
 			if we_have_it then
 				d = clampf(ball_depth + 0.14, 0.12, 0.90)
 				l = clampf(ball_lane + ((by > geo.cy) and -0.20 or 0.20), 0.08, 0.92)
-				reason = "supporting the ball"
 			else
 				d = clampf(ball_depth - 0.13, 0.05, 0.85)
 				l = clampf(ball_lane * 0.6 + 0.2, 0.08, 0.92)
-				reason = "covering behind the ball"
 			end
 			local tx, ty = slot_xy(team, d, l)
-			cmd = { act = 0, tx = tx, ty = ty, speed = p.speed, reason = reason }
+			cmd = { act = 0, tx = tx, ty = ty, speed = p.speed }
 		else
 			local rd = ROLE_DEPTH[role] or ROLE_DEPTH.MID
 			local d = clampf(rd.base + (ball_depth - 0.5) * rd.shift, 0.06, 0.93)
 			local l = clampf((b.lane or 0.5) + (ball_lane - 0.5) * LANE_FOLLOW, 0.07, 0.93)
 			local tx, ty = slot_xy(team, d, l)
-			cmd = { act = 0, tx = tx, ty = ty, speed = p.speed, reason = "holding " .. role .. " shape" }
+			cmd = { act = 0, tx = tx, ty = ty, speed = p.speed }
 		end
 
 		-- Nobody except the chaser crowds the ball.
@@ -1428,7 +1413,9 @@ function add_bot(team, btype)
 	end
 
 	bot_seq = bot_seq + 1
-	local label = "Bot " .. tostring(bot_seq) .. " (" .. (DIFF_TOKENS[difficulty] or DIFF_TOKENS[2]) .. ")"
+	-- Keywords, not words: the label travels to every peer and is rendered in
+	-- each one's own language (same reason DIFF_TOKENS are tokens already).
+	local label = "{bot} " .. tostring(bot_seq) .. " (" .. (DIFF_TOKENS[difficulty] or DIFF_TOKENS[2]) .. ")"
 	local spawn_pos = get_random_position_in_polygon(team == 1 and "red_spawn_area" or "blue_spawn_area")
 	local bot_name = spawn_entity_host({
 		t = "bot",

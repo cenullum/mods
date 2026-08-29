@@ -203,6 +203,44 @@ function tg_resolve(args)
     run_network_function(name, "tg_done_ALL", { cfg.id, hit_any, cfg.x, cfg.y })
 end
 
+-- Green hit puff on every peer when an NPC takes damage - it had a floating
+-- number and a sprite flash (hit_fx.lua) but no puff at all, unlike the leaf/
+-- stone chip fx block-breaking gets (-gm's ensure_chip_fx). Same build-once
+-- pattern: create_particle rebuilds the cached node every call, so the
+-- variants are created once and only re-emitted per hit. Several light/dark
+-- green variants are pre-created (color is cached per particle_id, so
+-- start_particle can't override it) and picked at random per hit.
+local npc_hit_fx_ready = false
+
+local NPC_HIT_COLORS = {
+    Color(150 / 255, 224 / 255, 130 / 255, 1), -- light
+    Color(120 / 255, 210 / 255, 100 / 255, 1), -- light-mid
+    Color(99 / 255, 199 / 255, 77 / 255, 1),   -- base
+    Color(70 / 255, 165 / 255, 55 / 255, 1),   -- dark-mid
+    Color(48 / 255, 130 / 255, 40 / 255, 1),   -- dark
+}
+
+local function ensure_npc_hit_fx()
+    if npc_hit_fx_ready then return end
+    npc_hit_fx_ready = true
+    for i, tint in ipairs(NPC_HIT_COLORS) do
+        create_particle({
+            particle_id = "mbl_npc_hit_" .. i,
+            texture_path = "white",
+            lifetime = 0.4,
+            amount = 6,
+            explosiveness = 1.0,
+            one_shot = true,
+            spread = 180,
+            initial_velocity_min = 30,
+            initial_velocity_max = 70,
+            scale_amount_min = 0.2,
+            scale_amount_max = 0.4,
+            color = tint,
+        })
+    end
+end
+
 -- =============================================================================
 -- Damage numbers - everyone sees them, they fade out after 2 seconds.
 -- =============================================================================
@@ -211,14 +249,38 @@ end
 -- kind: "player" | "npc" | "heal" (picks the colour). A small random offset is
 -- baked in host-side (before broadcasting) so every peer sees the same jittered
 -- spot instead of numbers stacking exactly on top of each other on repeat hits.
-function show_damage(x, y, amount, kind)
+--
+-- 'victim' and 'dir' are optional and carry the hit FEEL along with the number:
+-- the victim's sprite flashes white, squashes and wobbles on every peer (see
+-- hit_fx.lua). They ride this broadcast instead of costing a message of their
+-- own, which is why the effect is triggered from here rather than from each
+-- npc_take_damage - only this function already reaches everybody. Leave them out
+-- for damage with no body behind it (mining a tile, a heal tick).
+function show_damage(x, y, amount, kind, victim, dir, strength)
     if not IS_HOST then return end
     local jx = x + (math.random() * 2 - 1) * DAMAGE_LABEL_JITTER
     local jy = y + (math.random() * 2 - 1) * DAMAGE_LABEL_JITTER
-    run_network_function(name, "damage_fx_ALL", { jx, jy, amount, kind })
+    -- Never leave a nil in the middle of the payload: a Lua array stops at the
+    -- first hole, so 'dir' would silently vanish with it.
+    run_network_function(name, "damage_fx_ALL",
+        { jx, jy, amount, kind, victim or "", dir or 1, strength or 1 })
 end
 
-function damage_fx_ALL(sender_id, x, y, amount, kind)
+function damage_fx_ALL(sender_id, x, y, amount, kind, victim, dir, strength)
+    -- "body" is the sprite name every damageable thing in this mod uses (users,
+    -- enemies, critters, the boss, breakables), and none of them wear a shader,
+    -- hence the empty base.
+    if victim and victim ~= "" then
+        run_function("-hfx", "play_hit", { victim, "body", "", dir, strength })
+    end
+    -- Critters (animals) share the "npc" damage kind but don't get the puff -
+    -- only hostile NPCs (zombies etc.) do.
+    if kind == "npc" and not (victim ~= "" and has_tag(victim, "critter")) then
+        ensure_npc_hit_fx()
+        local variant = math.random(1, #NPC_HIT_COLORS)
+        start_particle({ particle_id = "mbl_npc_hit_" .. variant, position = Vector2(x, y) })
+    end
+
     dmg_counter = dmg_counter + 1
     local label_name = "dmg" .. LOCAL_STEAM_ID .. "_" .. dmg_counter
     local prefix = (kind == "heal") and "+" or "-"

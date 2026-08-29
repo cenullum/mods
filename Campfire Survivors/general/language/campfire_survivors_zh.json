@@ -45,6 +45,8 @@
     "{go_to_campfire_to_start_wave}": "前往篝火开始波次",
     "{has_been_downed_go_to_revive}": "[color=#883377] 倒地了！快去复活他！[/color]",
     "{has_been_revived_by}": "[/color][color=#0f6622] 被复活了，复活者：[/color][color=#117733]",
+    "{has_connected}": " 已连接",
+    "{has_disconnected}": " 已断开连接",
     "{health_0_0}": "生命值：0/0",
     "{health_base_health_level_index}": "• 生命值 = 基础生命值 × 等级系数\n",
     "{health_label}": "生命值：%s/%s",

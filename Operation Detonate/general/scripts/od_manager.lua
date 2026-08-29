@@ -1105,7 +1105,7 @@ function end_round(winner_id)
         players[winner_id].wins = players[winner_id].wins + 1
     end
     run_network_function(name, "round_over_ALL",
-        { players[winner_id] and players[winner_id].name or "Nobody" })
+        { players[winner_id] and players[winner_id].name or "{nobody}" })
     start_timer({
         timer_id = "od_next",
         entity_name = name,

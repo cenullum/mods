@@ -142,7 +142,12 @@ end
 -- its own: take_damage subtracts the health BEFORE it calls this, so the fatal
 -- blow already knows it was fatal, and every peer needs exactly this one
 -- message to draw the number, play the hit and play the death.
-function show_damage_label_ALL(sender_id, damage_amount, died)
+function show_damage_label_ALL(sender_id, damage_amount, died, hit_dir)
+    -- The hit FEELS like one: white flash, squash & stretch, elastic wobble.
+    -- Purely local and purely visual, driven by the -hfx ticker - it rides this
+    -- broadcast rather than costing a message of its own (see hit_fx.lua).
+    run_function("-hfx", "play_hit", { name, image_name, "circle", hit_dir })
+
     -- The hit itself. no_multiple_tag is keyed per monster so a single target
     -- being focused by several players (or a penetrating bullet) cannot stack
     -- its own hit sound on top of itself; separate monsters still overlap,
@@ -203,7 +208,11 @@ function take_damage(damage, knockback_amount, angle, player_id)
     -- 'health' is already decremented above, so this doubles as "was this the
     -- killing blow?" and carries the death sound without a second message.
     if IS_HOST then
-        run_network_function(name, "show_damage_label_ALL", {actual_damage, health <= 0})
+        -- cos(angle) makes the hit wobble tip AWAY from whatever hit it. Not
+        -- every damage source passes an angle (bandit bullets, commands), so
+        -- fall back to a straight 1.
+        local hit_dir = angle and math.cos(angle) or 1
+        run_network_function(name, "show_damage_label_ALL", {actual_damage, health <= 0, hit_dir})
         if player_id and actual_damage > 0 then
             run_function("-stats", "add_player_stat", {player_id, "damage_dealt", actual_damage})
         end

@@ -10,7 +10,7 @@ is_score_table_input_last = false
 
 change_view("gameplay")
 
-set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_6@ {hit_ball}\n@key_11@ {scoreboard}\n@stick_1@ {movement}") -- right bottom  inputs label
+set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_8@ {hit_ball}\n@key_11@ {scoreboard}\n@stick_1@ {movement}") -- right bottom  inputs label
 
 
 blue_score = 0
@@ -559,3 +559,5 @@ function dump(o)
         return tostring(o)
     end
 end
+
+

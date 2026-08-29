@@ -5,14 +5,14 @@ angular_damp = -1.0
 mass=1000000000000.0
 angular_velocity=1.0
 
--- Değirmen ayarları
-rotation_speed = 90.0  -- Derece/saniye
-cross_size = 1.0      -- Artı şeklinin boyutu
-cross_thickness = 7.0  -- Çizgi kalınlığı
+-- Windmill settings
+rotation_speed = 90.0  -- Degrees per second
+cross_size = 1.0      -- Size of the cross shape
+cross_thickness = 7.0  -- Line thickness
 
 add_tag(name,"rotating_cross")
 
--- Görsel elementler
+-- Visual elements
 horizontal_rect_name = ""
 vertical_rect_name = ""
 
@@ -26,19 +26,19 @@ collision_config2={parent_name=name,shape="rectangle",size=Vector2(size_y,size_x
 collision_name2=set_collision(collision_config2)
 
 function create_rotating_cross()
-    -- Yatay dikdörtgen (yatay çizgi)
+    -- Horizontal rectangle (horizontal line)
     horizontal_rect_name = set_image({
         parent_name = name,
-        image_path = "wood",  -- Beyaz dikdörtgen texture
+        image_path = "wood",  -- White rectangle texture
         size = Vector2(cross_size, cross_thickness),
         is_repeat = true,
         z_index = 5
     })
     
-    -- Dikey dikdörtgen (dikey çizgi)
+    -- Vertical rectangle (vertical line)
     vertical_rect_name = set_image({
         parent_name = name,
-        image_path = "wood",  -- Beyaz dikdörtgen texture
+        image_path = "wood",  -- White rectangle texture
         size = Vector2(cross_thickness, cross_size),
         is_repeat = true,
         z_index = 5
@@ -47,7 +47,7 @@ function create_rotating_cross()
 
 end
 
--- Değirmen oluşturulduğunda çağrılır
+-- Called when the windmill is created
 create_rotating_cross()
 
 

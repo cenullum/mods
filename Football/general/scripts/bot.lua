@@ -106,14 +106,6 @@ local CARRY_TOL = 0.80   -- rad: how far off our run may be and still be useful
 image_name = ""
 label_name = ""
 collision_name = ""
-hit_progress_bar_name = ""
--- DEBUG ONLY: shows what the bot is currently trying to do, under its
--- nickname.  Host-only, same reasoning as hit_progress_bar_name below (the
--- coach's decision is host-only state).  Delete this whole block (here, in
--- build_visuals, set_command and _process) once bot behaviour is trusted.
-debug_label_name = ""
-cmd_reason = ""
-last_debug_text = nil
 is_ball_interactable = false
 hit_value = 0.0
 press_time = 0.0 -- seconds spent holding the stick, read by the coach
@@ -148,7 +140,7 @@ retreat_x = 0.0
 retreat_y = 0.0
 
 if team == nil then team = 0 end
-if label == nil then label = "Bot" end
+if label == nil then label = "{bot}" end
 if btype == nil then btype = 0 end
 
 function team_color()
@@ -169,22 +161,6 @@ function build_visuals()
 		font_size = 64, scale = Vector2(0.125, 0.125),
 		horizontal_alignment = 1, vertical_alignment = 1,
 	})
-	-- Debug-only: hit_value (charge for the next shot) is host-only state, so
-	-- only the host can draw a meaningful bar for it - clients never see this.
-	if IS_HOST then
-		hit_progress_bar_name = set_progress_bar({
-			parent_name = name, name = hit_progress_bar_name, position = Vector2(-64, 48),
-			modulate = Color(1, 1, 0, 1), size = Vector2(128, 16),
-		})
-		-- DEBUG ONLY, see the note by debug_label_name above.
-		debug_label_name = set_label({
-			parent_name = name, name = debug_label_name, text = "",
-			position = Vector2(-256, 68), size = Vector2(4096, 128),
-			font_size = 64, scale = Vector2(0.1, 0.1),
-			horizontal_alignment = 1, vertical_alignment = 1,
-			modulate = Color(1, 1, 0.3, 1),
-		})
-	end
 end
 
 build_visuals()
@@ -241,12 +217,10 @@ function set_command(c)
 	cmd_chase = c.chase and true or false
 	has_cmd = true
 	retreat_t = 0.0
-	cmd_reason = c.reason or "" -- DEBUG ONLY, see debug_label_name above
-	-- The bar survives a new order and just keeps climbing towards HIT_MAX (see
-	-- _process) - it is never trimmed back down when the coach re-decides with a
-	-- slightly different power, which used to make the bar visibly snap backwards
-	-- every ACTION_COOLDOWN.  How much of it a shot spends is decided at the
-	-- moment of firing instead (work_ball's `spend`).
+	-- hit_value survives a new order and just keeps climbing towards HIT_MAX
+	-- (see _process) - it is never trimmed back down when the coach re-decides
+	-- with a slightly different power. How much of it a shot spends is decided
+	-- at the moment of firing instead (work_ball's `spend`).
 end
 
 -- ============================================================  host AI loop --
@@ -502,26 +476,14 @@ function _process(delta, inputs)
 	if team == 0 then return end
 
 	-- Holding the hit "button" down the whole time, the way a player runs at the
-	-- ball with the key already pressed, so the bar is loaded on arrival instead
-	-- of the bot standing over the ball waiting for it.  It always charges all
-	-- the way to HIT_MAX, exactly like a player who keeps the key held - it never
-	-- stalls parked at some fractional level while lining the shot up (that used
-	-- to look like the bar freezing at 80% or snapping back and forth as the
-	-- coach's re-decisions nudged the order's power up and down).  How much of a
-	-- full bar an order actually needs is decided once, at the moment of firing
-	-- (see work_ball's `spend`), not by capping how high the bar is allowed to go.
+	-- ball with the key already pressed, so hit_value is loaded on arrival
+	-- instead of the bot standing over the ball waiting for it.  It always
+	-- charges all the way to HIT_MAX, exactly like a player who keeps the key
+	-- held - it never stalls parked at some fractional level while lining the
+	-- shot up.  How much of a full charge an order actually needs is decided
+	-- once, at the moment of firing (see work_ball's `spend`), not by capping
+	-- how high hit_value is allowed to climb.
 	hit_value = math.min(hit_value + HIT_MAX * delta, HIT_MAX)
-	set_progress_bar({ parent_name = name, name = hit_progress_bar_name, value = hit_value })
-
-	-- DEBUG ONLY: refresh the "what am I doing" label under the nickname.  Only
-	-- writes when the text actually changed (see rule 10 in the stub header).
-	local debug_text = cmd_reason
-	if retreat_t > 0.0 then debug_text = "retreating after hit" end
-	if not has_cmd and retreat_t <= 0.0 then debug_text = "idle: no order" end
-	if debug_text ~= last_debug_text then
-		last_debug_text = debug_text
-		set_label({ parent_name = name, name = debug_label_name, text = debug_text })
-	end
 
 	if not has_cmd and retreat_t <= 0.0 then
 		has_sent_v = false

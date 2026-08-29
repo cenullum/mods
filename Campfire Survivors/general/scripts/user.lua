@@ -880,7 +880,16 @@ function update_player_state_ALL(sender_id, health, dead_status)
         set_alive_appearance()
         set_value("", name, "speed", movement_speed)
     end
-    
+
+    -- Hit feedback: white flash, squash & stretch, elastic wobble. This runs on
+    -- EVERY peer, not just the victim, so a teammate getting mauled reads at a
+    -- glance - and it rides this existing broadcast instead of costing a
+    -- message of its own (see hit_fx.lua). Must come after the appearance calls
+    -- above: those re-apply the circle shader and would wipe the flash.
+    if health_difference > 0 then
+        run_function("-hfx", "play_hit", { name, image_name, "circle", 1 })
+    end
+
     if IS_LOCAL then
 
         -- Apply screen shake based on damage taken

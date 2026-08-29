@@ -52,7 +52,8 @@ function npc_take_damage(dmg_in, attacker, kb, angle)
     hp = hp - dmg_in
     local my_pos = get_value("", name, "position")
     if my_pos then
-        run_function("-combat", "show_damage", { my_pos.x, my_pos.y, dmg_in, "npc" })
+        run_function("-combat", "show_damage",
+            { my_pos.x, my_pos.y, dmg_in, "npc", name, angle and math.cos(angle) or 1 })
     end
     if hp > 0 then return end
     broken = true

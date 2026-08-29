@@ -16,7 +16,17 @@
 		"guilt": 0.0,
 		"suspicion": 0.0,
 		"aylin_art": 0.0,
-		"kerem_path": 0.0
+		"kerem_path": 0.0,
+		"k_seller": 0.0,
+		"k_bought": 0.0,
+		"k_fees": 0.0,
+		"k_amount": 0.0,
+		"k_keys": 0.0,
+		"k_form": 0.0,
+		"k_signer": 0.0,
+		"k_september": 0.0,
+		"k_comp": 0.0,
+		"k_zsaid": 0.0
 	},
 	"chars": {
 		"aylin": {
@@ -341,7 +351,18 @@
 			"bg": "bg_hall",
 			"sound": "",
 			"tags": [],
-			"set": [],
+			"set": [
+				{
+					"var": "k_keys",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_zsaid",
+					"op": "add",
+					"value": 1
+				}
+			],
 			"next": "intro2",
 			"choices": []
 		},
@@ -1932,7 +1953,13 @@
 			"bg": "bg_library",
 			"sound": "",
 			"tags": [],
-			"set": [],
+			"set": [
+				{
+					"var": "k_fees",
+					"op": "add",
+					"value": 1
+				}
+			],
 			"next": "e_finish",
 			"choices": []
 		},
@@ -2387,6 +2414,11 @@
 			"set": [
 				{
 					"var": "aylin_art",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_comp",
 					"op": "add",
 					"value": 1
 				}
@@ -2863,6 +2895,11 @@
 					"cond": [
 						{
 							"var": "aylin_art",
+							"cmp": ">=",
+							"value": 1
+						},
+						{
+							"var": "k_comp",
 							"cmp": ">=",
 							"value": 1
 						}
@@ -3342,6 +3379,11 @@
 					"var": "truth",
 					"op": "add",
 					"value": 1
+				},
+				{
+					"var": "k_fees",
+					"op": "add",
+					"value": 1
 				}
 			],
 			"next": "week_bridge",
@@ -3481,6 +3523,11 @@
 							"var": "truth",
 							"cmp": ">=",
 							"value": 3
+						},
+						{
+							"var": "k_zsaid",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -3551,6 +3598,11 @@
 			"set": [
 				{
 					"var": "truth",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_keys",
 					"op": "add",
 					"value": 1
 				}
@@ -3664,6 +3716,16 @@
 					"var": "truth",
 					"op": "add",
 					"value": 1
+				},
+				{
+					"var": "k_keys",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_september",
+					"op": "add",
+					"value": 1
 				}
 			],
 			"next": "rumor_after",
@@ -3718,7 +3780,13 @@
 			"tags": [
 				"decision"
 			],
-			"set": [],
+			"set": [
+				{
+					"var": "k_seller",
+					"op": "add",
+					"value": 1
+				}
+			],
 			"next": "",
 			"choices": [
 				{
@@ -3800,16 +3868,6 @@
 							"var": "suspicion",
 							"op": "add",
 							"value": 2
-						},
-						{
-							"var": "grades",
-							"op": "add",
-							"value": 1
-						},
-						{
-							"var": "guilt",
-							"op": "add",
-							"value": 1
 						}
 					],
 					"hidden": false
@@ -3851,6 +3909,16 @@
 			"set": [
 				{
 					"var": "truth",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_fees",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_amount",
 					"op": "add",
 					"value": 1
 				}
@@ -4053,6 +4121,16 @@
 					"var": "guilt",
 					"op": "add",
 					"value": 1
+				},
+				{
+					"var": "k_seller",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_bought",
+					"op": "add",
+					"value": 1
 				}
 			],
 			"next": "rumor_after",
@@ -4150,6 +4228,11 @@
 							"var": "courage",
 							"cmp": ">=",
 							"value": 1
+						},
+						{
+							"var": "k_seller",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -4179,6 +4262,16 @@
 							"var": "truth",
 							"cmp": ">=",
 							"value": 6
+						},
+						{
+							"var": "k_keys",
+							"cmp": ">=",
+							"value": 1
+						},
+						{
+							"var": "k_fees",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -4213,6 +4306,11 @@
 							"var": "e_bond",
 							"cmp": ">=",
 							"value": 3
+						},
+						{
+							"var": "k_amount",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -4266,7 +4364,7 @@
 					"next": "confess_self",
 					"cond": [
 						{
-							"var": "guilt",
+							"var": "k_bought",
 							"cmp": ">=",
 							"value": 1
 						}
@@ -4337,6 +4435,11 @@
 							"var": "z_bond",
 							"cmp": ">=",
 							"value": 3
+						},
+						{
+							"var": "k_zsaid",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [],
@@ -4411,6 +4514,11 @@
 				},
 				{
 					"var": "reputation",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_keys",
 					"op": "add",
 					"value": 1
 				}
@@ -4497,6 +4605,11 @@
 			"set": [
 				{
 					"var": "truth",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_september",
 					"op": "add",
 					"value": 1
 				}
@@ -5039,7 +5152,13 @@
 						"honest"
 					],
 					"next": "confess_name",
-					"cond": [],
+					"cond": [
+						{
+							"var": "k_seller",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
 					"set": [
 						{
 							"var": "reputation",
@@ -5546,6 +5665,11 @@
 					"var": "truth",
 					"op": "add",
 					"value": 1
+				},
+				{
+					"var": "k_comp",
+					"op": "add",
+					"value": 1
 				}
 			],
 			"next": "",
@@ -5851,7 +5975,13 @@
 			"bg": "bg_hall",
 			"sound": "",
 			"tags": [],
-			"set": [],
+			"set": [
+				{
+					"var": "k_keys",
+					"op": "add",
+					"value": 1
+				}
+			],
 			"next": "w1_zeynep2",
 			"choices": []
 		},
@@ -5992,6 +6122,21 @@
 					"var": "truth",
 					"op": "add",
 					"value": 1
+				},
+				{
+					"var": "k_keys",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_form",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_signer",
+					"op": "add",
+					"value": 1
 				}
 			],
 			"next": "winter_bridge",
@@ -6028,6 +6173,11 @@
 			"set": [
 				{
 					"var": "truth",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_keys",
 					"op": "add",
 					"value": 1
 				}
@@ -6305,6 +6455,21 @@
 					"var": "truth",
 					"op": "add",
 					"value": 1
+				},
+				{
+					"var": "k_keys",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_form",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_fees",
+					"op": "add",
+					"value": 1
 				}
 			],
 			"next": "winter_bridge",
@@ -6435,6 +6600,11 @@
 							"var": "z_bond",
 							"cmp": ">=",
 							"value": 2
+						},
+						{
+							"var": "k_form",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -6912,7 +7082,23 @@
 			"bg": "bg_office",
 			"sound": "",
 			"tags": [],
-			"set": [],
+			"set": [
+				{
+					"var": "k_keys",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_form",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_signer",
+					"op": "add",
+					"value": 1
+				}
+			],
 			"next": "ch5_end",
 			"choices": []
 		},
@@ -7073,7 +7259,13 @@
 			"bg": "bg_office",
 			"sound": "",
 			"tags": [],
-			"set": [],
+			"set": [
+				{
+					"var": "d_bond",
+					"op": "sub",
+					"value": 1
+				}
+			],
 			"next": "ch5_end",
 			"choices": []
 		},
@@ -7144,7 +7336,13 @@
 						"brave"
 					],
 					"next": "w2_emre_fees",
-					"cond": [],
+					"cond": [
+						{
+							"var": "k_fees",
+							"cmp": ">=",
+							"value": 1
+						}
+					],
 					"set": [
 						{
 							"var": "e_bond",
@@ -7217,6 +7415,16 @@
 			"set": [
 				{
 					"var": "truth",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_fees",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_amount",
 					"op": "add",
 					"value": 1
 				}
@@ -7719,6 +7927,11 @@
 							"var": "truth",
 							"cmp": ">=",
 							"value": 8
+						},
+						{
+							"var": "k_signer",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -7836,6 +8049,11 @@
 							"var": "aylin_art",
 							"cmp": ">=",
 							"value": 3
+						},
+						{
+							"var": "k_comp",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -8379,6 +8597,16 @@
 					"var": "truth",
 					"op": "add",
 					"value": 1
+				},
+				{
+					"var": "k_keys",
+					"op": "add",
+					"value": 1
+				},
+				{
+					"var": "k_september",
+					"op": "add",
+					"value": 1
 				}
 			],
 			"next": "hearing_open",
@@ -8473,6 +8701,11 @@
 							"var": "e_bond",
 							"cmp": ">=",
 							"value": 4
+						},
+						{
+							"var": "k_amount",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -8506,6 +8739,11 @@
 							"var": "truth",
 							"cmp": ">=",
 							"value": 6
+						},
+						{
+							"var": "k_keys",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -8535,6 +8773,21 @@
 							"var": "truth",
 							"cmp": ">=",
 							"value": 9
+						},
+						{
+							"var": "k_keys",
+							"cmp": ">=",
+							"value": 1
+						},
+						{
+							"var": "k_amount",
+							"cmp": ">=",
+							"value": 1
+						},
+						{
+							"var": "k_september",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [
@@ -8574,6 +8827,11 @@
 							"var": "courage",
 							"cmp": ">=",
 							"value": 6
+						},
+						{
+							"var": "k_signer",
+							"cmp": ">=",
+							"value": 1
 						}
 					],
 					"set": [

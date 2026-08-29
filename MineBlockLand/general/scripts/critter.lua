@@ -259,7 +259,8 @@ function npc_take_damage(dmg_in, attacker, kb, angle)
     hp = hp - dmg_in
     local pos = get_value("", name, "position")
     if pos then
-        run_function("-combat", "show_damage", { pos.x, pos.y, dmg_in, "npc" })
+        run_function("-combat", "show_damage",
+            { pos.x, pos.y, dmg_in, "npc", name, angle and math.cos(angle) or 1 })
     end
     if attacker and attacker ~= "" and has_tag(attacker, "user") then
         run_function("-gm", "add_stat", { attacker, "dmg_dealt", dmg_in })

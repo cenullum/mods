@@ -443,14 +443,14 @@ end
 
 -- Player connection/disconnection handlers
 function _on_user_connected(user_id, nickname)
-    add_to_chat("[color=#117733]" .. nickname .. "[/color][color=#0f6622] connected[/color]")
+    add_to_chat("[color=#117733]" .. nickname .. "[/color][color=#0f6622]{has_connected}[/color]")
     if IS_HOST then
         initialize_player_stats(user_id)
     end
 end
 
 function _on_user_disconnected(user_id, nickname)
-    add_to_chat("[color=#cc6677]" .. nickname .. "[/color][color=#aa5566] disconnected[/color]")
+    add_to_chat("[color=#cc6677]" .. nickname .. "[/color][color=#aa5566]{has_disconnected}[/color]")
     if IS_HOST then
         -- Player stats remain in memory until game reset
     end

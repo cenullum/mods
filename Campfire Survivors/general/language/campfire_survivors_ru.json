@@ -45,6 +45,8 @@
     "{go_to_campfire_to_start_wave}": "Подойдите к костру, чтобы начать волну",
     "{has_been_downed_go_to_revive}": "[color=#883377] повержен! Бегите поднимать![/color]",
     "{has_been_revived_by}": "[/color][color=#0f6622] был поднят игроком [/color][color=#117733]",
+    "{has_connected}": " подключился",
+    "{has_disconnected}": " отключился",
     "{health_0_0}": "Здоровье: 0/0",
     "{health_base_health_level_index}": "• Здоровье = базовое здоровье × индекс уровня\n",
     "{health_label}": "Здоровье: %s/%s",

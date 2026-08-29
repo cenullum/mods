@@ -17,7 +17,11 @@ singleton_name = "sd_manager"
 --     (vote_HOST); the host tallies live and, when everyone has voted or the
 --     60s timer runs out, broadcasts the winner (apply_choice_ALL). Ties and
 --     empty votes are broken randomly ON THE HOST only (then broadcast), so the
---     result is still identical everywhere. Nodes tagged "notimer" have no clock.
+--     result is still identical everywhere. Nodes tagged "notimer" have no clock
+--     while empty: with several players, the 60s clock only starts once the
+--     FIRST vote comes in (so nobody is rushed before anyone has answered, but
+--     the rest can't stall forever once someone did). With a single voter
+--     there is no clock at all: their vote resolves the node immediately.
 --
 --   * Narration nodes just flow: anyone can press Continue (continue_HOST) and
 --     there is an auto-advance fallback so the story never stalls.
@@ -280,12 +284,16 @@ function resolve_vote()
         if enabled_ids[id] then counts[id] = (counts[id] or 0) + 1 end
     end
     -- Winner = most votes; ties broken randomly. No votes = random enabled.
+    -- That random fallback is only for TIMED nodes, where a decision must be
+    -- forced. A "notimer" node (deadline == 0) never picks randomly: with no
+    -- clear single leader it just keeps waiting for votes to settle.
     local best = -1
     local leaders = {}
     for id, n in pairs(counts) do
         if n > best then best = n; leaders = { id }
         elseif n == best then table.insert(leaders, id) end
     end
+    if deadline == 0 and #leaders ~= 1 then return end
     if #leaders == 0 then
         for id in pairs(enabled_ids) do table.insert(leaders, id) end
     end
@@ -325,6 +333,14 @@ function vote_HOST(sender_id, data)
     if not IS_HOST or phase ~= "vote" then return end
     if not voters[sender_id] then return end
     if not enabled_ids[data.id] then return end -- ignore locked / unknown choices
+    -- Untimed ("notimer") node, multiple players, nobody has voted yet: this
+    -- vote is the first one, so start the 60s clock now. Everyone got to look
+    -- as long as they wanted beforehand; from here the rest have 60s to catch
+    -- up before a tie gets forced. A single-voter game skips the clock
+    -- entirely - the quorum check below resolves it immediately either way.
+    if deadline == 0 and count_keys(voters) > 1 and count_keys(votes) == 0 then
+        deadline = get_os_time_unix() + VOTE_TIME
+    end
     votes[sender_id] = data.id
     broadcast_status()
     -- Resolve early once every current voter has picked.

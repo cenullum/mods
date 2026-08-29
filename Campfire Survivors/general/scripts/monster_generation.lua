@@ -386,30 +386,43 @@ end
 -- monster.lua's show_damage_label_ALL, which already runs on every peer).
 -- create_particle rebuilds the cached node every call, so it's created once
 -- here and only re-emitted per hit - same pattern as MineBlockLand's chip fx.
+-- color is cached per particle_id (start_particle can't override it), so a
+-- handful of light/dark green variants are pre-created and picked at random.
 local damage_fx_ready = false
+
+local DAMAGE_HIT_COLORS = {
+    Color(150 / 255, 224 / 255, 130 / 255, 1), -- light
+    Color(120 / 255, 210 / 255, 100 / 255, 1), -- light-mid
+    Color(99 / 255, 199 / 255, 77 / 255, 1),   -- base
+    Color(70 / 255, 165 / 255, 55 / 255, 1),   -- dark-mid
+    Color(48 / 255, 130 / 255, 40 / 255, 1),   -- dark
+}
 
 local function ensure_damage_fx()
     if damage_fx_ready then return end
     damage_fx_ready = true
-    create_particle({
-        particle_id = "cs_damage_hit",
-        texture_path = "white",
-        lifetime = 0.4,
-        amount = 6,
-        explosiveness = 1.0,
-        one_shot = true,
-        spread = 180,
-        initial_velocity_min = 30,
-        initial_velocity_max = 70,
-        scale_amount_min = 0.2,
-        scale_amount_max = 0.4,
-        color = Color(99 / 255, 199 / 255, 77 / 255, 1),
-    })
+    for i, tint in ipairs(DAMAGE_HIT_COLORS) do
+        create_particle({
+            particle_id = "cs_damage_hit_" .. i,
+            texture_path = "white",
+            lifetime = 0.4,
+            amount = 6,
+            explosiveness = 1.0,
+            one_shot = true,
+            spread = 180,
+            initial_velocity_min = 30,
+            initial_velocity_max = 70,
+            scale_amount_min = 0.4,
+            scale_amount_max = 0.8,
+            color = tint,
+        })
+    end
 end
 
 function spawn_damage_particle(hit_position)
     ensure_damage_fx()
-    start_particle({ particle_id = "cs_damage_hit", position = hit_position })
+    local variant = math.random(1, #DAMAGE_HIT_COLORS)
+    start_particle({ particle_id = "cs_damage_hit_" .. variant, position = hit_position })
 end
 
 

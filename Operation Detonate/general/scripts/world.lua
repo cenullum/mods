@@ -8,9 +8,10 @@ singleton_name = "w"
 -- (general/images/<id>.png) - repaint them any time, the layout stays.
 --
 -- Every card is defined here with load_cards_from_data using the same "cards"
--- JSON structure the online image editor exports, INCLUDING localization:
--- titles/descriptions carry loc_keys with English + Turkish strings, so the
--- printable export of this set can be produced in every language at once.
+-- JSON structure the online card editor exports. Card TEXT is not here: each
+-- title/description is a `{keyword}` resolved against this mod's own
+-- general/language/operation_detonate_<code>.json, exactly like every label and
+-- chat line the mod shows. Nothing user-facing is written in this script.
 -- =============================================================================
 
 -- REQUIRED for user.lua's cursor sync: the engine only gathers "stick_2"
@@ -44,7 +45,7 @@ set_image({
 })
 
 -- -----------------------------------------------------------------------------
--- Card catalogue: id -> {title, desc (en/tr), art, icon, bg, type, extra kw}
+-- Card catalogue: id -> {icon, bg, type}; the words live in the language JSONs
 -- -----------------------------------------------------------------------------
 local ICONS = {
     bomb = "bomb_32dp_FFFFFF_FILL0_wght400_GRAD0_opsz40.svg",
@@ -59,55 +60,37 @@ local ICONS = {
 }
 
 local CATALOG = {
-    { id = "time_bomb", type = "bomb", icon = ICONS.bomb, bg = "(0.32, 0.06, 0.06, 1)",
-      en = { "Time Bomb", "Draw this without a Disarm Kit and you are out of the mission." },
-      tr = { "Saatli Bomba", "Etkisizleştirme Kiti olmadan çekersen görevden elenirsin." } },
-    { id = "disarm_kit", type = "disarm", icon = ICONS.disarm, bg = "(0.05, 0.35, 0.32, 1)",
-      en = { "Disarm Kit", "Defuses a Time Bomb - then hide the bomb anywhere in the deck." },
-      tr = { "Etkisizleştirme Kiti", "Saatli Bombayı etkisiz hâle getirir - bombayı destede istediğin yere gizle." } },
-    { id = "ambush", type = "attack", icon = ICONS.attack, bg = "(0.45, 0.16, 0.05, 1)",
-      en = { "Ambush", "End your turn instantly; the next agent must take TWO turns." },
-      tr = { "Pusu", "Turun anında biter; sıradaki ajan İKİ tur oynamak zorunda kalır." } },
-    { id = "retreat", type = "skip", icon = ICONS.skip, bg = "(0.12, 0.25, 0.42, 1)",
-      en = { "Retreat", "End your turn without drawing a card." },
-      tr = { "Geri Çekil", "Kart çekmeden turunu bitirirsin." } },
-    { id = "supply_request", type = "favor", icon = ICONS.favor, bg = "(0.42, 0.32, 0.14, 1)",
-      en = { "Supply Request", "Pick an agent: they must hand you a card of their choice." },
-      tr = { "İkmal Talebi", "Bir ajan seç: sana elinden seçtiği bir kartı vermek zorundadır." } },
-    { id = "mission_shuffle", type = "shuffle", icon = ICONS.shuffle, bg = "(0.28, 0.16, 0.4, 1)",
-      en = { "Mission Shuffle", "Shuffle the whole deck." },
-      tr = { "Görev Karıştırması", "Desteyi tamamen karıştırır." } },
-    { id = "recon_drone", type = "future", icon = ICONS.future, bg = "(0.5, 0.42, 0.06, 1)",
-      en = { "Recon Drone", "Secretly look at the top 3 cards of the deck." },
-      tr = { "Keşif Dronu", "Destenin en üstündeki 3 kartı gizlice görürsün." } },
-    { id = "signal_jammer", type = "nope", icon = ICONS.nope, bg = "(0.2, 0.23, 0.3, 1)",
-      en = { "Signal Jammer", "Cancel another agent's action card. Jammers can jam jammers." },
-      tr = { "Sinyal Kesici", "Başka bir ajanın aksiyon kartını iptal eder. Kesici kesiciyi keser." } },
-    { id = "pistol_9mm", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.2, 0.22, 1)",
-      en = { "9mm Pistol", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "9mm Tabanca", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
-    { id = "heavy_revolver", type = "weapon", icon = ICONS.weapon, bg = "(0.24, 0.19, 0.15, 1)",
-      en = { "Heavy Revolver", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "Ağır Toplu Tabanca", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
-    { id = "machine_pistol", type = "weapon", icon = ICONS.weapon, bg = "(0.25, 0.25, 0.28, 1)",
-      en = { "Machine Pistol", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "Makineli Tabanca", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
-    { id = "compact_smg", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.23, 0.3, 1)",
-      en = { "Compact SMG", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "Kompakt SMG", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
-    { id = "tactical_handgun", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.26, 0.2, 1)",
-      en = { "Tactical Handgun", "No power alone. Play 2 identical: steal a random card. 3: name a card." },
-      tr = { "Taktik Tabanca", "Tek başına gücü yok. Aynı silahtan 2: rastgele kart çal. 3: kart iste." } },
+    { id = "time_bomb", type = "bomb", icon = ICONS.bomb, bg = "(0.32, 0.06, 0.06, 1)" },
+    { id = "disarm_kit", type = "disarm", icon = ICONS.disarm, bg = "(0.05, 0.35, 0.32, 1)" },
+    { id = "ambush", type = "attack", icon = ICONS.attack, bg = "(0.45, 0.16, 0.05, 1)" },
+    { id = "retreat", type = "skip", icon = ICONS.skip, bg = "(0.12, 0.25, 0.42, 1)" },
+    { id = "supply_request", type = "favor", icon = ICONS.favor, bg = "(0.42, 0.32, 0.14, 1)" },
+    { id = "mission_shuffle", type = "shuffle", icon = ICONS.shuffle, bg = "(0.28, 0.16, 0.4, 1)" },
+    { id = "recon_drone", type = "future", icon = ICONS.future, bg = "(0.5, 0.42, 0.06, 1)" },
+    { id = "signal_jammer", type = "nope", icon = ICONS.nope, bg = "(0.2, 0.23, 0.3, 1)" },
+    { id = "pistol_9mm", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.2, 0.22, 1)" },
+    { id = "heavy_revolver", type = "weapon", icon = ICONS.weapon, bg = "(0.24, 0.19, 0.15, 1)" },
+    { id = "machine_pistol", type = "weapon", icon = ICONS.weapon, bg = "(0.25, 0.25, 0.28, 1)" },
+    { id = "compact_smg", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.23, 0.3, 1)" },
+    { id = "tactical_handgun", type = "weapon", icon = ICONS.weapon, bg = "(0.2, 0.26, 0.2, 1)" },
 }
 
 local cards = {}
-local localization = {}
 for _, entry in ipairs(CATALOG) do
-    localization["od_" .. entry.id .. "_title"] = { en = entry.en[1], tr = entry.tr[1] }
-    localization["od_" .. entry.id .. "_desc"] = { en = entry.en[2], tr = entry.tr[2] }
+    -- Titles/descriptions are mod KEYWORDS, never literal text: the strings
+    -- themselves live in general/language/operation_detonate_<code>.json like
+    -- every other string this mod shows, and CardRenderer resolves a cell's
+    -- loc_key against those files (see localized_text). So a card face is
+    -- translated by the same JSON the chat lines and panels use, in every
+    -- language the mod ships, and adding a language means adding a file - not
+    -- editing this script.
+    local title_key = "{od_" .. entry.id .. "_title}"
+    local desc_key = "{od_" .. entry.id .. "_desc}"
     table.insert(cards, {
         id = entry.id,
-        name = entry.en[1],
+        -- A keyword, not a name: od_manager puts this straight into panels and
+        -- chat lines, which auto-translate tokens per peer.
+        name = title_key,
         keywords = { type = entry.type },
         bg = { type = "color", color = entry.bg },
         corner = {
@@ -116,13 +99,13 @@ for _, entry in ipairs(CATALOG) do
             outline_color = "(0, 0, 0, 1)",
         },
         layout = { type = "vbox", children = {
-            { type = "text", weight = 0.17, pad = 0.015, text = entry.en[1],
+            { type = "text", weight = 0.17, pad = 0.015, text = title_key,
               loc_key = "od_" .. entry.id .. "_title", keyword = "title",
               font_size = 0, align = "center", valign = "center",
               color = "(1, 1, 1, 1)", outline_size = 0.14, outline_color = "(0, 0, 0, 1)" },
             { type = "image", weight = 0.5, pad = 0.02, fit = "contain",
               source = "file:" .. entry.id .. ".png", keyword = "art" },
-            { type = "text", weight = 0.33, pad = 0.03, text = entry.en[2],
+            { type = "text", weight = 0.33, pad = 0.03, text = desc_key,
               loc_key = "od_" .. entry.id .. "_desc", keyword = "description",
               font_size = 0, align = "center", valign = "begin",
               color = "(0.95, 0.95, 0.95, 1)", outline_size = 0.08,
@@ -143,8 +126,8 @@ load_cards_from_data({
     back = { type = "color", color = "(0.1, 0.12, 0.16, 1)" },
     -- Subtle steel rim around every card so they read against the dark table.
     outline = { enabled = true, color = "(0.85, 0.88, 0.95, 0.85)", width = 0.018 },
-    languages = { "en", "tr" },
-    localization = localization,
+    -- No "languages"/"localization" here on purpose: this set carries no
+    -- translation table of its own, it uses the mod's language JSON files.
     cards = cards,
 }, "od")
 

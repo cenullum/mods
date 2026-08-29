@@ -381,7 +381,10 @@ function take_damage(incoming_damage, knockback_amount, angle, player_id)
     local is_final_blow = health <= 0 and phase >= PHASE_COUNT
     -- 'health' is already decremented, so this doubles as "was that the killing
     -- blow?" and carries the death sound on the same message (see monster.lua).
-    run_network_function(name, "show_damage_label_ALL", { actual_damage, is_final_blow })
+    -- cos(angle) tips the hit wobble away from the blow; not every damage
+    -- source passes an angle, so fall back to a straight 1 (see monster.lua).
+    local hit_dir = angle and math.cos(angle) or 1
+    run_network_function(name, "show_damage_label_ALL", { actual_damage, is_final_blow, hit_dir })
     if player_id and actual_damage > 0 then
         run_function("-stats", "add_player_stat", { player_id, "damage_dealt", actual_damage })
     end
@@ -406,7 +409,11 @@ function hp_bar_ALL(sender_id, new_health)
     set_progress_bar({ parent_name = name, name = "hpbar", value = math.max(new_health, 0) })
 end
 
-function show_damage_label_ALL(sender_id, damage_amount, died)
+function show_damage_label_ALL(sender_id, damage_amount, died, hit_dir)
+    -- Same flash + squash every monster gets, but half as far: a boss this big
+    -- reads as jelly at the default squash (see hit_fx.lua).
+    run_function("-hfx", "play_hit", { name, image_name, "circle", hit_dir, 0.5 })
+
     -- Same hit/death pair every monster plays, just louder - this is the boss.
     set_audio({
         no_multiple_tag = "imp" .. name,

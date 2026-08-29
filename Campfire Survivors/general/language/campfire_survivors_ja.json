@@ -45,6 +45,8 @@
     "{go_to_campfire_to_start_wave}": "焚き火へ行ってウェーブを開始",
     "{has_been_downed_go_to_revive}": "[color=#883377] がダウンしました！蘇生に向かおう！[/color]",
     "{has_been_revived_by}": "[/color][color=#0f6622] を蘇生したのは [/color][color=#117733]",
+    "{has_connected}": "が接続しました",
+    "{has_disconnected}": "が切断しました",
     "{health_0_0}": "体力: 0/0",
     "{health_base_health_level_index}": "• 体力 = 基礎体力 × レベル指数\n",
     "{health_label}": "体力: %s/%s",

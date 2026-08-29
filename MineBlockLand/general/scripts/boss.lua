@@ -174,7 +174,10 @@ function npc_take_damage(dmg_in, attacker, kb, angle)
     hp = hp - dmg_in
     local my_pos = get_value("", name, "position")
     if my_pos then
-        run_function("-combat", "show_damage", { my_pos.x, my_pos.y, dmg_in, "npc" })
+        -- Half strength on the hit wobble: the boss is big enough to read as
+        -- jelly at the default squash.
+        run_function("-combat", "show_damage",
+            { my_pos.x, my_pos.y, dmg_in, "npc", name, angle and math.cos(angle) or 1, 0.5 })
     end
     if attacker and attacker ~= "" and has_tag(attacker, "user") then
         run_function("-gm", "add_stat", { attacker, "dmg_dealt", dmg_in })

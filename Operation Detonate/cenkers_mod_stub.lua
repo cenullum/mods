@@ -1011,7 +1011,7 @@ function screenshake(duration, intensity) end
 --   _on_card_peek(deck_name, ids)                 -- only on the peeking peer
 --   _on_player_left_cards(steam_id, uids)         -- HOST only, before cleanup
 
---- Load a card set JSON exported by the online image editor's Card tool.
+--- Load a card set JSON exported by the Online Asset Editor's Card editor.
 --- The path is relative to your mod folder and sandboxed (no "..").
 ---@param relative_path string e.g. "cards/my_set.cards.json"
 ---@return string Set id ("" on failure).
@@ -1026,6 +1026,15 @@ function load_cards_from_json_data(json_string, set_id) end
 --- Load a card set from a Lua table using the same structure as the JSON
 --- format (kind="cards", card_w, card_h, cards={...} etc.). The easiest way
 --- to generate decks procedurally.
+---
+--- LOCALIZATION: never put card text in Lua. Give a text cell a `loc_key` and
+--- write the same key as a `{keyword}` in its `text`, then translate it in your
+--- mod's general/language/<mod>_<code>.json like every other string; a card's
+--- `name` can be a `{keyword}` too, so panels/chat printing it translate as
+--- well. Faces render live, so each peer sees the deck in its own language and
+--- they re-render when the language changes. A `loc_key` resolves against your
+--- mod's language files first, then the set's own optional `localization`
+--- table (what the Card Editor exports), then the cell's plain `text`.
 ---@param data table Card set table.
 ---@param set_id string|nil Optional set id override.
 ---@return string Set id ("" on failure).
@@ -1035,7 +1044,7 @@ function load_cards_from_data(data, set_id) end
 --- load_cards_from_json/from_data (which render live, so the shadow gets
 --- baked in at load and the text can react to language changes), a PNG sheet
 --- is a flat image prepared ahead of time — export it from the online image
---- editor's Card tool with the shadow you want already in the pixels.
+--- editor's Card editor with the shadow you want already in the pixels.
 ---
 --- Localization for PNG sheets works by FILE NAME (same convention as the
 --- image_localizer tool): given front_sheet = "cards.png", this also looks for
@@ -1686,6 +1695,19 @@ function open_profile(steam_id) end
 ---@param config table Audio configuration dictionary.
 ---@return string Audio player identifier (name), or "" on error.
 function set_audio(config) end
+
+--- Update the volume of an ALREADY-PLAYING audio player WITHOUT restarting it.
+--- set_audio() always restarts playback from the beginning, even when reusing
+--- an existing player by name - fine for a one-shot sound effect, but it means
+--- set_audio can never smoothly fade a continuous looping track (each call
+--- would snap it back to the start). Use this instead once the player already
+--- exists (created via set_audio with an explicit name/parent_name) to ramp
+--- its volume over several calls, e.g. for a day/night ambience crossfade.
+---@param parent_name string Entity the audio player is attached to (same value passed as set_audio's parent_name).
+---@param entity_name string The audio player's name (same value passed as set_audio's name).
+---@param volume_db number New volume in decibels.
+---@return boolean True if a matching, currently-alive audio player was found and updated.
+function set_audio_volume(parent_name, entity_name, volume_db) end
 
 --- Add an audio effect to a bus.
 --- Config parameters:
