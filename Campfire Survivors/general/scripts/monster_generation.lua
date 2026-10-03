@@ -80,6 +80,8 @@ local monster_definitions = {
 -- set_map_scale_ALL rather than calling it directly.
 -- =============================================================================
 
+local ARENA_TILESET = 0  -- dual-grid wall/floor tileset id in maps/square/info.json
+local WALL_EXTRA = 32  -- extra wall cells painted outward around the arena rectangle
 local drawn_rect = nil  -- what is currently painted, so a resize can erase it first
 
 -- Draw a rectangle of tiles.
@@ -98,41 +100,21 @@ function draw_rectangle(x, y, width, height, use_middle_tile)
         use_middle_tile = false
     end
 
-    -- Draw the four corners
-    -- Top-left corner
-    set_tile(x, y, Vector2(0, 0))
-
-    -- Top-right corner
-    set_tile(x + width - 1, y, Vector2(2, 0))
-
-    -- Bottom-left corner
-    set_tile(x, y + height - 1, Vector2(0, 2))
-
-    -- Bottom-right corner
-    set_tile(x + width - 1, y + height - 1, Vector2(2, 2))
-
-    -- Draw top and bottom edges
-    for i = 1, width - 2 do
-        -- Top edge
-        set_tile(x + i, y, Vector2(1, 0))
-
-        -- Bottom edge
-        set_tile(x + i, y + height - 1, Vector2(1, 2))
-    end
-
-    -- Draw left and right edges
-    for j = 1, height - 2 do
-        -- Left edge
-        set_tile(x, y + j, Vector2(0, 1))
-
-        -- Right edge
-        set_tile(x + width - 1, y + j, Vector2(2, 1))
-    end
-
-    -- Fill the interior with regular tiles (1,1)
-    for i = 1, width - 2 do
-        for j = 1, height - 2 do
-            set_tile(x + i, y + j, Vector2(1, 1))
+    -- The arena is a 15-tile dual-grid tileset (maps/square/info.json, id 0):
+    -- the outer ring of cells is the lower terrain (stone wall, solid) and the
+    -- interior is the upper terrain (wooden floor). Painting cells is enough -
+    -- every corner and edge fits itself.
+    -- The ring is WALL_EXTRA cells thicker on the outside; the floor (interior)
+    -- is unchanged.
+    for i = -WALL_EXTRA, width - 1 + WALL_EXTRA do
+        for j = -WALL_EXTRA, height - 1 + WALL_EXTRA do
+            local cx, cy = x + i, y + j
+            clear_tile(cx, cy)
+            if i <= 0 or j <= 0 or i >= width - 1 or j >= height - 1 then
+                set_dual_tile(cx, cy, ARENA_TILESET, true)
+            else
+                set_tile(cx, cy, Vector2(0, 0), ARENA_TILESET)
+            end
         end
     end
 
@@ -145,11 +127,11 @@ function draw_rectangle(x, y, width, height, use_middle_tile)
     print("Rectangle drawn at (" .. x .. ", " .. y .. ") with dimensions " .. width .. "x" .. height)
 end
 
--- Erase every tile of a rectangle (Vector2(-1, -1) clears a cell).
+-- Erase every tile of a rectangle.
 function clear_rectangle(x, y, width, height)
-    for i = 0, width - 1 do
-        for j = 0, height - 1 do
-            set_tile(math.floor(x + i), math.floor(y + j), Vector2(-1, -1))
+    for i = -WALL_EXTRA, width - 1 + WALL_EXTRA do
+        for j = -WALL_EXTRA, height - 1 + WALL_EXTRA do
+            clear_tile(math.floor(x + i), math.floor(y + j))
         end
     end
 end
@@ -196,7 +178,7 @@ function get_monster_data(monster_id)
 end
 
 -- Function to get a random position inside the interior of a rectangle
--- Only considers the tiles with Vector2(1,1) (interior tiles)
+-- Only considers the interior (floor) cells, never the wall ring
 -- x, y: top-left position of the rectangle
 -- width, height: dimensions of the rectangle
 -- Returns: a world position (not tile position)

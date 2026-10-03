@@ -31,6 +31,8 @@ local K_STONE = 9
 local K_SAPLING = 11
 local K_CACTUS, K_PALM, K_FLOWER = 12, 13, 14
 local K_WOOD_BLOCK = 15
+local K_DIRT = 16
+local K_LAVA = 17
 
 -- Local-only "tile under the mouse" highlight (each peer sees its own).
 local HL_NAME = "mbl_tilehl"
@@ -55,6 +57,8 @@ local REACH = 44               -- how far you can chop/mine/farm (pixels)
 local MELEE_WINDUP = 0.25
 local MELEE_HURTBOX_SCALE = 1.5 -- close-range swings hit a bigger zone than the item's base shape
 local RESPAWN_SECONDS = 2.0
+local LAVA_DAMAGE = 5          -- per LAVA_TICK while standing in lava
+local LAVA_TICK = 1.0
 local BOMB_THROW_SPEED = 90    -- lobbed just past arm's length, then it skids
 local CAMERA_ZOOM = 2.6
 
@@ -323,7 +327,7 @@ function update_tile_highlight(aim, live_pos)
     if tx ~= hl_tile_x or ty ~= hl_tile_y then
         hl_tile_x, hl_tile_y = tx, ty
         local kind = run_function("-gen", "kind_at", { tx, ty })
-        hl_actionable = kind == K_TREE or kind == K_STONE or kind == K_GRASS or kind == K_SAND
+        hl_actionable = kind == K_TREE or kind == K_STONE or kind == K_GRASS or kind == K_SAND or kind == K_DIRT
             or kind == K_FARM or kind == K_FARM_SEEDED or kind == K_FARM_GROWN or kind == K_SAPLING
             or kind == K_CACTUS or kind == K_PALM or kind == K_FLOWER or kind == K_WOOD_BLOCK
         set_image({ name = HL_NAME, position = center })
@@ -525,6 +529,24 @@ end
 
 start_timer({ timer_id = "speed" .. name, entity_name = name,
     function_name = "speed_check", wait_time = 0.25 })
+
+-- HOST: standing in lava burns. Checked on a slow tick (not per frame) against
+-- the host's own copy of the body, so the damage is authoritative.
+function lava_check()
+    if not IS_HOST or is_dead then return end
+    local live_pos = get_value("", name, "position")
+    if not live_pos then return end
+    local tile = local_to_map(live_pos)
+    local kind = run_function("-gen", "kind_at", { math.floor(tile.x), math.floor(tile.y) })
+    if kind == K_LAVA then
+        host_take_damage(LAVA_DAMAGE, "")
+    end
+end
+
+if IS_HOST then
+    start_timer({ timer_id = "lava" .. name, entity_name = name,
+        function_name = "lava_check", wait_time = LAVA_TICK })
+end
 
 -- Leaves a spreading ring behind anyone wading through shallow water. Unlike the
 -- other effects this one costs nothing to share: every peer runs it for EVERY user

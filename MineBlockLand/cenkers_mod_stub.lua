@@ -1924,18 +1924,65 @@ function get_map_list() end
 function get_tile(x, y) end
 
 --- Set a tile at a map coordinate.
---- `tileset_id` selects which tileset source (default 0 = first tileset). If that
---- tileset has autotile enabled (via the editor's Tile Maps panel), `atlas_coords`
---- is ignored and the correct 47-blob tile is chosen automatically from neighbours
---- (and neighbouring tiles are re-fitted too).
---- Pass `atlas_coords = Vector2(-1, -1)` to ERASE the cell (autotile neighbours are
---- re-fitted around the hole — handy for carving a doorway/opening at runtime).
+--- `tileset_id` selects which tileset source (default 0 = first tileset).
+--- PLAIN tileset: `atlas_coords` is the tile to place.
+--- 15-TILE DUAL-GRID tileset (mode "dual15" in the editor's Tile Maps panel):
+--- `atlas_coords` is ignored and the right transition tile is chosen from the
+--- four cells around each corner automatically (neighbours re-fit by themselves).
+---   * opaque layer      -> the cell's terrain becomes this layer's UPPER terrain
+---                          (use set_dual_tile(..., true) for its lower terrain)
+---   * transparent layer -> this layer is added to the cell; it replaces whatever
+---                          transparent tile the cell had in the SAME slot, tiles in
+---                          other slots stay (e.g. a tree in slot 1 over grass in slot 0)
+--- Pass `atlas_coords = Vector2(-1, -1)` to ERASE: a plain cell is cleared, an opaque
+--- layer clears the cell's terrain, a transparent layer is removed only if the cell
+--- holds that layer.
+--- Dual-grid drawing/collision is batched and applied at the end of the frame.
 ---@param x number Tile X coordinate.
 ---@param y number Tile Y coordinate.
 ---@param atlas_coords Vector2 Atlas coordinates of the tile, or (-1,-1) to erase.
 ---@param tileset_id? number Tileset source id (default 0).
 ---@return boolean True on success, false if no tileset is loaded.
 function set_tile(x, y, atlas_coords, tileset_id) end
+
+--- Clear EVERYTHING in a cell: the plain tile, the dual-grid terrain and every
+--- transparent dual-grid tile in every slot. Handy before repainting a cell from
+--- scratch.
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+function clear_tile(x, y) end
+
+--- Paint a 15-tile dual-grid layer into a cell. For an OPAQUE layer `lower = true`
+--- paints the layer's LOWER terrain instead (for the first opaque layer that is the
+--- base terrain baked into its sheet, e.g. the dirt under a dirt->sand sheet).
+--- For a transparent layer this is the same as set_tile.
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+---@param tileset_id number A dual-grid tileset id.
+---@param lower? boolean Paint the lower terrain (opaque layers only). Default false.
+---@return boolean False if the id is not a dual-grid tileset.
+function set_dual_tile(x, y, tileset_id, lower) end
+
+--- What a cell holds in the dual-grid layers.
+--- `terrain` is an opaque layer id, -2 for the base terrain, -1 for none;
+--- `overlays` lists the transparent layer ids in the cell (slot order).
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+---@return table {terrain = number, overlays = number[]}
+function get_dual_tile(x, y) end
+
+--- Change the animation speed of a dual-grid tileset live (frames per second,
+--- 0.1..60). Local to this peer and not saved; the speed set in the editor (the
+--- map's info.json) is the default. Frames themselves are set in the editor.
+---@param tileset_id number A dual-grid tileset id.
+---@param fps number Frames per second.
+---@return boolean False if the id is not a dual-grid tileset.
+function set_tileset_animation(tileset_id, fps) end
+
+--- Animation of a dual-grid tileset.
+---@param tileset_id number Tileset id.
+---@return table {frames = number (1 = still, 0 = not a dual-grid tileset), fps = number}
+function get_tileset_animation(tileset_id) end
 
 --- HOST ONLY: allow or forbid the minimap (default: forbidden). This is the only
 --- thing that travels over the network — the map IMAGE itself never does: every
@@ -1949,8 +1996,8 @@ function set_minimap(allowed) end
 --- Returns "" while the host has not called set_minimap(true) — check for it.
 --- The texture is built locally and keeps updating live while it is on screen
 --- (new chunks appear as they load). Each (tileset, tile) pair gets its own
---- colour (the average of its texture); tiles with collision are drawn darker;
---- 47-blob autotile sources use one shared colour. Works in any mod — nothing
+--- colour (the average of its texture); a dual-grid cell takes its topmost
+--- layer's full-tile colour; tiles with collision are drawn darker. Works in any mod — nothing
 --- about it is game-specific.
 ---@return string Texture key for set_image's image_path, or "" if not allowed.
 function get_minimap() end

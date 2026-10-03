@@ -14,6 +14,7 @@ network_mode = 1
 local K_GRASS, K_SAND, K_TREE, K_FARM, K_FARM_SEEDED, K_FARM_GROWN, K_STONE = 1, 2, 3, 4, 5, 6, 9
 local K_SAPLING = 11
 local K_CACTUS, K_PALM, K_FLOWER = 12, 13, 14
+local K_DIRT = 16
 local K_WOOD_BLOCK = 15
 
 -- Day/night: 5 real minutes of day + 2.5 of night; clock shows 06:00 -> 06:00.
@@ -31,8 +32,12 @@ local TREE_GROW_SECONDS = 300     -- planted sapling -> full tree
 local TILL_SEED_CHANCE = 0.75     -- shovel-tilling grass has this chance to turn up a wheat seed
 local ZOMBIE_SPAWN_DIST_MIN = 260 -- just outside the player's view
 local ZOMBIE_SPAWN_DIST_MAX = 340
-local SUN_START_ANGLE = 100       -- shadow angle sweep across the day
-local SUN_END_ANGLE = 260
+-- Shadow angle sweep across the day. The shader's direction is (sin a, cos a),
+-- so 180 - a mirrors it on the Y axis: dawn/dusk shadows tilt up instead of down
+-- while the sun still travels the same way (right -> left) over the day.
+-- The end angle is negative on purpose; the engine wraps it into 0..360.
+local SUN_START_ANGLE = 80
+local SUN_END_ANGLE = -80
 
 local NIGHT_BG = Color(24 / 255, 20 / 255, 37 / 255, 1)      -- Ink
 local DAY_BG = Color(0.3, 0.3, 0.3, 1)
@@ -794,8 +799,8 @@ function host_gather_hit(args)
 
     -- Shovel on grass tills it into farmland (farm plots are made, not generated).
     -- A good chance of turning up a wheat seed while at it. A flower is just
-    -- decorated grass, so it tills the same way.
-    if tool == "shovel" and (kind == K_GRASS or kind == K_FLOWER) then
+    -- decorated grass and bare dirt is grass-less ground, so both till the same way.
+    if tool == "shovel" and (kind == K_GRASS or kind == K_FLOWER or kind == K_DIRT) then
         host_mutate(x, y, K_FARM)
         run_network_function(name, "gather_fx_ALL", { x, y, kind })
         if math.random() < TILL_SEED_CHANCE then
@@ -1037,7 +1042,7 @@ function host_place_block(args)
     if not place_kind then return false end
     local kind = run_function("-gen", "kind_at", { x, y })
     -- Flowers are decoration on otherwise bare grass; a block simply covers one.
-    if kind ~= K_GRASS and kind ~= K_SAND and kind ~= K_FLOWER then return false end
+    if kind ~= K_GRASS and kind ~= K_SAND and kind ~= K_FLOWER and kind ~= K_DIRT then return false end
     if tile_occupied(x, y) then return false end
     if not run_function("-inv", "host_consume",
             { { steam_id = steam_id, item_id = item_id, count = 1 } }) then

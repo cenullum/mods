@@ -21,7 +21,7 @@ network_mode = 0
 -- what the save file persists - same seed + same ledger = same world.
 -- =============================================================================
 
--- Tile kinds (the mod's own vocabulary; ATLAS below maps them to tiles).
+-- Tile kinds (the mod's own vocabulary; LOOK below maps them to dual-grid layers).
 K_GRASS = 1
 K_SAND = 2
 K_TREE = 3
@@ -37,22 +37,57 @@ K_CACTUS = 12  -- desert-sand equivalent of a tree (blocks, choppable)
 K_PALM = 13    -- beach-sand equivalent of a tree (blocks, choppable)
 K_FLOWER = 14  -- purely decorative grass detail (walkable, not actionable)
 K_WOOD_BLOCK = 15 -- player-placed wood block (mined/gathered material, not a tree)
+K_DIRT = 16       -- bare ground of the grassland (grass grows on it in patches)
+K_LAVA = 17       -- molten vein inside stone: walkable, but it burns (see user.lua)
 
-local TILESET_STONE = 0 -- 47-blob autotile source (stone_47_blob_texture.png)
-local TILESET_MAIN = 1  -- tiles.png
-local TILESET_WOOD = 2  -- 47-blob autotile source (wood_atlas.png)
+-- Tileset ids of the map's 15-tile dual-grid layers (prodecural_map/info.json).
+-- Every cell is a TERRAIN (sand, or the dirt baked under it) plus up to two
+-- transparent tiles: slot 0 is ground cover (grass, farmland, water, lava,
+-- stone, wood), slot 1 sits on top (trees, cacti, palms, flowers, crops, deep
+-- water). The list order in info.json is the drawing order.
+local T_SAND = 0           -- opaque: dirt (lower terrain) -> sand
+local T_GRASS = 1
+local T_FARMLAND = 2
+local T_WATER = 3
+local T_LAVA = 4
+local T_STONE = 5
+local T_WOOD = 6
+local T_DEEP = 7
+local T_FLOWERS = { 8, 9, 10 }
+local T_WHEAT_SEEDED = 11
+local T_TREE_SAPLING = 12
+local T_WHEAT_RIPE = 13
+local T_CACTI = { 14, 15, 16 }
+local T_PALMS = { 17, 18 }
+local T_TREES = { 19, 20, 21, 22, 23 }
 
--- kind -> atlas coords in tiles.png
-local ATLAS = {
-    [K_GRASS] = { 1, 0 }, [K_SAND] = { 0, 0 }, [K_TREE] = { 2, 0 },
-    [K_FARM] = { 3, 0 }, [K_FARM_SEEDED] = { 4, 0 }, [K_FARM_GROWN] = { 5, 0 },
-    [K_SEA] = { 6, 0 }, [K_DEEP] = { 7, 0 }, [K_FLOOR] = { 0, 1 },
-    [K_SAPLING] = { 1, 1 }, [K_CACTUS] = { 2, 1 }, [K_PALM] = { 3, 1 },
-    [K_FLOWER] = { 4, 1 },
+local SALT_VARIANT = 131 -- picks which tree/palm/cactus/flower sheet a cell uses
+
+-- kind -> how it is painted: `sand` = sand terrain instead of dirt, `cover` =
+-- slot 0 layer, `top` = slot 1 layer (a list = variants, one picked per cell).
+-- The tree/flower/crop/cactus sheets in images/map/deco are decoration only (the
+-- ground was stripped out - tools/make_mbl_decor_sheets.py), like the palms, so
+-- each one stands on a ground layer of its own: grass under a tree, sand under
+-- a cactus.
+local LOOK = {
+    [K_DIRT] = {},
+    [K_FLOOR] = {},
+    [K_GRASS] = { cover = T_GRASS },
+    [K_FLOWER] = { cover = T_GRASS, top = T_FLOWERS },
+    [K_TREE] = { cover = T_GRASS, top = T_TREES },
+    [K_SAND] = { sand = true },
+    [K_CACTUS] = { sand = true, top = T_CACTI },
+    [K_PALM] = { sand = true, top = T_PALMS },
+    [K_FARM] = { cover = T_FARMLAND },
+    [K_FARM_SEEDED] = { cover = T_FARMLAND, top = T_WHEAT_SEEDED },
+    [K_FARM_GROWN] = { cover = T_FARMLAND, top = T_WHEAT_RIPE },
+    [K_SAPLING] = { cover = T_FARMLAND, top = T_TREE_SAPLING },
+    [K_SEA] = { sand = true, cover = T_WATER },
+    [K_DEEP] = { sand = true, cover = T_WATER, top = T_DEEP },
+    [K_STONE] = { cover = T_STONE },
+    [K_WOOD_BLOCK] = { cover = T_WOOD },
+    [K_LAVA] = { cover = T_LAVA },
 }
-
--- Kinds painted from an autotile source instead of a fixed ATLAS coord.
-local AUTOTILE_SOURCES = { [K_STONE] = TILESET_STONE, [K_WOOD_BLOCK] = TILESET_WOOD }
 
 -- World dimensions (1 chunk = 32x32 tiles, fixed by the engine).
 local CHUNK_TILES = 32
@@ -77,12 +112,32 @@ local SALT_SPAWN_TREE = 66
 local SALT_CACTUS, SALT_CACTUS2 = 77, 88
 local SALT_PALM, SALT_PALM2 = 99, 110
 local SALT_FLOWER = 121
+local SALT_GRASS = 141
+local SALT_DUNE = 181
+local SALT_LAVA = 151
+local SALT_HOUSE = 171
 
 -- Desert/beach flora is deliberately rarer than the grassland's trees: the
 -- noise gate is tighter AND a per-tile hash thins out whatever survives it.
 local CACTUS_NOISE, CACTUS_CHANCE = 0.66, 0.04
 local PALM_NOISE, PALM_CHANCE = 0.62, 0.22
 local FLOWER_CHANCE = 0.035 -- scattered single tiles, no clustering
+
+-- Grass grows on the dirt in patches: noise above this is grass.
+local GRASS_NOISE = 0.45
+-- The desert is dirt with sand dunes: noise above this is sand.
+local DUNE_NOISE = 0.42
+
+-- Lava: thin veins along a noise contour, only deep inside stone masses.
+local LAVA_STONE_NOISE = 0.77 -- stone noise must be at least this (well inside)
+local LAVA_BAND = 0.022       -- half-width of the contour band that becomes lava
+
+-- Wooden houses (hollow rectangles with a door) scattered over the grassland:
+-- the land is cut into HOUSE_CELL x HOUSE_CELL regions and each region rolls
+-- for at most one house fully inside it.
+local HOUSE_CELL = 40
+local HOUSE_CHANCE = 0.22
+local HOUSE_MIN, HOUSE_MAX = 6, 9
 
 local SPAWN_TREE_COUNT = 10 -- trees ringed near the edge of the spawn clearing
 
@@ -107,6 +162,7 @@ local dungeon_grid = nil         -- [local_y*64+local_x] -> K_FLOOR / K_STONE
 local dungeon_pois = {}          -- {{type="chest"/"witch"/"brute", x, y, id}, ...}
 local dungeon_entrance = nil     -- {x, y} tile of the west-side corridor mouth
 local spawn_trees = {}           -- "x,y" -> true (ring of trees near the spawn clearing's edge)
+local houses = {}                -- "rx,ry" -> house rect or false (memo, rebuilt per seed)
 
 -- =============================================================================
 -- Deterministic hashing / noise (pure Lua 5.4 integer math).
@@ -296,12 +352,73 @@ function biome_at(x, y)
     return "grass"
 end
 
--- Ground with no features on it (what mining/chopping reveals).
+-- Ground with no features on it (what mining/chopping reveals). The grassland
+-- is dirt with grass growing on it in patches.
 function ground_kind(x, y)
+    x, y = math.floor(x), math.floor(y)
     local biome = biome_at(x, y)
     if biome == "dungeon" then return K_FLOOR end
-    if biome == "grass" then return K_GRASS end
-    return K_SAND -- beach and desert share the sand tile
+    if biome == "grass" then
+        if value_noise(x, y, 11, SALT_GRASS) > GRASS_NOISE then return K_GRASS end
+        return K_DIRT
+    end
+    if biome == "desert" and value_noise(x, y, 9, SALT_DUNE) <= DUNE_NOISE then
+        return K_DIRT
+    end
+    return K_SAND -- the beach and the desert's dunes
+end
+
+-- The wooden house of land region (rx, ry), or false. A house is a pure
+-- function of the seed, rolled once per region and memoised; it only stands
+-- where the whole footprint (plus a margin) is grassland away from spawn, the
+-- boss arena and the dungeon.
+local function house_of_region(rx, ry)
+    local rkey = key_of(rx, ry)
+    local cached = houses[rkey]
+    if cached ~= nil then return cached end
+    local h = false
+    if hash01(rx, ry, SALT_HOUSE) < HOUSE_CHANCE then
+        local w = HOUSE_MIN + math.floor(hash01(rx, ry, SALT_HOUSE + 1) * (HOUSE_MAX - HOUSE_MIN + 1))
+        local d = HOUSE_MIN + math.floor(hash01(rx, ry, SALT_HOUSE + 2) * (HOUSE_MAX - HOUSE_MIN + 1))
+        local x0 = rx * HOUSE_CELL + 3 + math.floor(hash01(rx, ry, SALT_HOUSE + 3) * (HOUSE_CELL - w - 6))
+        local y0 = ry * HOUSE_CELL + 3 + math.floor(hash01(rx, ry, SALT_HOUSE + 4) * (HOUSE_CELL - d - 6))
+        local x1, y1 = x0 + w - 1, y0 + d - 1
+        local ok = true
+        for _, c in ipairs({ { x0 - 2, y0 - 2 }, { x1 + 2, y0 - 2 }, { x0 - 2, y1 + 2 }, { x1 + 2, y1 + 2 },
+                { (x0 + x1) // 2, (y0 + y1) // 2 } }) do
+            if biome_at(c[1], c[2]) ~= "grass" or coast_at(c[1], c[2]) > LAND_RADIUS - 10
+                    or near(c[1], c[2], 0, 0, SPAWN_CLEAR_R + 12)
+                    or near(c[1], c[2], BOSS_ARENA_X, BOSS_ARENA_Y, BOSS_ARENA_R + 10) then
+                ok = false
+                break
+            end
+        end
+        if ok then
+            -- The door: one gap in a random wall, never on a corner.
+            local side = math.floor(hash01(rx, ry, SALT_HOUSE + 5) * 4)
+            local along = hash01(rx, ry, SALT_HOUSE + 6)
+            local door_x, door_y
+            if side == 0 or side == 1 then
+                door_x = x0 + 1 + math.floor(along * (w - 2))
+                door_y = (side == 0) and y1 or y0
+            else
+                door_y = y0 + 1 + math.floor(along * (d - 2))
+                door_x = (side == 2) and x0 or x1
+            end
+            h = { x0 = x0, y0 = y0, x1 = x1, y1 = y1, door_x = door_x, door_y = door_y }
+        end
+    end
+    houses[rkey] = h
+    return h
+end
+
+-- K_WOOD_BLOCK for a house wall, K_DIRT for its floor and door, nil elsewhere.
+local function house_kind(x, y)
+    local h = house_of_region(x // HOUSE_CELL, y // HOUSE_CELL)
+    if not h or x < h.x0 or x > h.x1 or y < h.y0 or y > h.y1 then return nil end
+    if x == h.door_x and y == h.door_y then return K_DIRT end
+    if x == h.x0 or x == h.x1 or y == h.y0 or y == h.y1 then return K_WOOD_BLOCK end
+    return K_DIRT
 end
 
 function base_kind(x, y)
@@ -316,7 +433,7 @@ function base_kind(x, y)
     -- Keep spawn and the boss arena free of blocking features, except for a
     -- ring of trees near the edge of the spawn clearing (see spawn_trees).
     if near(x, y, 0, 0, SPAWN_CLEAR_R) then
-        if ground == K_GRASS and spawn_trees[key_of(x, y)] then
+        if biome_at(x, y) == "grass" and spawn_trees[key_of(x, y)] then
             return K_TREE
         end
         return ground
@@ -324,20 +441,31 @@ function base_kind(x, y)
     if near(x, y, BOSS_ARENA_X, BOSS_ARENA_Y, BOSS_ARENA_R) then
         return ground
     end
-    if coast < LAND_RADIUS - 6 and value_noise(x, y, 18, SALT_STONE) > 0.68 then
+    local house = house_kind(x, y)
+    if house then return house end
+    local stone_noise = value_noise(x, y, 18, SALT_STONE)
+    if coast < LAND_RADIUS - 6 and stone_noise > 0.68 then
+        -- Thin lava veins run through the heart of the bigger stone masses.
+        if stone_noise > LAVA_STONE_NOISE
+                and math.abs(value_noise(x, y, 7, SALT_LAVA) - 0.5) < LAVA_BAND then
+            return K_LAVA
+        end
         return K_STONE
     end
-    if ground == K_GRASS and value_noise(x, y, 10, SALT_TREE) > 0.60
+    -- Trees grow anywhere on the grassland (always drawn standing on grass).
+    if biome_at(x, y) == "grass" and value_noise(x, y, 10, SALT_TREE) > 0.60
             and hash01(x, y, SALT_TREE2) < 0.45 then
         return K_TREE
     end
-    -- Sand grows its own (much sparser) flora: cacti inland, palms on the coast.
+    -- The desert grows its own (much sparser) flora, on the dunes' sand.
+    if ground == K_SAND and biome_at(x, y) == "desert"
+            and value_noise(x, y, 12, SALT_CACTUS) > CACTUS_NOISE
+            and hash01(x, y, SALT_CACTUS2) < CACTUS_CHANCE then
+        return K_CACTUS
+    end
+    -- Palms on the coast.
     if ground == K_SAND then
         local biome = biome_at(x, y)
-        if biome == "desert" and value_noise(x, y, 12, SALT_CACTUS) > CACTUS_NOISE
-                and hash01(x, y, SALT_CACTUS2) < CACTUS_CHANCE then
-            return K_CACTUS
-        end
         if biome == "beach" and value_noise(x, y, 9, SALT_PALM) > PALM_NOISE
                 and hash01(x, y, SALT_PALM2) < PALM_CHANCE then
             return K_PALM
@@ -362,27 +490,33 @@ end
 function is_walkable(x, y)
     local k = kind_at(math.floor(x), math.floor(y))
     return k ~= K_DEEP and k ~= K_SEA and k ~= K_STONE and k ~= K_TREE
-        and k ~= K_CACTUS and k ~= K_PALM and k ~= K_WOOD_BLOCK
+        and k ~= K_CACTUS and k ~= K_PALM and k ~= K_WOOD_BLOCK and k ~= K_LAVA
 end
 
 -- =============================================================================
 -- Painting tiles.
 -- =============================================================================
 
-local function paint(x, y, kind, was_kind)
-    local src = AUTOTILE_SOURCES[kind]
-    if src then
-        set_tile(x, y, Vector2(0, 0), src) -- autotile picks the blob
-        return
+-- Variant of a tree/palm/cactus/flower: a pure function of the cell, so every
+-- peer (and every repaint) picks the same sheet.
+local function pick(layer, x, y)
+    if type(layer) ~= "table" then return layer end
+    return layer[1 + math.floor(hash01(x, y, SALT_VARIANT) * #layer) % #layer]
+end
+
+-- Repaint one cell from scratch: terrain, then slot 0, then slot 1. The
+-- dual-grid tilesets fit their transitions to the neighbours by themselves.
+local function paint(x, y, kind)
+    local look = LOOK[kind] or {}
+    clear_tile(x, y)
+    if look.sand then
+        set_tile(x, y, Vector2(0, 0), T_SAND)
+    else
+        set_dual_tile(x, y, T_SAND, true) -- the dirt baked under the sand
     end
-    local was_src = was_kind and AUTOTILE_SOURCES[was_kind]
-    if was_src then
-        -- Erase through the autotile source first so neighbouring blobs
-        -- re-fit around the new hole (see the Hide and Seek generator notes).
-        set_tile(x, y, Vector2(-1, -1), was_src)
-    end
-    local atlas = ATLAS[kind]
-    set_tile(x, y, Vector2(atlas[1], atlas[2]), TILESET_MAIN)
+    local cover = look.cover
+    if cover then set_tile(x, y, Vector2(0, 0), pick(cover, x, y)) end
+    if look.top then set_tile(x, y, Vector2(0, 0), pick(look.top, x, y)) end
 end
 
 -- =============================================================================
@@ -391,14 +525,13 @@ end
 
 function apply_mut(x, y, kind)
     x, y, kind = math.floor(x), math.floor(y), math.floor(kind)
-    local was = kind_at(x, y)
     muts[key_of(x, y)] = kind
     local cx, cy = x // CHUNK_TILES, y // CHUNK_TILES
     local ck = key_of(cx, cy)
     -- Paint if the chunk is on screen (fully painted OR currently streaming
     -- in row by row - an already-painted row would otherwise stay stale).
     if generated[ck] or queued[ck] then
-        paint(x, y, kind, was)
+        paint(x, y, kind)
     end
 end
 
@@ -429,7 +562,7 @@ local function paint_chunk_rows(cx, cy, row0, row1)
     for y = ty0 + row0, ty0 + row1 do
         for x = tx0, tx0 + CHUNK_TILES - 1 do
             local k = muts[key_of(x, y)] or base_kind(x, y)
-            paint(x, y, k, nil)
+            paint(x, y, k)
         end
     end
 end
@@ -577,8 +710,7 @@ function set_seed(new_seed)
         local tx0, ty0 = tonumber(cx) * CHUNK_TILES, tonumber(cy) * CHUNK_TILES
         for y = ty0, ty0 + CHUNK_TILES - 1 do
             for x = tx0, tx0 + CHUNK_TILES - 1 do
-                set_tile(x, y, Vector2(-1, -1), TILESET_STONE)
-                set_tile(x, y, Vector2(-1, -1), TILESET_MAIN)
+                clear_tile(x, y)
             end
         end
     end
@@ -587,6 +719,7 @@ function set_seed(new_seed)
     queued = {}
     reveal_queue = {}
     muts = {}
+    houses = {}
     build_spawn_trees()
     build_dungeon()
     -- Solid ground under everyone's feet immediately; the rest streams in.

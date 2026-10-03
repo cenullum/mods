@@ -33,6 +33,7 @@ network_mode = 0
 local K_GRASS, K_SAND, K_TREE, K_FARM, K_FARM_SEEDED, K_FARM_GROWN = 1, 2, 3, 4, 5, 6
 local K_SEA, K_DEEP, K_STONE, K_FLOOR, K_SAPLING = 7, 8, 9, 10, 11
 local K_CACTUS, K_PALM, K_FLOWER, K_WOOD_BLOCK = 12, 13, 14, 15
+local K_DIRT, K_LAVA = 16, 17
 
 -- Which footstep set a tile plays. Sand is deliberately "dirt": there is no
 -- sand set, and dirt is what loose ground sounds like. Nothing walkable is
@@ -43,7 +44,7 @@ local MATERIAL = {
     [K_GRASS] = "grass", [K_FLOWER] = "grass", [K_TREE] = "grass",
     [K_SAND] = "dirt", [K_FARM] = "dirt", [K_FARM_SEEDED] = "dirt",
     [K_FARM_GROWN] = "dirt", [K_SAPLING] = "dirt", [K_CACTUS] = "dirt",
-    [K_PALM] = "dirt",
+    [K_PALM] = "dirt", [K_DIRT] = "dirt", [K_LAVA] = "dirt",
     [K_SEA] = "water", [K_DEEP] = "water",
     [K_STONE] = "stone", [K_FLOOR] = "stone", [K_WOOD_BLOCK] = "stone",
 }

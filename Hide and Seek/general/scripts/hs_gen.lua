@@ -26,23 +26,16 @@ local ANNEX_ROWS = 28           -- rows reserved at the top for the sealed seeke
                                 -- can't see the hiders (they arrive down a long corridor)
 local ITEM_Z = 0                -- item render order (players sit above)
 local TILESET_ID = 0
--- The deep filler ring beyond the actual map uses the SAME autotile source as
--- everything else. A second (non-autotile) source was tried here for speed, but
--- autotile only counts same-SOURCE neighbours (compute_autotile_coords checks
--- get_cell_source_id(neighbour) == source_id) - so cells right at the boundary
--- between two different sources compute an "edge" blob shape (as if that side
--- were open) even though a solid margin block visually sits there. That is a
--- real hole: the edge blob's collision polygon is missing a chunk exactly where
--- the two sources meet, letting players and raycasts pass straight through. One
--- shared autotile source keeps the whole solid mass - and its collision - seamless.
--- Extra solid tiles surrounding the map. Every cell here goes through the same
--- autotile neighbour-recompute cascade as the interior (see the note above), so
--- this is O(margin_area) EXTRA set_tile calls on top of the interior every
--- single generate() - and generate() runs on EVERY round, first erasing the
--- previous round's tiles then rebuilding, i.e. roughly DOUBLE this cost each
--- transition. At the original 32 (one chunk) a large map could add ~16,000
--- extra autotile placements; kept small since players can never actually reach
--- this ring (build_walls already seals the real cave/annex boundary).
+-- The deep filler ring beyond the actual map uses the SAME dual-grid wall layer
+-- as everything else. A dual-grid layer only joins with its OWN cells, so a
+-- second layer at the boundary would draw an open edge there (and its collision
+-- would follow the drawing) - one shared layer keeps the whole solid mass, and
+-- its collision, seamless.
+-- Extra solid tiles surrounding the map: O(margin_area) extra set_tile calls on
+-- top of the interior every single generate() - and generate() runs on EVERY
+-- round, first erasing the previous round's tiles then rebuilding. Kept small
+-- since players can never actually reach this ring (build_walls already seals
+-- the real cave/annex boundary).
 local OUTER_MARGIN = 8
 
 -- Generated state (queried by the host for spawn placement) -----------------
@@ -266,7 +259,7 @@ local function build_walls()
     for y = 0, H - 1 do
         for x = 0, W - 1 do
             if solid[idx(x, y)] ~= false then -- nil (untouched) or true = wall
-                set_tile(x, y, Vector2(0, 0), TILESET_ID) -- autotile ignores coords
+                set_tile(x, y, Vector2(0, 0), TILESET_ID) -- dual-grid tileset: coords ignored, the transition tile is picked from the corners
                 table.insert(_wall_cells, { x, y, TILESET_ID })
             end
         end
@@ -275,7 +268,7 @@ end
 
 -- =============================================================================
 -- Deep filler ring: OUTER_MARGIN tiles of solid rock surrounding the whole map
--- (the actual cave/annex box already built by build_walls), same autotile source
+-- (the actual cave/annex box already built by build_walls), same dual-grid tileset
 -- as everything else so there is no seam (visual or collision) at the boundary.
 -- =============================================================================
 local function build_margin()
@@ -285,7 +278,7 @@ local function build_margin()
         local inside_rows = (y >= 0 and y < H)
         for x = x0, x1 do
             if not (inside_rows and x >= 0 and x < W) then
-                set_tile(x, y, Vector2(0, 0), TILESET_ID) -- autotile ignores coords
+                set_tile(x, y, Vector2(0, 0), TILESET_ID) -- dual-grid tileset: coords ignored, the transition tile is picked from the corners
                 table.insert(_wall_cells, { x, y, TILESET_ID })
             end
         end
@@ -383,7 +376,7 @@ function seal_room()
     end
 end
 
--- Open the seeker room by erasing those door tiles again (autotile re-fits).
+-- Open the seeker room by erasing those door tiles again (the walls around re-fit).
 function open_room()
     for _, key in ipairs(door_cells) do
         local cx, cy = string.match(key, "(%-?%d+),(%-?%d+)")
