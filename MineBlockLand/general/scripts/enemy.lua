@@ -39,7 +39,8 @@ local target = ""
 set_value("", name, "speed", speed)
 
 set_image({ parent_name = name, name = "body", image_path = image,
-    scale = Vector2(size, size), modulate = tint, z_index = 2 })
+    scale = Vector2(size, size), modulate = tint, z_index = 0 })
+set_shadow_of_image(name, "body", true)
 set_collision({ parent_name = name, name = "col", shape = "circle", size = size / 2,
     collision_layer = { 3 }, collision_mask = phasing and {} or { 1 } })
 -- Read by -combat's melee hit test: without this, a swing that visually

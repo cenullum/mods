@@ -19,6 +19,7 @@ add_tag(name,"ball")
 image_config={parent_name=name,image_path="SoccerBall"}
 image_name= set_image(image_config)
 set_image_pixel(name,image_name,Vector2(16,16))
+set_shadow_of_image(name,image_name,true)-- flat ground shadow; it stays steady while the ball spins
 collision_config={parent_name=name,name=collision_name,shape="circle",size=8}
 collision_name=set_collision(collision_config)
 

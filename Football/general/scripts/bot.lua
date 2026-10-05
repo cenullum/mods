@@ -154,6 +154,7 @@ function build_visuals()
 	collision_name = set_collision({ parent_name = name, name = collision_name, shape = "circle", size = BODY_R })
 	image_name = set_image({ parent_name = name, name = image_name })
 	set_image_pixel(name, image_name, Vector2(32, 32))
+	set_shadow_of_image(name, image_name, true)
 	set_shader({ parent_name = name, image_name = image_name, shader_name = "circle", outline_color = team_color() })
 	label_name = set_label({
 		parent_name = name, name = label_name, text = label,

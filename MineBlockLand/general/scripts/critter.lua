@@ -70,11 +70,15 @@ local progress_x, progress_y = anchor_x, anchor_y
 local progress_time = 0
 
 local SIZE = def.size
+local FLY_SHADOW_DROP = 10      -- pixels between a flying animal and its shadow
 local CHARGE_SPEED = def.charge_speed or def.speed
 
 set_value("", name, "speed", def.speed)
 set_image({ parent_name = name, name = "body", image_path = def.image,
-    scale = Vector2(SIZE, SIZE), z_index = 2 })
+    scale = Vector2(SIZE, SIZE), z_index = 0 })
+-- A flyer's shadow is drawn below it on the ground (and smaller), which is the
+-- whole cue that a bird or a butterfly is in the air.
+set_shadow_of_image(name, "body", true, def.flying and FLY_SHADOW_DROP or 0)
 -- Flying animals have an EMPTY collision mask, so trees, rock and water are
 -- nothing to them; they still sit on layer 3 so arrows and melee hit normally.
 set_collision({ parent_name = name, name = "col", shape = "circle", size = SIZE / 2,

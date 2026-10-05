@@ -4,57 +4,57 @@
     },
     "positions": {
         "76561198072268617": {
+            "x": 956.499572753906,
+            "y": -2711.42114257812
+        },
+        "1": {
             "x": 8.0,
             "y": 8.0
-        },
-        "1": {
-            "x": -41.2999992370605,
-            "y": -14.0687046051025
         }
     },
-    "seed": 784242144.0,
-    "day": 1.0,
+    "seed": 791092699.0,
     "stats": {
-        "1": {
-            "kills": 0.0,
-            "dmg_dealt": 0.0,
-            "trees": 0.0,
-            "stones": 0.0,
+        "76561198072268617": {
+            "crafts": 0.0,
             "deaths": 0.0,
-            "dmg_taken": 90.0,
-            "crafts": 0.0
+            "dmg_taken": 0.0,
+            "trees": 0.0,
+            "kills": 3.0,
+            "dmg_dealt": 35.0,
+            "stones": 0.0
         }
-    },
-    "boss_defeated": false,
-    "is_night": false,
-    "muts": {
-
-    },
-    "t": 69.0,
-    "inv": {
-        "inv": {
-            "76561198072268617": {
-
-            },
-            "1": {
-
-            }
-        },
-        "held": {
-
-        },
-        "worn": {
-
-        },
-        "progress": {
-
-        }
-    },
-    "dungeon_done": {
-
     },
     "growth": {
 
     },
-    "friendly_fire": false
+    "t": 30.0,
+    "inv": {
+        "worn": {
+
+        },
+        "held": {
+
+        },
+        "progress": {
+
+        },
+        "inv": {
+            "76561198072268617": {
+                "apple": 2.0
+            },
+            "1": {
+
+            }
+        }
+    },
+    "muts": {
+
+    },
+    "boss_defeated": false,
+    "is_night": false,
+    "dungeon_done": {
+
+    },
+    "friendly_fire": false,
+    "day": 2.0
 }

@@ -18,7 +18,8 @@ local sound_played = false
 
 local item = run_function("-items", "get_item", { item_id })
 set_image({ parent_name = name, name = "icon", image_path = item.image,
-    scale = Vector2(12, 12), z_index = 1 })
+    scale = Vector2(12, 12), z_index = 0 })
+set_shadow_of_image(name, "icon", true)
 if count and count > 1 then
     -- Crisp world-space text: big font_size drawn small via scale
     -- (48 * 0.125 = the old size 6, but sharp instead of blurry).

@@ -51,7 +51,8 @@ local target = ""
 set_value("", name, "speed", SPEED)
 
 set_image({ parent_name = name, name = "body", image_path = "items/15x15_octopus",
-    scale = Vector2(SIZE, SIZE), z_index = 2 })
+    scale = Vector2(SIZE, SIZE), z_index = 0 })
+set_shadow_of_image(name, "body", true)
 set_collision({ parent_name = name, name = "col", shape = "circle", size = SIZE / 2,
     collision_layer = { 3 }, collision_mask = { 1 } })
 set_progress_bar({ parent_name = name, name = "hpbar", position = Vector2(-HP_BAR_WIDTH / 2, -SIZE / 2 - 10),

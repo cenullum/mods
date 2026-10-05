@@ -15,6 +15,10 @@ is_dash_input_last = false
 image_name = ""
 nickname_label_name = ""
 hit_progres_bar_name = ""
+hit_range_circle_name = "hit_range_circle"
+HIT_RANGE = 64          -- ball area radius (48) + player collision radius (16)
+HIT_RANGE_FADE = 128    -- extra distance beyond HIT_RANGE over which the circle fades out
+HIT_RANGE_MAX_ALPHA = 0.1
 
 --general values
 hit_value = 0
@@ -53,6 +57,7 @@ function delete_visuals()
     end
     if IS_LOCAL then
         set_value("", "_hit_ball_prompt", "visible", false)
+        destroy_line(hit_range_circle_name)
     end
     if image_name ~= "" then
         destroy(name, image_name)
@@ -101,6 +106,7 @@ function change_team_ALL(sender_id, _team)
         image_name = set_image({ parent_name = name, name = image_name })         --just temporary image until avatar is loaded
     end
     set_image_pixel(name, image_name, Vector2(32, 32))                            -- fit to 32 width 32 height pixels
+    set_shadow_of_image(name, image_name, true)                                   -- flat ground shadow under the player
 
     color = Color(1, 1, 1, 1)
     if team == 1 then --RED
@@ -114,6 +120,27 @@ function change_team_ALL(sender_id, _team)
         config = { parent_name = name, name = hit_progres_bar_name, position = Vector2(-64, 48), modulate = Color(1, 1, 0,
             1), size = Vector2(128, 16) }
         hit_progres_bar_name = set_progress_bar(config)
+        -- Hit range: ball area radius (48) + player collision radius (16). Local player only.
+        set_circle({ name = hit_range_circle_name, parent_name = name, radius = HIT_RANGE, width = 1.5, color = Color(1, 1, 1, 0), visible = false })
+    end
+end
+
+-- Circle gets more opaque as the ball gets closer (max HIT_RANGE_MAX_ALPHA), hidden when far.
+function update_hit_range_circle()
+    local ball = get_value("", "*ball", "position")
+    local me = get_value("", name, "position")
+    if ball == nil or me == nil then
+        set_circle({ name = hit_range_circle_name, visible = false })
+        return
+    end
+    local dx = ball.x - me.x
+    local dy = ball.y - me.y
+    local dist = math.sqrt(dx * dx + dy * dy)
+    local t = 1.0 - math.max(0.0, dist - HIT_RANGE) / HIT_RANGE_FADE -- 1 inside range, 0 at the fade edge
+    if t <= 0.0 then
+        set_circle({ name = hit_range_circle_name, visible = false })
+    else
+        set_circle({ name = hit_range_circle_name, visible = true, color = Color(1, 1, 1, HIT_RANGE_MAX_ALPHA * t) })
     end
 end
 
@@ -129,6 +156,7 @@ function _process(delta, inputs)
     if IS_LOCAL then
         config = { parent_name = name, name = hit_progres_bar_name, value = hit_value }
         set_progress_bar(config)
+        update_hit_range_circle()
 
         if is_ball_interactable then
             set_label({ text = "{press_key_8}", visible = true, name = "_hit_ball_prompt" })
@@ -160,9 +188,10 @@ function _on_loaded_avatar(steam_id)
         if team == 0 then  -- if spectator dont need to set image
             return
         end
-        image_config = { parent_name = name, image_path = steam_id }
+        image_config = { parent_name = name, name = image_name, image_path = steam_id } -- name: replace the placeholder, don't stack a second image on it
         image_name = set_image(image_config)
         set_image_pixel(name, image_name, Vector2(32, 32))
+        set_shadow_of_image(name, image_name, true)
         color = Color(1, 1, 1, 1)
         if team == 1 then --RED
             color = Color(1, 0, 0, 1)

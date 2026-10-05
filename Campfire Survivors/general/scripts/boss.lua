@@ -110,6 +110,7 @@ local phase_locked = false          -- true during the between-phase pause
 
 image_name = set_image({ parent_name = name, name = "body", image_path = "boss",
     scale = Vector2(SIZE, SIZE), z_index = 2 })
+set_shadow_of_image(name, image_name, true)
 set_shader({ parent_name = name, image_name = image_name, shader_name = "circle",
     outline_color = PHASE_COLOR[1] })
 

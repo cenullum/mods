@@ -31,7 +31,7 @@ local IDLE_COLOR = Color(0.55, 0.4, 0.95, 0.85)
 local armed = false
 
 set_image({ parent_name = name, name = "ring", image_path = "items/15x15_portal_stone",
-    scale = Vector2(RING_SIZE, RING_SIZE), modulate = IDLE_COLOR, z_index = 1 })
+    scale = Vector2(RING_SIZE, RING_SIZE), modulate = IDLE_COLOR, z_index = 0 })
 
 -- Crisp world-space name: big font_size drawn small via scale, same trick the
 -- player nickname uses.

@@ -26,7 +26,7 @@ local BOLT_COLOR = Color(247 / 255, 118 / 255, 34 / 255, 1)
 if bolt_color ~= nil and bolt_color.a > 0 then BOLT_COLOR = bolt_color end
 
 set_image({ parent_name = name, name = "body", image_path = "white",
-    scale = Vector2(7, 7), modulate = BOLT_COLOR, z_index = 3 })
+    scale = Vector2(7, 7), modulate = BOLT_COLOR, z_index = 0 })
 set_shader({ parent_name = name, image_name = "body", shader_name = "circle" })
 set_area({ parent_name = name, name = "area", shape = "circle", size = 4,
     collision_mask = { 1, 2 } }) -- tiles and player bodies

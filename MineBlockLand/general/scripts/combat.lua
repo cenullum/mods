@@ -86,7 +86,8 @@ function tg_show_ALL(sender_id, cfg)
     local fill_name = "tgf" .. cfg.id
     local base = { parent_name = name, image_path = "white",
         position = Vector2(cfg.x, cfg.y), rotation = cfg.angle }
-    -- z 0/1 keeps the decal above the tilemap but below player bodies (z 2).
+    -- z 0 keeps the decal above the tilemap and under the global shadow, like
+    -- every other world sprite here.
     base.name = zone_name
     base.scale = Vector2(cfg.w, cfg.h)
     base.modulate = ZONE_COLOR
@@ -95,7 +96,7 @@ function tg_show_ALL(sender_id, cfg)
     base.name = fill_name
     base.scale = Vector2(1, 1)
     base.modulate = FILL_COLOR
-    base.z_index = 1
+    base.z_index = 0
     set_image(base)
     -- Both shapes get the same white-outline treatment so a sword's rectangle
     -- reads exactly like a fist's circle (outline ring + coloured fill).

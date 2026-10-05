@@ -36,7 +36,8 @@ local TILE = map_to_local(Vector2(1, 0)).x - map_to_local(Vector2(0, 0)).x
 local blink_on = false
 
 set_image({ parent_name = name, name = "body", image_path = "items/10x10_bomb",
-    scale = Vector2(11, 11), z_index = 2 })
+    scale = Vector2(11, 11), z_index = 0 })
+set_shadow_of_image(name, "body", true)
 -- Collides with tiles only, like every other projectile here: it should bounce
 -- off walls but never shove a player or a zombie around.
 set_collision({ parent_name = name, name = "col", shape = "circle", size = 5,

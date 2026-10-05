@@ -169,6 +169,7 @@ function create_user_ALL(sender_id)
     else
         image_name= set_image({parent_name=name,name=image_name,scale=Vector2(32,32)})--just temporary image until avatar is loaded
     end
+    set_shadow_of_image(name,image_name,true)-- flat ground shadow under the player
 
     set_shader({parent_name= name,image_name= image_name, shader_name= "circle"})--default values inner_circle=0.45 outer_circle=0.49 smoothness=0.01
     
@@ -201,8 +202,9 @@ end
 function _on_loaded_avatar(steam_id)
     if name==steam_id then -- if it is this user entity
         is_avatar_loaded=true
-        image_config={parent_name=name,image_name= image_name,image_path=steam_id,scale=Vector2(32,32)}
+        image_config={parent_name=name,name= image_name,image_path=steam_id,scale=Vector2(32,32)}-- name: replace the placeholder, don't stack a second image on it
         image_name= set_image(image_config)
+        set_shadow_of_image(name,image_name,true)
         set_shader({parent_name= name,image_name= image_name, shader_name= "circle"})
     end
 end

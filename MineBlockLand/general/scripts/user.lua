@@ -78,14 +78,14 @@ local last_grapple = -10
 -- no physics, no AI. A mount also changes how fast you move, a pet is cosmetic
 -- only.
 --
--- Both sit ABOVE the body (z 2) and therefore above loose critters and enemies,
--- which are z 2 as well: at z 1 the mount used to disappear behind any animal
--- that happened to walk over the same spot, so the thing you were riding was
--- hidden by the thing you were not.
+-- Everything the player wears or rides sits at z 0, like the body: only z 0 is
+-- both above the ground tiles AND under the map's global shadow overlay (z 1),
+-- so anything higher would never be shaded by walls/trees the way Football's
+-- players are. Inside one entity the draw order is therefore the order the
+-- images are CREATED in: body, mount, pet, aim dot, worn accessory (see the
+-- set_image calls right after the body).
 local SADDLE_REACH = 34
 local MOUNT_SIZE = 20
-local MOUNT_Z = 3
-local PET_Z = 4
 local MOUNT_OFFSET = Vector2(0, 4)
 local MOUNT_SPEED_MIN, MOUNT_SPEED_MAX = 0.7, 1.5
 local PET_SIZE = 9
@@ -99,7 +99,6 @@ local mount_speed_mult = 1.0
 -- has to survive this entity being destroyed and recreated on relog, and the
 -- inventory already owns that lifetime for held items too.
 local WORN_SIZE = 13
-local WORN_Z = 5 -- above mount/pet, below the nickname/buff badges
 -- Each wearable sits where it actually reads as worn: a hat on the head, boots
 -- and the trophy sock down at the feet. Only one can ever be worn at once, so
 -- there is never a clash to resolve here.
@@ -199,8 +198,20 @@ set_collision({ parent_name = name, name = "col", shape = "circle", size = BODY_
 set_value("", name, "hit_radius", BODY_RADIUS) -- read by -combat's melee hit test (friendly fire)
 
 -- Default icon until Steam delivers the avatar (see _on_loaded_avatar).
-body_image = set_image({ parent_name = name, name = "body", z_index = 2 })
+body_image = set_image({ parent_name = name, name = "body", z_index = 0 })
 set_image_pixel(name, "body", Vector2(BODY_PX, BODY_PX))
+set_shadow_of_image(name, "body", true)
+
+-- Mount & pet slots exist from the start (hidden, on a texture that always
+-- resolves) so toggling them later is a plain visibility flip and never has to
+-- create an image with no path. Created HERE, straight after the body, because
+-- creation order is what stacks them above it (see the note at MOUNT_SIZE).
+set_image({ parent_name = name, name = "mount", image_path = "white",
+    position = MOUNT_OFFSET, visible = false, z_index = 0 })
+set_shadow_of_image(name, "mount", true)
+set_image({ parent_name = name, name = "pet", image_path = "white",
+    position = PET_OFFSET, visible = false, z_index = 0 })
+set_shadow_of_image(name, "pet", true)
 
 -- Facing dot orbiting the body. It exists on EVERY peer, because it doubles as
 -- the held-item sprite (see set_held_visual): your own copy is aimed per frame
@@ -208,8 +219,11 @@ set_image_pixel(name, "body", Vector2(BODY_PX, BODY_PX))
 -- Shown for everybody (fists count as "held item" too), not just the local
 -- player - otherwise an empty hand silently vanished on other peers' screens.
 set_image({ parent_name = name, name = "dot", image_path = "hand",
-    position = Vector2(DOT_ORBIT, 0), scale = Vector2(16, 16), z_index = 4,
+    position = Vector2(DOT_ORBIT, 0), scale = Vector2(16, 16), z_index = 0,
     modulate = Color(1, 1, 1, 0.9), visible = true })
+-- Worn accessory, last so a hat stays on top of everything else on the body.
+set_image({ parent_name = name, name = "worn", image_path = "white",
+    visible = false, z_index = 0 })
 
 -- Crisp world-space nickname: big font_size drawn small via scale
 -- (48 * 0.125 = old size 6, but sharp) - set once, no per-frame work.
@@ -243,7 +257,7 @@ end
 
 function _on_loaded_avatar(steam_id)
     if steam_id ~= name then return end
-    set_image({ parent_name = name, name = "body", image_path = name, z_index = 2 })
+    set_image({ parent_name = name, name = "body", image_path = name, z_index = 0 })
     set_image_pixel(name, "body", Vector2(BODY_PX, BODY_PX))
 end
 
@@ -259,9 +273,9 @@ if IS_LOCAL then
     set_camera_target(name)
     set_camera_zoom(Vector2(CAMERA_ZOOM, CAMERA_ZOOM))
     -- Standalone world-space highlight (16x16, matches a tile). Hidden until the
-    -- mouse is over a tile we can act on and it is in reach. z 1 = above tiles,
-    -- below player bodies (z 2). Not networked: only this machine ever sees it.
-    set_image({ name = HL_NAME, image_path = "choosed_tile", z_index = 1,
+    -- mouse is over a tile we can act on and it is in reach. z 0 = above tiles
+    -- and shaded like them. Not networked: only this machine ever sees it.
+    set_image({ name = HL_NAME, image_path = "choosed_tile", z_index = 0,
         modulate = Color(1, 1, 1, 0.7), visible = false })
 end
 
@@ -591,7 +605,7 @@ function water_ripple()
             scale_curve = { 0.0, 1.0, 1.0 },
             alpha_curve = { 1.0, 1.0, 0.0 },
             color = Color(1, 1, 1, 0.8),
-            z_index = 1, -- under the body sprite (z 2), still over the tiles
+            z_index = 0, -- over the tiles and under the global shadow, like the body
         })
     end
     -- Parented to the body so z_index is relative to it, but local_coords stays
@@ -652,15 +666,8 @@ start_timer({ timer_id = "buff" .. name, entity_name = name,
 -- Mount & pet: two images hung off the body, nothing more.
 -- =============================================================================
 
--- Both slots exist from the start (hidden, on a texture that always resolves)
--- so toggling them later is a plain visibility flip and never has to create an
--- image with no path.
-set_image({ parent_name = name, name = "mount", image_path = "white",
-    position = MOUNT_OFFSET, visible = false, z_index = MOUNT_Z })
-set_image({ parent_name = name, name = "pet", image_path = "white",
-    position = PET_OFFSET, visible = false, z_index = PET_Z })
-set_image({ parent_name = name, name = "worn", image_path = "white",
-    visible = false, z_index = WORN_Z })
+-- The mount, pet and worn slots themselves are created up with the body (their
+-- creation order is their draw order).
 
 -- Driven by -inv's worn_ALL (every peer, for every player) - a worn accessory
 -- is its own slot, fixed on the body at that item's own offset, never the

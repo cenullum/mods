@@ -40,11 +40,12 @@ K_WOOD_BLOCK = 15 -- player-placed wood block (mined/gathered material, not a tr
 K_DIRT = 16       -- bare ground of the grassland (grass grows on it in patches)
 K_LAVA = 17       -- molten vein inside stone: walkable, but it burns (see user.lua)
 
--- Tileset ids of the map's 15-tile dual-grid layers (prodecural_map/info.json).
--- Every cell is a TERRAIN (sand, or the dirt baked under it) plus up to two
--- transparent tiles: slot 0 is ground cover (grass, farmland, water, lava,
--- stone, wood), slot 1 sits on top (trees, cacti, palms, flowers, crops, deep
--- water). The list order in info.json is the drawing order.
+-- Tileset ids of prodecural_map/info.json. The ground layers are 15-tile
+-- dual-grid tilesets: a TERRAIN (sand, or the dirt baked under it) plus
+-- transparent tiles, slot 0 = ground cover (grass, farmland, water, lava,
+-- stone, wood), slot 1 = deep water. The list order is the drawing order.
+-- Trees, cacti, palms, flowers and crops (ids 8-23) are PLAIN single 16x16
+-- images in images/map/deco; plain tiles always draw above the dual layers.
 local T_SAND = 0           -- opaque: dirt (lower terrain) -> sand
 local T_GRASS = 1
 local T_FARMLAND = 2
@@ -64,11 +65,9 @@ local T_TREES = { 19, 20, 21, 22, 23 }
 local SALT_VARIANT = 131 -- picks which tree/palm/cactus/flower sheet a cell uses
 
 -- kind -> how it is painted: `sand` = sand terrain instead of dirt, `cover` =
--- slot 0 layer, `top` = slot 1 layer (a list = variants, one picked per cell).
--- The tree/flower/crop/cactus sheets in images/map/deco are decoration only (the
--- ground was stripped out - tools/make_mbl_decor_sheets.py), like the palms, so
--- each one stands on a ground layer of its own: grass under a tree, sand under
--- a cactus.
+-- ground layer, `top` = plain decoration tile (a list = variants, one picked
+-- per cell). The deco images are transparent, so each stands on a ground layer
+-- of its own: grass under a tree, sand under a cactus.
 local LOOK = {
     [K_DIRT] = {},
     [K_FLOOR] = {},

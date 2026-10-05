@@ -608,6 +608,24 @@ function create_painting_panel(config) end
 ---@param pixel_size? Vector2 Desired size in pixels. Default: Vector2(32, 32).
 function set_image_pixel(parent_name, image_name, pixel_size) end
 
+-- Give a world image a ground shadow that is part of the map's shadow: a
+-- blurred clone of the image's alpha, standing on its lowest opaque pixel and
+-- laid on the ground the way the walls' shadows fall - exactly shadow_length
+-- long, fading out at the tip like a wall's shadow. It is merged into the
+-- global shadow before the colour is applied, so overlapping shadows (image or
+-- wall) never change the alpha, and an image is never darkened by an image
+-- shadow. Follows set_shadow (colour, angle, length, visibility). An image drawn
+-- round by the circle shader casts a round shadow. Local only (call it on every
+-- peer, like set_image); images outside the camera cost nothing. Follows the
+-- image's visibility/alpha, texture swaps, frames and flips; ignores rotation.
+-- Note: the global tile shadow only darkens images at z_index <= 0.
+---@param entity_name string Parent entity name (the image's parent_name).
+---@param image_name string Image node name (as returned by set_image).
+---@param enabled boolean true = add/update the shadow, false = remove it.
+---@param y_offset? number Height above the ground in pixels: the shadow lies this far BELOW the image and smaller (e.g. 10 for a flying butterfly). Default: 0.
+---@return boolean ok false if the image does not exist.
+function set_shadow_of_image(entity_name, image_name, enabled, y_offset) end
+
 --- Set or create a text label on an entity.
 --- Config parameters:
 ---   - parent_name (string, required): Parent entity name.

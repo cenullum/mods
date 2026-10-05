@@ -358,6 +358,16 @@ function freeze_entity(entity_name, all) end
 ---@param all? boolean Also unfreeze on all clients (Host only). Default: true.
 function unfreeze_entity(entity_name, all) end
 
+--- Check whether an entity (or one of its children) is still in the world,
+--- WITHOUT logging an error when it is not. get_value() and every other lookup
+--- push an error for a missing entity, which is what you want for a typo but
+--- not for an effect that can outlive its target - e.g. a per-frame hit flash
+--- on a monster that the killing blow just destroyed.
+---@param entity_name string Entity (or child node) name to look for.
+---@param parent_name? string Parent entity name when checking a child such as an image or a label. Default: "".
+---@return boolean True if the entity exists right now.
+function entity_exists(entity_name, parent_name) end
+
 ---------------------------------------------------
 -- ENTITY TAGS
 ---------------------------------------------------
@@ -398,7 +408,7 @@ function get_nearest_entity_by_tag(entity_name, tag, excluded_entities) end
 --- Config parameters:
 ---   - parent_name (string, required): Parent entity name.
 ---   - name (string, optional): Image node name. Default: auto-generated.
----   - image_path (string, optional): Path to image in mod/general/images/ (without .png extension). If empty and creating new sprite, uses default icon. Default: "".
+---   - image_path (string, optional): Path to image in mod/general/images/ (without .png extension). If empty and creating new sprite, uses default icon. Also accepts "card:<card_id>:front" or "card:<card_id>:back" to show a live-rendered (localized) card face instead of a plain file. Default: "".
 ---   - position (Vector2, optional): Position offset from parent. Default: Vector2(0, 0).
 ---   - scale (Vector2, optional): Scale the image to this pixel size (based on texture size). Cannot use with 'size'. Default: none.
 ---   - size (Vector2, optional): Direct scale multiplier. Cannot use with 'scale'. Default: none.
@@ -598,6 +608,24 @@ function create_painting_panel(config) end
 ---@param pixel_size? Vector2 Desired size in pixels. Default: Vector2(32, 32).
 function set_image_pixel(parent_name, image_name, pixel_size) end
 
+-- Give a world image a ground shadow that is part of the map's shadow: a
+-- blurred clone of the image's alpha, standing on its lowest opaque pixel and
+-- laid on the ground the way the walls' shadows fall - exactly shadow_length
+-- long, fading out at the tip like a wall's shadow. It is merged into the
+-- global shadow before the colour is applied, so overlapping shadows (image or
+-- wall) never change the alpha, and an image is never darkened by an image
+-- shadow. Follows set_shadow (colour, angle, length, visibility). An image drawn
+-- round by the circle shader casts a round shadow. Local only (call it on every
+-- peer, like set_image); images outside the camera cost nothing. Follows the
+-- image's visibility/alpha, texture swaps, frames and flips; ignores rotation.
+-- Note: the global tile shadow only darkens images at z_index <= 0.
+---@param entity_name string Parent entity name (the image's parent_name).
+---@param image_name string Image node name (as returned by set_image).
+---@param enabled boolean true = add/update the shadow, false = remove it.
+---@param y_offset? number Height above the ground in pixels: the shadow lies this far BELOW the image and smaller (e.g. 10 for a flying butterfly). Default: 0.
+---@return boolean ok false if the image does not exist.
+function set_shadow_of_image(entity_name, image_name, enabled, y_offset) end
+
 --- Set or create a text label on an entity.
 --- Config parameters:
 ---   - parent_name (string, required): Parent entity name.
@@ -690,6 +718,27 @@ function set_button(config) end
 ---   - parent_name (string, required): Parent entity name.
 ---   - shader_name (string, optional): Shader file name (without .gdshader extension) from res://shaders/. If empty or omitted, removes the shader. Default: "".
 ---   - Additional shader-specific parameters can be added and will be passed to the shader as uniforms.
+---
+--- HIT FEEDBACK ("hit_flash", and the same uniforms inside "circle"):
+--- an impact effect for a sprite - a solid colour flash, an area-preserving
+--- squash & stretch (wider, shorter) and a decaying elastic wobble. All of it
+--- is driven by ONE uniform, so the whole hit costs a single float per frame:
+--- set `hit = 1.0` at the moment of impact and fade it to 0.0 over ~0.25 s.
+--- At hit = 0.0 nothing is applied, so the shader is free when nobody is hurt.
+--- "circle" carries the identical uniforms because a sprite has only one
+--- material - use it instead of "hit_flash" on anything already outlined.
+---   - hit (number): 0..1 effect strength. 1 = the frame of impact.
+---   - hit_dir (number): sign of the wobble. Pass cos(hit angle) so the sprite
+---       tips away from the blow. Default: 1.0.
+---   - hit_color (Color): the flash colour. Default: white.
+---   - hit_squash (number): peak horizontal stretch, vertical is 1/x. Default: 0.35.
+---   - hit_spin (number): peak rotation in radians. Default: 0.3.
+---   - hit_wobbles (number): oscillations over the life of the effect. Default: 2.5.
+---   - hit_flash_start / hit_flash_full (number): the flash is a HOLD, not a
+---       fade - solid colour while hit is above hit_flash_full, gone below
+---       hit_flash_start. Defaults: 0.6 / 0.75.
+--- Only RGB is flashed, so transparent pixels stay transparent. The uniforms
+--- stay on the material, so a per-frame update only needs `hit`.
 ---@param config table Shader configuration dictionary.
 function set_shader(config) end
 
@@ -1134,6 +1183,15 @@ function card_draw(deck_name, target_steam_id) end
 ---@param count integer How many cards from the top.
 ---@param target_steam_id string Peeking player's Steam id string.
 function card_peek(deck_name, count, target_steam_id) end
+
+--- HOST ONLY: same information as card_peek(), returned synchronously instead
+--- of via the _on_card_peek callback. Use this for host-side logic that has no
+--- client peer to call that back on (e.g. bot AI reacting to its own "see the
+--- future" card) - a bot has no screen, so nothing is ever sent over the wire.
+---@param deck_name string Deck identifier.
+---@param count integer How many cards from the top.
+---@return table Array of card ids, index 1 = top of the deck.
+function card_peek_host(deck_name, count) end
 
 --- HOST ONLY: put a card (from a hand or the table) back into a deck.
 ---@param uid string Card uid.
@@ -1687,6 +1745,19 @@ function open_profile(steam_id) end
 ---@return string Audio player identifier (name), or "" on error.
 function set_audio(config) end
 
+--- Update the volume of an ALREADY-PLAYING audio player WITHOUT restarting it.
+--- set_audio() always restarts playback from the beginning, even when reusing
+--- an existing player by name - fine for a one-shot sound effect, but it means
+--- set_audio can never smoothly fade a continuous looping track (each call
+--- would snap it back to the start). Use this instead once the player already
+--- exists (created via set_audio with an explicit name/parent_name) to ramp
+--- its volume over several calls, e.g. for a day/night ambience crossfade.
+---@param parent_name string Entity the audio player is attached to (same value passed as set_audio's parent_name).
+---@param entity_name string The audio player's name (same value passed as set_audio's name).
+---@param volume_db number New volume in decibels.
+---@return boolean True if a matching, currently-alive audio player was found and updated.
+function set_audio_volume(parent_name, entity_name, volume_db) end
+
 --- Add an audio effect to a bus.
 --- Config parameters:
 ---   - bus_name (string, optional): Audio bus name (auto-formatted). Default: "Effect".
@@ -1871,18 +1942,65 @@ function get_map_list() end
 function get_tile(x, y) end
 
 --- Set a tile at a map coordinate.
---- `tileset_id` selects which tileset source (default 0 = first tileset). If that
---- tileset has autotile enabled (via the editor's Tile Maps panel), `atlas_coords`
---- is ignored and the correct 47-blob tile is chosen automatically from neighbours
---- (and neighbouring tiles are re-fitted too).
---- Pass `atlas_coords = Vector2(-1, -1)` to ERASE the cell (autotile neighbours are
---- re-fitted around the hole — handy for carving a doorway/opening at runtime).
+--- `tileset_id` selects which tileset source (default 0 = first tileset).
+--- PLAIN tileset: `atlas_coords` is the tile to place.
+--- 15-TILE DUAL-GRID tileset (mode "dual15" in the editor's Tile Maps panel):
+--- `atlas_coords` is ignored and the right transition tile is chosen from the
+--- four cells around each corner automatically (neighbours re-fit by themselves).
+---   * opaque layer      -> the cell's terrain becomes this layer's UPPER terrain
+---                          (use set_dual_tile(..., true) for its lower terrain)
+---   * transparent layer -> this layer is added to the cell; it replaces whatever
+---                          transparent tile the cell had in the SAME slot, tiles in
+---                          other slots stay (e.g. a tree in slot 1 over grass in slot 0)
+--- Pass `atlas_coords = Vector2(-1, -1)` to ERASE: a plain cell is cleared, an opaque
+--- layer clears the cell's terrain, a transparent layer is removed only if the cell
+--- holds that layer.
+--- Dual-grid drawing/collision is batched and applied at the end of the frame.
 ---@param x number Tile X coordinate.
 ---@param y number Tile Y coordinate.
 ---@param atlas_coords Vector2 Atlas coordinates of the tile, or (-1,-1) to erase.
 ---@param tileset_id? number Tileset source id (default 0).
 ---@return boolean True on success, false if no tileset is loaded.
 function set_tile(x, y, atlas_coords, tileset_id) end
+
+--- Clear EVERYTHING in a cell: the plain tile, the dual-grid terrain and every
+--- transparent dual-grid tile in every slot. Handy before repainting a cell from
+--- scratch.
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+function clear_tile(x, y) end
+
+--- Paint a 15-tile dual-grid layer into a cell. For an OPAQUE layer `lower = true`
+--- paints the layer's LOWER terrain instead (for the first opaque layer that is the
+--- base terrain baked into its sheet, e.g. the dirt under a dirt->sand sheet).
+--- For a transparent layer this is the same as set_tile.
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+---@param tileset_id number A dual-grid tileset id.
+---@param lower? boolean Paint the lower terrain (opaque layers only). Default false.
+---@return boolean False if the id is not a dual-grid tileset.
+function set_dual_tile(x, y, tileset_id, lower) end
+
+--- What a cell holds in the dual-grid layers.
+--- `terrain` is an opaque layer id, -2 for the base terrain, -1 for none;
+--- `overlays` lists the transparent layer ids in the cell (slot order).
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+---@return table {terrain = number, overlays = number[]}
+function get_dual_tile(x, y) end
+
+--- Change the animation speed of a dual-grid tileset live (frames per second,
+--- 0.1..60). Local to this peer and not saved; the speed set in the editor (the
+--- map's info.json) is the default. Frames themselves are set in the editor.
+---@param tileset_id number A dual-grid tileset id.
+---@param fps number Frames per second.
+---@return boolean False if the id is not a dual-grid tileset.
+function set_tileset_animation(tileset_id, fps) end
+
+--- Animation of a dual-grid tileset.
+---@param tileset_id number Tileset id.
+---@return table {frames = number (1 = still, 0 = not a dual-grid tileset), fps = number}
+function get_tileset_animation(tileset_id) end
 
 --- HOST ONLY: allow or forbid the minimap (default: forbidden). This is the only
 --- thing that travels over the network — the map IMAGE itself never does: every
@@ -1896,8 +2014,8 @@ function set_minimap(allowed) end
 --- Returns "" while the host has not called set_minimap(true) — check for it.
 --- The texture is built locally and keeps updating live while it is on screen
 --- (new chunks appear as they load). Each (tileset, tile) pair gets its own
---- colour (the average of its texture); tiles with collision are drawn darker;
---- 47-blob autotile sources use one shared colour. Works in any mod — nothing
+--- colour (the average of its texture); a dual-grid cell takes its topmost
+--- layer's full-tile colour; tiles with collision are drawn darker. Works in any mod — nothing
 --- about it is game-specific.
 ---@return string Texture key for set_image's image_path, or "" if not allowed.
 function get_minimap() end
