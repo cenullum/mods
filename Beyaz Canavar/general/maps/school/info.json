@@ -1,0 +1,1674 @@
+{
+	"map_name": "school",
+	"collision": {
+		"11": [
+			"(0, 0)"
+		],
+		"12": [
+			"(0, 0)"
+		],
+		"13": [
+			"(0, 0)"
+		],
+		"25": [
+			"(0, 0)"
+		],
+		"26": [
+			"(0, 0)"
+		],
+		"27": [
+			"(0, 0)"
+		],
+		"30": [
+			"(0, 0)"
+		],
+		"36": [
+			"(0, 0)"
+		],
+		"37": [
+			"(0, 0)"
+		],
+		"38": [
+			"(0, 0)"
+		],
+		"39": [
+			"(0, 0)"
+		],
+		"40": [
+			"(0, 0)"
+		],
+		"41": [
+			"(0, 0)"
+		],
+		"42": [
+			"(0, 0)"
+		],
+		"43": [
+			"(0, 0)"
+		],
+		"44": [
+			"(0, 0)"
+		],
+		"45": [
+			"(0, 0)"
+		],
+		"46": [
+			"(0, 0)"
+		],
+		"47": [
+			"(0, 0)"
+		],
+		"48": [
+			"(0, 0)"
+		],
+		"49": [
+			"(0, 0)"
+		],
+		"52": [
+			"(0, 0)"
+		],
+		"53": [
+			"(0, 0)"
+		],
+		"54": [
+			"(0, 0)"
+		],
+		"55": [
+			"(0, 0)"
+		],
+		"56": [
+			"(0, 0)"
+		],
+		"57": [
+			"(0, 0)"
+		],
+		"58": [
+			"(0, 0)"
+		],
+		"59": [
+			"(0, 0)"
+		],
+		"60": [
+			"(0, 0)"
+		],
+		"61": [
+			"(0, 0)"
+		],
+		"62": [
+			"(0, 0)"
+		],
+		"63": [
+			"(0, 0)"
+		],
+		"64": [
+			"(0, 0)"
+		],
+		"65": [
+			"(0, 0)"
+		],
+		"66": [
+			"(0, 0)"
+		],
+		"67": [
+			"(0, 0)"
+		]
+	},
+	"one_way": {},
+	"shadow": {},
+	"tilesets": [
+		{
+			"id": 0,
+			"path": "/general/images/office_wall_32px/Wall_01.png",
+			"mode": "dual15",
+			"name": "Floor",
+			"opaque": true,
+			"slot": 0,
+			"dmap": {
+				"0": [
+					0,
+					3
+				],
+				"1": [
+					3,
+					3
+				],
+				"2": [
+					0,
+					2
+				],
+				"3": [
+					1,
+					2
+				],
+				"4": [
+					0,
+					0
+				],
+				"5": [
+					3,
+					2
+				],
+				"6": [
+					2,
+					3
+				],
+				"7": [
+					3,
+					1
+				],
+				"8": [
+					1,
+					3
+				],
+				"9": [
+					0,
+					1
+				],
+				"10": [
+					1,
+					0
+				],
+				"11": [
+					2,
+					2
+				],
+				"12": [
+					3,
+					0
+				],
+				"13": [
+					2,
+					0
+				],
+				"14": [
+					1,
+					1
+				],
+				"15": [
+					2,
+					1
+				]
+			},
+			"col": [
+				15,
+				14,
+				13,
+				12,
+				11,
+				10,
+				9,
+				8,
+				7,
+				6,
+				5,
+				4,
+				3,
+				2,
+				1,
+				0
+			],
+			"sh": [
+				15,
+				14,
+				13,
+				12,
+				11,
+				10,
+				9,
+				8,
+				7,
+				6,
+				5,
+				4,
+				3,
+				2,
+				1,
+				0
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 1,
+			"path": "/general/images/office_wall_32px/Wall_01.png",
+			"mode": "dual15",
+			"name": "Wall 01",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 2,
+			"path": "/general/images/office_wall_32px/Wall_02.png",
+			"mode": "dual15",
+			"name": "Wall 02",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 3,
+			"path": "/general/images/office_wall_32px/Wall_03.png",
+			"mode": "dual15",
+			"name": "Wall 03",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 4,
+			"path": "/general/images/office_wall_32px/Wall_04.png",
+			"mode": "dual15",
+			"name": "Wall 04",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 5,
+			"path": "/general/images/office_wall_32px/Wall_05.png",
+			"mode": "dual15",
+			"name": "Wall 05",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 6,
+			"path": "/general/images/office_wall_32px/Wall_06.png",
+			"mode": "dual15",
+			"name": "Wall 06",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 7,
+			"path": "/general/images/office_wall_32px/Wall_07.png",
+			"mode": "dual15",
+			"name": "Wall 07",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 8,
+			"path": "/general/images/office_wall_32px/Wall_08.png",
+			"mode": "dual15",
+			"name": "Wall 08",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 9,
+			"path": "/general/images/office_wall_32px/Wall_09.png",
+			"mode": "dual15",
+			"name": "Wall 09",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 10,
+			"path": "/general/images/office_wall_32px/Wall_10.png",
+			"mode": "dual15",
+			"name": "Wall 10",
+			"group": 1,
+			"opaque": false,
+			"slot": 0,
+			"dmap": {
+				"1": [
+					1,
+					1
+				],
+				"2": [
+					2,
+					0
+				],
+				"3": [
+					3,
+					0
+				],
+				"4": [
+					2,
+					2
+				],
+				"5": [
+					1,
+					0
+				],
+				"6": [
+					0,
+					1
+				],
+				"7": [
+					1,
+					3
+				],
+				"8": [
+					3,
+					1
+				],
+				"9": [
+					2,
+					3
+				],
+				"10": [
+					3,
+					2
+				],
+				"11": [
+					0,
+					0
+				],
+				"12": [
+					1,
+					2
+				],
+				"13": [
+					0,
+					2
+				],
+				"14": [
+					3,
+					3
+				],
+				"15": [
+					0,
+					3
+				]
+			},
+			"col": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"sh": [
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11,
+				12,
+				13,
+				14,
+				15
+			],
+			"shadow": 1,
+			"one_way": false,
+			"frames": [],
+			"fps": 6.0
+		},
+		{
+			"id": 11,
+			"path": "/general/images/tiles/bin1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 12,
+			"path": "/general/images/tiles/bin2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 13,
+			"path": "/general/images/tiles/bin3.png",
+			"mode": "plain"
+		},
+		{
+			"id": 14,
+			"path": "/general/images/tiles/blackboard.png",
+			"mode": "plain"
+		},
+		{
+			"id": 15,
+			"path": "/general/images/tiles/blackboard1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 16,
+			"path": "/general/images/tiles/blackboard2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 17,
+			"path": "/general/images/tiles/blackboard_with_map.png",
+			"mode": "plain"
+		},
+		{
+			"id": 18,
+			"path": "/general/images/tiles/blood_floor.png",
+			"mode": "plain"
+		},
+		{
+			"id": 19,
+			"path": "/general/images/tiles/blood_floor2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 20,
+			"path": "/general/images/tiles/blood_floor4.png",
+			"mode": "plain"
+		},
+		{
+			"id": 21,
+			"path": "/general/images/tiles/blood_wall1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 22,
+			"path": "/general/images/tiles/blood_wall2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 23,
+			"path": "/general/images/tiles/blood_wall3.png",
+			"mode": "plain"
+		},
+		{
+			"id": 24,
+			"path": "/general/images/tiles/blood_wall4.png",
+			"mode": "plain"
+		},
+		{
+			"id": 25,
+			"path": "/general/images/tiles/bookshelf1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 26,
+			"path": "/general/images/tiles/bookshelf2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 27,
+			"path": "/general/images/tiles/bookshelf_empty.png",
+			"mode": "plain"
+		},
+		{
+			"id": 28,
+			"path": "/general/images/tiles/bulletin_board1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 29,
+			"path": "/general/images/tiles/bulletin_board2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 30,
+			"path": "/general/images/tiles/cafeteria_table.png",
+			"mode": "plain"
+		},
+		{
+			"id": 31,
+			"path": "/general/images/tiles/chair1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 32,
+			"path": "/general/images/tiles/chair2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 33,
+			"path": "/general/images/tiles/chair3.png",
+			"mode": "plain"
+		},
+		{
+			"id": 34,
+			"path": "/general/images/tiles/clock.png",
+			"mode": "plain"
+		},
+		{
+			"id": 35,
+			"path": "/general/images/tiles/clock2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 36,
+			"path": "/general/images/tiles/desk_metal_with_many_papers.png",
+			"mode": "plain"
+		},
+		{
+			"id": 37,
+			"path": "/general/images/tiles/desk_with_blood.png",
+			"mode": "plain"
+		},
+		{
+			"id": 38,
+			"path": "/general/images/tiles/desk_with_computer.png",
+			"mode": "plain"
+		},
+		{
+			"id": 39,
+			"path": "/general/images/tiles/desk_with_computer2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 40,
+			"path": "/general/images/tiles/desk_with_desktop_globe.png",
+			"mode": "plain"
+		},
+		{
+			"id": 41,
+			"path": "/general/images/tiles/door1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 42,
+			"path": "/general/images/tiles/door2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 43,
+			"path": "/general/images/tiles/door3.png",
+			"mode": "plain"
+		},
+		{
+			"id": 44,
+			"path": "/general/images/tiles/door4.png",
+			"mode": "plain"
+		},
+		{
+			"id": 45,
+			"path": "/general/images/tiles/door5.png",
+			"mode": "plain"
+		},
+		{
+			"id": 46,
+			"path": "/general/images/tiles/door6.png",
+			"mode": "plain"
+		},
+		{
+			"id": 47,
+			"path": "/general/images/tiles/door_Exit2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 48,
+			"path": "/general/images/tiles/door_exit.png",
+			"mode": "plain"
+		},
+		{
+			"id": 49,
+			"path": "/general/images/tiles/double_chair_student_desk.png",
+			"mode": "plain"
+		},
+		{
+			"id": 50,
+			"path": "/general/images/tiles/fire_extinguisher1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 51,
+			"path": "/general/images/tiles/fire_extinguisher2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 52,
+			"path": "/general/images/tiles/food_display _counter2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 53,
+			"path": "/general/images/tiles/food_display_counter1.png",
+			"mode": "plain"
+		},
+		{
+			"id": 54,
+			"path": "/general/images/tiles/fridge_closed.png",
+			"mode": "plain"
+		},
+		{
+			"id": 55,
+			"path": "/general/images/tiles/fridge_opened.png",
+			"mode": "plain"
+		},
+		{
+			"id": 56,
+			"path": "/general/images/tiles/locker_blue_closed.png",
+			"mode": "plain"
+		},
+		{
+			"id": 57,
+			"path": "/general/images/tiles/locker_closed_red.png",
+			"mode": "plain"
+		},
+		{
+			"id": 58,
+			"path": "/general/images/tiles/locker_green_closed.png",
+			"mode": "plain"
+		},
+		{
+			"id": 59,
+			"path": "/general/images/tiles/locker_grey_closed.png",
+			"mode": "plain"
+		},
+		{
+			"id": 60,
+			"path": "/general/images/tiles/locker_grey_opened.png",
+			"mode": "plain"
+		},
+		{
+			"id": 61,
+			"path": "/general/images/tiles/locker_opened_red.png",
+			"mode": "plain"
+		},
+		{
+			"id": 62,
+			"path": "/general/images/tiles/park_bench.png",
+			"mode": "plain"
+		},
+		{
+			"id": 63,
+			"path": "/general/images/tiles/sink.png",
+			"mode": "plain"
+		},
+		{
+			"id": 64,
+			"path": "/general/images/tiles/student_desk_with_apple.png",
+			"mode": "plain"
+		},
+		{
+			"id": 65,
+			"path": "/general/images/tiles/student_desk_with_book.png",
+			"mode": "plain"
+		},
+		{
+			"id": 66,
+			"path": "/general/images/tiles/tablet_chair.png",
+			"mode": "plain"
+		},
+		{
+			"id": 67,
+			"path": "/general/images/tiles/tablet_chair_double.png",
+			"mode": "plain"
+		},
+		{
+			"id": 68,
+			"path": "/general/images/tiles/vent.png",
+			"mode": "plain"
+		},
+		{
+			"id": 69,
+			"path": "/general/images/tiles/window.png",
+			"mode": "plain"
+		},
+		{
+			"id": 70,
+			"path": "/general/images/tiles/window2.png",
+			"mode": "plain"
+		},
+		{
+			"id": 71,
+			"path": "/general/images/tiles/window3.png",
+			"mode": "plain"
+		}
+	],
+	"dual_base_name": "Wall",
+	"tile_size": "(32, 32)",
+	"chunk_size": 32,
+	"lobby_type": 0,
+	"shadow_effect": {
+		"visible": false,
+		"shadow_color": "(0.0039, 0.0039, 0.0157, 0.7608)",
+		"shadow_angle": 145.0,
+		"shadow_length": 64.0,
+		"shadow_blur": 2.795
+	},
+	"background_color": "(0.0, 0.0, 0.0, 1.0)",
+	"background_texture": "",
+	"vignette_effect": {
+		"visible": true,
+		"smoothness": 0.45,
+		"strength": 1.2,
+		"color": "(0.0, 0.0, 0.0, 1.0)",
+		"radius": 0.5
+	},
+	"pathfinding": {
+		"diagonal": "no_obstacles",
+		"wall_weight": 1.0,
+		"clearance": 0
+	}
+}

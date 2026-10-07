@@ -1,1 +1,9 @@
-This is a default mod description. 
+Beyaz Canavar - an online co-op horror game.
+
+You wake up in a locked detention room next to something pale curled up on the floor. When it opens its eyes, a white flash throws you into a dark school that is built anew from a seed every round: corridors, classrooms, a library, a cafeteria, toilets and a locked principal's office.
+
+Work together on five tasks - find the master key in the lockers, dig the torn evacuation plan out of the bins, track down the caretaker's logbook, stop the overflowing sinks and get the security computer running. Then five exits open: reach any of them to win.
+
+The monster is slower than you, but its scream stuns everyone nearby. Whoever it catches is eaten, leaves a body behind and comes back as a monster that knows nothing about your tasks. Crawl through vents of the same colour to lose it, talk with proximity voice chat and watch out: you only see what is in front of you.
+
+Host: pick a seed (the same seed always builds the same school) and start. Everyone else can type /start to vote.

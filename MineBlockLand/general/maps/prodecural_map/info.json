@@ -622,6 +622,7 @@
             "path": "/general/images/map/stone.png",
             "mode": "dual15",
             "name": "Stone",
+            "group": 1,
             "opaque": false,
             "slot": 0,
             "dmap": {
@@ -736,6 +737,7 @@
             "path": "/general/images/map/wood.png",
             "mode": "dual15",
             "name": "Wood",
+            "group": 1,
             "opaque": false,
             "slot": 0,
             "dmap": {

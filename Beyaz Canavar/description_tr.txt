@@ -1,0 +1,9 @@
+Beyaz Canavar - online co-op korku oyunu.
+
+Kilitli bir ceza odasında, yerde kıvrılmış solgun bir şeyin yanında uyanıyorsunuz. Gözlerini açtığı anda beyaz bir parlama sizi karanlık bir okula fırlatıyor; okul her turda bir seed'den yeniden kuruluyor: koridorlar, sınıflar, kütüphane, yemekhane, tuvaletler ve kilitli bir müdür odası.
+
+Beş görevi birlikte bitirin: dolaplardan ana anahtarı bulun, çöp kutularından yırtık tahliye planını toplayın, hademenin defterinin izini sürün, taşan lavaboları kapatın ve güvenlik bilgisayarını çalıştırın. Sonra beş çıkış açılır; herhangi birine ulaşan kazanır.
+
+Canavar sizden yavaş ama çığlığı yakındaki herkesi sersemletiyor. Yakaladığını yer; geride bir ceset kalır, yakalanan da görevlerinizden habersiz bir canavar olarak geri döner. Aynı renkteki havalandırmalardan geçip izinizi kaybettirin, yakınlık tabanlı sesli sohbetle konuşun ve unutmayın: sadece önünüzü görebiliyorsunuz.
+
+Host: bir seed seçin (aynı seed hep aynı okulu kurar) ve başlatın. Diğer oyuncular /start yazarak oylama açabilir.
