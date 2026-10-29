@@ -66,6 +66,11 @@ function start_wave()
     -- Increment wave counter
     current_wave = current_wave + 1
     set_wave_state("active")
+    if IS_HOST and current_wave == 10 then
+        for _, player_id in ipairs(get_entity_names_by_tag("user")) do
+            unlock_achievement("CS_WAVE_10", player_id)
+        end
+    end
     
 
     
@@ -186,6 +191,7 @@ function end_wave()
     -- Destroy all bullets
     destroy_entities_by_tag("bullet")
     run_function("-mg","monster_count_reset")
+    run_function("-stats", "flush_achievement_kills")
     -- Stop wave timer update
     stop_timer("wave_timer_update")
     
@@ -382,7 +388,10 @@ function game_over()
     end
 
     run_function("-sm", "reset_player_upgrade_rights")
+    -- Everybody is back to just the gun (the arsenal's levels, rings, hatchets)
+    run_function("-wpn", "reset_all")
     -- Stop stats tracking and show game over stats
+    run_function("-stats", "flush_achievement_kills")
     run_function("-stats", "stop_tracking", {})
     run_function("-stats", "show_game_over_stats", {})
 

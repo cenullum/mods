@@ -176,17 +176,22 @@ function on_seed_input(args)
     typed_seed = tostring(args["{seed}"] or "")
 end
 
+-- Through the host, so an admin who is not the host (a dedicated server's
+-- owner) can start a match too; on a listen host this runs locally as before.
 function on_use_seed(args)
     local s = tonumber(typed_seed) or 0
-    run_function(MANAGER, "host_begin", { s })
+    close_host_setup()
+    run_network_function(MANAGER, "host_begin_HOST", { s })
 end
 
 function on_random_seed(args)
-    run_function(MANAGER, "host_begin", { -1 }) -- <=0 tells the host to roll one
+    close_host_setup()
+    run_network_function(MANAGER, "host_begin_HOST", { -1 }) -- <=0 tells the host to roll one
 end
 
 function on_same_map(args)
-    run_function(MANAGER, "host_begin", { last_seed })
+    close_host_setup()
+    run_network_function(MANAGER, "host_begin_HOST", { last_seed })
 end
 
 -- =============================================================================
@@ -214,6 +219,9 @@ function on_vote_new(args)
 end
 
 function on_stats(hider_alive, hider_total, seekers, my_score)
+    -- run_function hands numbers back as floats ("Hiders: 1.0/1.0"): floor them before showing them.
+    hider_alive, hider_total = math.floor(hider_alive), math.floor(hider_total)
+    seekers, my_score = math.floor(seekers), math.floor(my_score)
     set_label({ name = LBL_HIDERS, text ="{hiders}" .. hider_alive .. "/" .. hider_total })
     set_label({ name = LBL_SEEKERS, text ="{seekers}" .. seekers })
     set_label({ name = LBL_SCORE, text ="{score}" .. my_score })

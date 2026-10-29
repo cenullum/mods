@@ -19,6 +19,7 @@
     "{hiders}": "隠れる人: ",
     "{host_pick_the_map}": "[b]ホスト: マップを選んでください[/b]",
     "{hunt_begins_in}": "ハント開始まで ",
+    "{match_starts_by_itself}": "管理者が参加していないため、20 秒後に試合が自動で始まります。",
     "{more_to_start_the_hunt}": " 人でハントを開始できます。",
     "{more}": " 人)",
     "{movement_mode}": "移動モード",

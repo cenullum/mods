@@ -91,19 +91,35 @@ linear_velocity = Vector2()
 ---@type boolean
 IS_LOCAL = false
 
---- Whether the local machine is the host/server in multiplayer.
+--- Whether the local machine is the host/server in multiplayer. On a dedicated
+--- server this is the server process, which has NO player of its own: do not
+--- assume the host is one of the users (see IS_DEDICATED, is_admin).
 ---@type boolean
 IS_HOST = false
+
+--- True on a dedicated server and on every player connected to one. A dedicated
+--- server is the authority (IS_HOST there) but has no user entity, no screen and
+--- nobody at the keyboard. Prefer rules that work either way - is_admin() for
+--- "host only" buttons, a vote or an automatic start when no admin is playing -
+--- over branching on this.
+---@type boolean
+IS_DEDICATED = false
 
 --- Absolute path to the current mod directory.
 ---@type string
 MOD_PATH = ""
 
---- Local player's Steam ID as a string.
+--- Local player's Steam ID as a string. Players who joined a dedicated or
+--- custom-master server without Steam have a key id here instead (still a
+--- numeric string, never colliding with a Steam ID). On a dedicated server this
+--- is the server's own id, which has no entity: check entity_exists(LOCAL_STEAM_ID)
+--- before using it as an entity name.
 ---@type string
 LOCAL_STEAM_ID = ""
 
---- Host/server's Steam ID as a string.
+--- Host/server's Steam ID as a string. On a dedicated server this is the
+--- server, never a player: `sender_id == HOST_STEAM_ID` is then never true for a
+--- player, so use is_admin(sender_id) for "may this player do host things".
 ---@type string
 HOST_STEAM_ID = ""
 
@@ -117,7 +133,7 @@ HOST_STEAM_ID = ""
 --- WARNING: This runs EVERY FRAME and consumes significant processing power.
 --- Avoid calling set_label, set_image, set_progress_bar, etc. unless values actually change!
 ---@param delta number Time elapsed since last frame in seconds.
----@param inputs table Input state dictionary with keys: key_1 to key_15 (boolean), stick_1 (Vector2), stick_2 (Vector2).
+---@param inputs table Input state dictionary with keys: key_1 to key_13 (boolean), stick_1 (Vector2), stick_2 (Vector2).
 ---@return table|nil Modified inputs dictionary (or nil to leave unchanged).
 function _process(delta, inputs) end
 
@@ -196,6 +212,14 @@ function _on_user_kicked(steam_id, nickname) end
 ---@param nickname string Display name of the banned user.
 ---@param reason string Ban reason text (may be empty).
 function _on_user_banned(steam_id, nickname, reason) end
+
+--- Called on an entity moved with navigate_to() when it stops on its own:
+--- reached the target (true) or gave up because no path exists / it got stuck
+--- (false). Not called when you stop it yourself with navigate_to(name, "").
+--- Runs on the peer that called navigate_to (the HOST for DYNAMIC entities).
+--- You may call navigate_to again from inside this callback.
+---@param reached boolean True if the target was reached.
+function _on_navigation_finished(reached) end
 
 ---------------------------------------------------
 -- CORE FUNCTION EXECUTION
@@ -358,6 +382,16 @@ function freeze_entity(entity_name, all) end
 ---@param all? boolean Also unfreeze on all clients (Host only). Default: true.
 function unfreeze_entity(entity_name, all) end
 
+--- Check whether an entity (or one of its children) is still in the world,
+--- WITHOUT logging an error when it is not. get_value() and every other lookup
+--- push an error for a missing entity, which is what you want for a typo but
+--- not for an effect that can outlive its target - e.g. a per-frame hit flash
+--- on a monster that the killing blow just destroyed.
+---@param entity_name string Entity (or child node) name to look for.
+---@param parent_name? string Parent entity name when checking a child such as an image or a label. Default: "".
+---@return boolean True if the entity exists right now.
+function entity_exists(entity_name, parent_name) end
+
 ---------------------------------------------------
 -- ENTITY TAGS
 ---------------------------------------------------
@@ -398,7 +432,7 @@ function get_nearest_entity_by_tag(entity_name, tag, excluded_entities) end
 --- Config parameters:
 ---   - parent_name (string, required): Parent entity name.
 ---   - name (string, optional): Image node name. Default: auto-generated.
----   - image_path (string, optional): Path to image in mod/general/images/ (without .png extension). If empty and creating new sprite, uses default icon. Default: "".
+---   - image_path (string, optional): Path to image in mod/general/images/ (without .png extension). If empty and creating new sprite, uses default icon. Also accepts "card:<card_id>:front" or "card:<card_id>:back" to show a live-rendered (localized) card face instead of a plain file. Default: "".
 ---   - position (Vector2, optional): Position offset from parent. Default: Vector2(0, 0).
 ---   - scale (Vector2, optional): Scale the image to this pixel size (based on texture size). Cannot use with 'size'. Default: none.
 ---   - size (Vector2, optional): Direct scale multiplier. Cannot use with 'scale'. Default: none.
@@ -598,6 +632,24 @@ function create_painting_panel(config) end
 ---@param pixel_size? Vector2 Desired size in pixels. Default: Vector2(32, 32).
 function set_image_pixel(parent_name, image_name, pixel_size) end
 
+-- Give a world image a ground shadow that is part of the map's shadow: a
+-- blurred clone of the image's alpha, standing on its lowest opaque pixel and
+-- laid on the ground the way the walls' shadows fall - exactly shadow_length
+-- long, fading out at the tip like a wall's shadow. It is merged into the
+-- global shadow before the colour is applied, so overlapping shadows (image or
+-- wall) never change the alpha, and an image is never darkened by an image
+-- shadow. Follows set_shadow (colour, angle, length, visibility). An image drawn
+-- round by the circle shader casts a round shadow. Local only (call it on every
+-- peer, like set_image); images outside the camera cost nothing. Follows the
+-- image's visibility/alpha, texture swaps, frames and flips; ignores rotation.
+-- Note: the global tile shadow only darkens images at z_index <= 0.
+---@param entity_name string Parent entity name (the image's parent_name).
+---@param image_name string Image node name (as returned by set_image).
+---@param enabled boolean true = add/update the shadow, false = remove it.
+---@param y_offset? number Height above the ground in pixels: the shadow lies this far BELOW the image and smaller (e.g. 10 for a flying butterfly). Default: 0.
+---@return boolean ok false if the image does not exist.
+function set_shadow_of_image(entity_name, image_name, enabled, y_offset) end
+
 --- Set or create a text label on an entity.
 --- Config parameters:
 ---   - parent_name (string, required): Parent entity name.
@@ -690,6 +742,27 @@ function set_button(config) end
 ---   - parent_name (string, required): Parent entity name.
 ---   - shader_name (string, optional): Shader file name (without .gdshader extension) from res://shaders/. If empty or omitted, removes the shader. Default: "".
 ---   - Additional shader-specific parameters can be added and will be passed to the shader as uniforms.
+---
+--- HIT FEEDBACK ("hit_flash", and the same uniforms inside "circle"):
+--- an impact effect for a sprite - a solid colour flash, an area-preserving
+--- squash & stretch (wider, shorter) and a decaying elastic wobble. All of it
+--- is driven by ONE uniform, so the whole hit costs a single float per frame:
+--- set `hit = 1.0` at the moment of impact and fade it to 0.0 over ~0.25 s.
+--- At hit = 0.0 nothing is applied, so the shader is free when nobody is hurt.
+--- "circle" carries the identical uniforms because a sprite has only one
+--- material - use it instead of "hit_flash" on anything already outlined.
+---   - hit (number): 0..1 effect strength. 1 = the frame of impact.
+---   - hit_dir (number): sign of the wobble. Pass cos(hit angle) so the sprite
+---       tips away from the blow. Default: 1.0.
+---   - hit_color (Color): the flash colour. Default: white.
+---   - hit_squash (number): peak horizontal stretch, vertical is 1/x. Default: 0.35.
+---   - hit_spin (number): peak rotation in radians. Default: 0.3.
+---   - hit_wobbles (number): oscillations over the life of the effect. Default: 2.5.
+---   - hit_flash_start / hit_flash_full (number): the flash is a HOLD, not a
+---       fade - solid colour while hit is above hit_flash_full, gone below
+---       hit_flash_start. Defaults: 0.6 / 0.75.
+--- Only RGB is flashed, so transparent pixels stay transparent. The uniforms
+--- stay on the material, so a per-frame update only needs `hit`.
 ---@param config table Shader configuration dictionary.
 function set_shader(config) end
 
@@ -735,10 +808,14 @@ function set_unique_physics_material(entity_name, state) end
 ---@param velocity Vector2 Velocity to add.
 function add_linear_velocity(entity_name, velocity) end
 
---- Get all entities currently overlapping with an entity's area.
----@param entity_name string Entity with area shape.
+--- Get all entities currently overlapping with one area of an entity.
+--- Always pass a tag: with tag = "" the engine returns raw nodes, not names.
+---@param parent_name string Parent of the entity ("" for world-level entities).
+---@param entity_name string Entity that owns the area.
+---@param area_name string Area node name (the name set_area returned / was given).
+---@param tag? string Only return overlapping entities with this tag. Default: "".
 ---@return table Array of overlapping entity names.
-function get_overlapping_entities(entity_name) end
+function get_overlapping_entities(parent_name, entity_name, area_name, tag) end
 
 --- Move entity towards a target entity using simple following.
 ---@param entity_name string Entity to move.
@@ -838,6 +915,74 @@ function set_shadow(config) end
 ---@return table Dictionary with keys: visible, shadow_color, shadow_angle, shadow_length, shadow_blur.
 function get_shadow_settings() end
 
+--- Fog of war (LOCAL: every peer runs its own, nothing is networked - call it in
+--- the local player's script, e.g. `if IS_LOCAL then ... end` in user.lua).
+--- Never-seen ground is black, ground seen before is dimmed, and everything
+--- within `radius` tiles that the origin has a line of sight to is shown
+--- normally. Sight is blocked by tiles/polygons that cast a SHADOW (the shadow
+--- setting of a plain tile, a dual-grid layer's shadow quarters, a polygon's
+--- shadow type) - so walls block it and furniture without a shadow does not.
+--- Config parameters (all optional):
+---   - radius (number): Sight radius in tiles. Default: 8.
+---   - explored_color (Color): Overlay over explored-but-not-visible ground. Default: Color(0, 0, 0, 0.65).
+---   - unexplored_color (Color): Overlay over never-seen ground. Default: Color(0, 0, 0, 1).
+---   - softness (number): Width of the soft edge of the sight circle, in tiles. Default: 1.
+---   - hide_tag (string): Entities with this tag (add_tag) are hidden while the
+---       origin cannot see them (other players, monsters...). Only their drawing
+---       is hidden; `visible` and everything else stay untouched. Default: "" (none).
+---   - reset (boolean): Forget everything explored so far. Default: false.
+--- set_fog_of_war(false) turns it off. It also turns off when the map reloads.
+--- Example: set_fog_of_war(true, LOCAL_STEAM_ID, { radius = 8, hide_tag = "fog_hide" })
+---@param enabled boolean Turn fog of war on or off.
+---@param origin_entity_name? string The entity whose eyes the fog follows (usually LOCAL_STEAM_ID).
+---@param config? table Optional settings (see above).
+function set_fog_of_war(enabled, origin_entity_name, config) end
+
+--- Reveal a circle of the fog of war for a while, walls or not (a noise the
+--- player heard, a flare, a scanner). Entities in the hide_tag inside it show up
+--- too. Local to this peer, like the fog itself.
+---@param world_pos Vector2 Centre of the revealed circle (world position).
+---@param radius_tiles? number Radius in tiles. Default: 2.
+---@param seconds? number How long it stays revealed. Default: 2.
+function reveal_fog(world_pos, radius_tiles, seconds) end
+
+--- Full-screen CRT look: scanlines, colour fringing toward the screen edges and a
+--- faint flicker, drawn behind the HUD. Local to this peer (call it per player,
+--- e.g. stronger when danger is near). The map editor's map settings hold the
+--- default for the map ("CRT Effect Settings").
+--- Config parameters (all optional, only the ones you pass change):
+---   - visible (boolean): Default: false.
+---   - intensity (number): 0..1, scales everything at once. Default: 0.35.
+---   - scanline_size (number): Pixels per scanline pair, in base-resolution (UI) pixels so it looks the same at any window size. Default: 3.
+---   - scanline_strength (number): 0..1, how dark the scanlines get. Default: 0.35.
+---   - aberration (number): Colour fringing at the screen edge, in pixels. Default: 1.5.
+---   - flicker (number): 0..1. Default: 0.04.
+---@param config table CRT settings.
+function set_crt(config) end
+
+---@return table { visible, intensity, scanline_size, scanline_strength, aberration, flicker }
+function get_crt_settings() end
+
+--- Full-screen animated noise (film grain with a faint rolling band), drawn
+--- behind the HUD. Local to this peer. Default per map in the map editor
+--- ("Screen Noise Settings").
+--- Config parameters (all optional):
+---   - visible (boolean): Default: false.
+---   - intensity (number): 0..1 opacity. Default: 0.12.
+---   - grain_size (number): Grain size in base-resolution (UI) pixels. Default: 2.
+---   - speed (number): New grain patterns per second. Default: 24.
+---   - color (Color): Grain colour. Default: white.
+---@param config table Noise settings.
+function set_screen_noise(config) end
+
+---@return table { visible, intensity, grain_size, speed, color }
+function get_screen_noise_settings() end
+
+--- What the local fog of war shows at a world position.
+---@param world_pos Vector2 World position.
+---@return integer 0 = never seen, 1 = seen before (dimmed), 2 = visible right now. Always 2 while fog of war is off.
+function get_fog_state(world_pos) end
+
 ---------------------------------------------------
 -- PARTICLES
 ---------------------------------------------------
@@ -929,6 +1074,23 @@ function get_cached_particle_count() end
 ---@param config table Line configuration dictionary.
 ---@return string Line identifier (name).
 function set_line(config) end
+
+--- Draw or update a circle outline (a closed Line2D). Circles share the line registry, so
+--- destroy_line(name), line_exists(name) and destroy_all_lines() work on them too.
+--- Config parameters:
+---   - name (string, required): Circle identifier.
+---   - parent_name (string, optional): Entity to attach to; the circle then follows it and `position` is relative to it. Only read when the circle is created.
+---   - position (Vector2, optional): Center (world position, or relative to parent_name). Default: Vector2(0, 0).
+---   - radius (number, optional): Radius in pixels. Default: 32.
+---   - segments (integer, optional): Smoothness, 8 to 256. Default: 64.
+---   - color (Color, optional): Outline color. Default: Color.WHITE.
+---   - width (number, optional): Outline width in pixels. Default: 2.0.
+---   - fill_color (Color, optional): Fills the inside with this color (alpha included). Alpha 0 removes the fill. Default: no fill.
+---   - z_index (integer, optional): Rendering order (-999 to 999). Default: 100.
+---   - visible (boolean, optional): Show or hide. Default: true.
+---@param config table Circle configuration dictionary.
+---@return string Circle identifier (name).
+function set_circle(config) end
 
 --- Remove a line shape.
 ---@param line_name string Line identifier.
@@ -1134,6 +1296,15 @@ function card_draw(deck_name, target_steam_id) end
 ---@param count integer How many cards from the top.
 ---@param target_steam_id string Peeking player's Steam id string.
 function card_peek(deck_name, count, target_steam_id) end
+
+--- HOST ONLY: same information as card_peek(), returned synchronously instead
+--- of via the _on_card_peek callback. Use this for host-side logic that has no
+--- client peer to call that back on (e.g. bot AI reacting to its own "see the
+--- future" card) - a bot has no screen, so nothing is ever sent over the wire.
+---@param deck_name string Deck identifier.
+---@param count integer How many cards from the top.
+---@return table Array of card ids, index 1 = top of the deck.
+function card_peek_host(deck_name, count) end
 
 --- HOST ONLY: put a card (from a hand or the table) back into a deck.
 ---@param uid string Card uid.
@@ -1384,6 +1555,24 @@ function _on_vn_choice(story_id, node_id, choice) end
 ---@param node_id string The last node id ("" if it ran off a dangling link).
 function _on_vn_end(story_id, node_id) end
 
+--- Show the OTHER players' mouse cursors in the world. Call it once (world.lua runs
+--- on every peer, so that configures everyone) and the engine does the rest: each
+--- peer sends its own mouse position, the host relays them in one batched message,
+--- and every peer draws them at a constant screen size, upright under any camera
+--- zoom/rotation. Your own cursor is never drawn (the OS cursor is there). No
+--- set_input_display_name("stick_2") and no per-frame network calls are needed.
+--- Call it again at any time to change the look; set_cursor(false) hides them all.
+--- With steam_id the call styles just that player; its nil fields fall back to
+--- the everyone-setting, e.g. per-player colours:
+---   set_cursor(true)                                   -- world.lua: everyone, defaults
+---   set_cursor(true, nil, outline_color, nil, name)    -- user.lua: this player's colour
+---@param enabled boolean Show (true) or hide (false) the cursors.
+---@param text? string Label under the cursor. nil = the player's nickname, "" = no label, otherwise this text ({keyword} tokens are translated per peer).
+---@param color? Color Tint of the icon and label. nil = a distinct automatic colour per player.
+---@param icon? string PNG under general/images/ (".png" optional). nil = the built-in hand cursor.
+---@param steam_id? string Only this player. nil = everyone.
+function set_cursor(enabled, text, color, icon, steam_id) end
+
 --- Set a navigation icon marker on an entity.
 --- This creates an off-screen indicator that points to the target entity when it's outside the viewport.
 --- Config parameters:
@@ -1394,6 +1583,9 @@ function _on_vn_end(story_id, node_id) end
 ---   - color (Color, optional): Icon color tint. Default: Color.WHITE.
 ---   - is_rotate (boolean, optional): Whether icon rotates to point at target. Default: true.
 ---   - is_show_distance (boolean, optional): Show distance to target in label. Default: false.
+---   - show_on_screen (boolean, optional): Keep the icon while the target is ON screen too,
+---     hovering above it and pointing down at it. false = hide it once the target is visible. Default: false.
+---   - on_screen_offset (number, optional): How many screen pixels above the target it hovers. Default: 40.
 ---   - font_size (integer, optional): Label font size. Default: system default.
 ---   - font_color (Color|string, optional): Label text color. Default: system default.
 ---   - outline_color (Color|string, optional): Label outline color. Default: system default.
@@ -1687,6 +1879,19 @@ function open_profile(steam_id) end
 ---@return string Audio player identifier (name), or "" on error.
 function set_audio(config) end
 
+--- Update the volume of an ALREADY-PLAYING audio player WITHOUT restarting it.
+--- set_audio() always restarts playback from the beginning, even when reusing
+--- an existing player by name - fine for a one-shot sound effect, but it means
+--- set_audio can never smoothly fade a continuous looping track (each call
+--- would snap it back to the start). Use this instead once the player already
+--- exists (created via set_audio with an explicit name/parent_name) to ramp
+--- its volume over several calls, e.g. for a day/night ambience crossfade.
+---@param parent_name string Entity the audio player is attached to (same value passed as set_audio's parent_name).
+---@param entity_name string The audio player's name (same value passed as set_audio's name).
+---@param volume_db number New volume in decibels.
+---@return boolean True if a matching, currently-alive audio player was found and updated.
+function set_audio_volume(parent_name, entity_name, volume_db) end
+
 --- Add an audio effect to a bus.
 --- Config parameters:
 ---   - bus_name (string, optional): Audio bus name (auto-formatted). Default: "Effect".
@@ -1871,18 +2076,65 @@ function get_map_list() end
 function get_tile(x, y) end
 
 --- Set a tile at a map coordinate.
---- `tileset_id` selects which tileset source (default 0 = first tileset). If that
---- tileset has autotile enabled (via the editor's Tile Maps panel), `atlas_coords`
---- is ignored and the correct 47-blob tile is chosen automatically from neighbours
---- (and neighbouring tiles are re-fitted too).
---- Pass `atlas_coords = Vector2(-1, -1)` to ERASE the cell (autotile neighbours are
---- re-fitted around the hole — handy for carving a doorway/opening at runtime).
+--- `tileset_id` selects which tileset source (default 0 = first tileset).
+--- PLAIN tileset: `atlas_coords` is the tile to place.
+--- 15-TILE DUAL-GRID tileset (mode "dual15" in the editor's Tile Maps panel):
+--- `atlas_coords` is ignored and the right transition tile is chosen from the
+--- four cells around each corner automatically (neighbours re-fit by themselves).
+---   * opaque layer      -> the cell's terrain becomes this layer's UPPER terrain
+---                          (use set_dual_tile(..., true) for its lower terrain)
+---   * transparent layer -> this layer is added to the cell; it replaces whatever
+---                          transparent tile the cell had in the SAME slot, tiles in
+---                          other slots stay (e.g. a tree in slot 1 over grass in slot 0)
+--- Pass `atlas_coords = Vector2(-1, -1)` to ERASE: a plain cell is cleared, an opaque
+--- layer clears the cell's terrain, a transparent layer is removed only if the cell
+--- holds that layer.
+--- Dual-grid drawing/collision is batched and applied at the end of the frame.
 ---@param x number Tile X coordinate.
 ---@param y number Tile Y coordinate.
 ---@param atlas_coords Vector2 Atlas coordinates of the tile, or (-1,-1) to erase.
 ---@param tileset_id? number Tileset source id (default 0).
 ---@return boolean True on success, false if no tileset is loaded.
 function set_tile(x, y, atlas_coords, tileset_id) end
+
+--- Clear EVERYTHING in a cell: the plain tile, the dual-grid terrain and every
+--- transparent dual-grid tile in every slot. Handy before repainting a cell from
+--- scratch.
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+function clear_tile(x, y) end
+
+--- Paint a 15-tile dual-grid layer into a cell. For an OPAQUE layer `lower = true`
+--- paints the layer's LOWER terrain instead (for the first opaque layer that is the
+--- base terrain baked into its sheet, e.g. the dirt under a dirt->sand sheet).
+--- For a transparent layer this is the same as set_tile.
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+---@param tileset_id number A dual-grid tileset id.
+---@param lower? boolean Paint the lower terrain (opaque layers only). Default false.
+---@return boolean False if the id is not a dual-grid tileset.
+function set_dual_tile(x, y, tileset_id, lower) end
+
+--- What a cell holds in the dual-grid layers.
+--- `terrain` is an opaque layer id, -2 for the base terrain, -1 for none;
+--- `overlays` lists the transparent layer ids in the cell (slot order).
+---@param x number Tile X coordinate.
+---@param y number Tile Y coordinate.
+---@return table {terrain = number, overlays = number[]}
+function get_dual_tile(x, y) end
+
+--- Change the animation speed of a dual-grid tileset live (frames per second,
+--- 0.1..60). Local to this peer and not saved; the speed set in the editor (the
+--- map's info.json) is the default. Frames themselves are set in the editor.
+---@param tileset_id number A dual-grid tileset id.
+---@param fps number Frames per second.
+---@return boolean False if the id is not a dual-grid tileset.
+function set_tileset_animation(tileset_id, fps) end
+
+--- Animation of a dual-grid tileset.
+---@param tileset_id number Tileset id.
+---@return table {frames = number (1 = still, 0 = not a dual-grid tileset), fps = number}
+function get_tileset_animation(tileset_id) end
 
 --- HOST ONLY: allow or forbid the minimap (default: forbidden). This is the only
 --- thing that travels over the network — the map IMAGE itself never does: every
@@ -1896,8 +2148,8 @@ function set_minimap(allowed) end
 --- Returns "" while the host has not called set_minimap(true) — check for it.
 --- The texture is built locally and keeps updating live while it is on screen
 --- (new chunks appear as they load). Each (tileset, tile) pair gets its own
---- colour (the average of its texture); tiles with collision are drawn darker;
---- 47-blob autotile sources use one shared colour. Works in any mod — nothing
+--- colour (the average of its texture); a dual-grid cell takes its topmost
+--- layer's full-tile colour; tiles with collision are drawn darker. Works in any mod — nothing
 --- about it is game-specific.
 ---@return string Texture key for set_image's image_path, or "" if not allowed.
 function get_minimap() end
@@ -1969,6 +2221,64 @@ function create_minimap_panel(config) end
 ---  ray end so you can still draw a full-length tracer.
 function raycast(config) end
 
+---------------------------------------------------
+-- PATHFINDING (AStarGrid2D)
+---------------------------------------------------
+-- Works on a grid of HALF tiles built from the map: plain tiles with collision,
+-- 15-tile dual-grid collision quarters and polygon walls are blocked; one-way
+-- tiles are not. It follows tile changes made at runtime (set_tile etc.).
+-- Settings live in the map editor (Tile Maps -> map settings -> Pathfinding)
+-- and can be changed at runtime with set_pathfinding.
+
+--- Find a path between two world positions.
+--- A target inside a wall is moved to the nearest walkable spot.
+---@param from Vector2 Start (world position).
+---@param to Vector2 Target (world position).
+---@return table Array of Vector2 waypoints (the start is not included), or an empty table if there is no path.
+function find_path(from, to) end
+
+--- Move an entity along a path to a target - like go_to_target, but around walls.
+--- The engine steers the entity every physics frame at its `speed` (pixels per
+--- second, set it with set_value or a `speed = 120` top variable) and calls
+--- _on_navigation_finished(reached) on it when it arrives or gives up.
+--- A target ENTITY is followed: the path is recomputed while it moves.
+--- Not for players (they move by input). DYNAMIC entities: call it on the HOST.
+--- Config parameters (all optional):
+---   - stop_distance (number): Arrive when this close to the target, in pixels. Default: 8.
+---   - speed (number): Speed in pixels per second. Default: the entity's `speed`.
+---   - rotate (boolean): Turn the entity to face where it walks. Default: false.
+---   - radius (number): Body radius used when straightening the path. Default: 6.
+---@param entity_name string Entity to move.
+---@param target string|Vector2 Target entity name, or a world position. "" stops (no callback).
+---@param config? table Optional settings (see above).
+---@return boolean True if the entity started moving (or was stopped).
+function navigate_to(entity_name, target, config) end
+
+--- Whether a world position is walkable for pathfinding (respects `clearance`).
+---@param world_pos Vector2 World position.
+---@return boolean True if walkable.
+function is_point_walkable(world_pos) end
+
+--- Whether nothing that blocks SIGHT lies between two world positions: tiles and
+--- polygons that cast a shadow (walls). Furniture without a shadow does not block.
+--- Same rule as the fog of war - handy for "can the monster see the player?".
+---@param from Vector2 Start (world position).
+---@param to Vector2 End (world position).
+---@return boolean True if there is a clear line of sight.
+function has_line_of_sight(from, to) end
+
+--- Change the pathfinding settings at runtime (the map's editor values are the default).
+--- Config parameters (all optional):
+---   - diagonal (string): "no_obstacles" (only when no wall is touched, default), "at_least_one", "always" or "never".
+---   - wall_weight (number): 0 = shortest path; higher keeps paths away from walls. Default: 0.
+---   - clearance (integer): Grow walls by this many half tiles (0-4) for big entities. Default: 0.
+---@param config table Settings to change.
+function set_pathfinding(config) end
+
+--- Current pathfinding settings.
+---@return table { diagonal = string, wall_weight = number, clearance = integer }
+function get_pathfinding() end
+
 --- Convert map coordinates to world position.
 ---@param tile_position Vector2 Tile coordinates.
 ---@return Vector2 World position.
@@ -2025,10 +2335,53 @@ function vector2_to_string(vec) end
 ---------------------------------------------------
 
 --- Set a custom display name for an input (for UI hints).
---- Available input names: key_1 to key_15, stick_1, stick_2.
+--- Available input names: key_1 to key_13, stick_1, stick_2.
 ---@param input_name string Input key name (e.g., "key_6", "stick_1").
 ---@param display_name string Display name to show in UI (e.g., "Jump", "Move").
 function set_input_display_name(input_name, display_name) end
+
+---------------------------------------------------
+-- ROLES (every peer)
+-- host > owner > moderator > player. The host is the lobby owner of a listen
+-- server, or the dedicated server itself; owners are listed in a dedicated
+-- server's server.json; moderators are appointed by an owner or the host and
+-- remembered by the server.
+---------------------------------------------------
+
+--- Whether this player may do "host only" things: true for the host and for a
+--- dedicated server's owners. On a listen server this is exactly
+--- `steam_id == HOST_STEAM_ID`, so replacing that comparison changes nothing
+--- there and makes the button work on a dedicated server too.
+---@param steam_id string
+---@return boolean
+function is_admin(steam_id) end
+
+--- "host", "owner", "moderator" or "player".
+---@param steam_id string
+---@return string
+function get_role(steam_id) end
+
+--- Whether `actor` may kick/ban `target`: a moderator or above, strictly
+--- outranking the target (moderators cannot act on each other).
+---@param actor_id string
+---@param target_id string
+---@return boolean
+function can_moderate(actor_id, target_id) end
+
+--- HOST ONLY. Appoint a moderator (persisted by the server). Returns false when
+--- nothing changed (already a moderator, or an owner).
+---@param steam_id string
+---@return boolean
+function add_moderator(steam_id) end
+
+--- HOST ONLY. Remove a moderator. Returns false when they were not one.
+---@param steam_id string
+---@return boolean
+function remove_moderator(steam_id) end
+
+--- The current moderators' ids.
+---@return string[]
+function get_moderators() end
 
 ---------------------------------------------------
 -- MODERATION (HOST ONLY)
@@ -2036,13 +2389,16 @@ function set_input_display_name(input_name, display_name) end
 
 --- Kick a user from the lobby.
 ---@param steam_id string Target user's Steam ID.
-function kick_user(steam_id) end
+---@param reason? string Reason shown to them. Default: "".
+---@param actor_id? string Who asked for it. When given, the kick only happens if can_moderate(actor_id, steam_id); a moderation mod relaying a request from another player should pass that player's sender_id here.
+function kick_user(steam_id, reason, actor_id) end
 
 --- Ban a user from the room for a specified duration.
 ---@param steam_id string Steam ID of the user to ban.
 ---@param duration integer Duration in seconds.
 ---@param reason? string Reason for the ban. Default: "".
-function ban_user(steam_id, duration, reason) end
+---@param actor_id? string Same as kick_user's actor_id.
+function ban_user(steam_id, duration, reason, actor_id) end
 
 --- Unban a user.
 ---@param steam_id string Target user's Steam ID.

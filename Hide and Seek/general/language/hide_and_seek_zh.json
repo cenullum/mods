@@ -19,6 +19,7 @@
     "{hiders}": "躲藏者：",
     "{host_pick_the_map}": "[b]房主：请选择地图[/b]",
     "{hunt_begins_in}": "距离狩猎开始还有 ",
+    "{match_starts_by_itself}": "没有管理者在场：比赛将在 20 秒后自动开始。",
     "{more_to_start_the_hunt}": " 人即可开始狩猎。",
     "{more}": " 人)",
     "{movement_mode}": "移动模式",

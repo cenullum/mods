@@ -14,13 +14,10 @@ singleton_name = "w"
 -- chat line the mod shows. Nothing user-facing is written in this script.
 -- =============================================================================
 
--- REQUIRED for user.lua's cursor sync: the engine only gathers "stick_2"
--- (world mouse position) into _process()'s inputs table for inputs that have
--- a registered display name (see input_manager.gd::gather_local_inputs -
--- "if not input_name in display_names: continue"). Without this call every
--- peer's stick_2 is nil forever and no one's cursor ever shows up (same
--- requirement Hook Up's world.lua has for its own cursor).
-set_input_display_name("stick_2","{mouse}")
+-- Everyone sees everyone else's mouse cursor (engine-side, see set_cursor in
+-- the manual). The per-player colours are set by od_manager.sync_ALL, so each
+-- cursor matches its owner's nickname colour in the scoreboard.
+set_cursor(true)
 
 set_background_color(Color(0.07, 0.08, 0.11, 1))
 -- Straight-down fallback for before we're seated/rotated; once seated,
@@ -133,3 +130,6 @@ load_cards_from_data({
 
 card_set_listener("-od_manager")
 card_set_hand_ui({ height = 165, separation = -38 })
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "operation_detonate")

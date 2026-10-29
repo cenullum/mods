@@ -431,6 +431,7 @@ function end_round(reason)
         players[drawer_id] and players[drawer_id].name or "{player}",
         drawer_round_bonus,
         lines,
+        reason,
     }, "")
     broadcast_scoreboard()
 
@@ -511,8 +512,14 @@ function hint_ALL(sender_id, word_key, used, maxr, seed)
 end
 
 function correct_guess_ALL(sender_id, guesser_id, guesser_name, pts)
+    local first = next(cl_correct) == nil
     cl_correct[guesser_id] = true
     run_function(UI, "on_correct_guess", { guesser_id, guesser_name, pts })
+    if guesser_id == LOCAL_STEAM_ID then
+        add_achievement_progress("dtw_guesses", 1)
+        if first then add_achievement_progress("dtw_first_guesses", 1) end
+    end
+    if cl_drawer_id == LOCAL_STEAM_ID then add_achievement_progress("dtw_drawings_guessed", 1) end
 end
 
 function broadcast_chat_ALL(sender_id, chat_name, chat_text)
@@ -528,15 +535,22 @@ function turn_skipped_ALL(sender_id, skipped_name, reason)
     run_function(UI, "on_turn_skipped", { skipped_name, reason })
 end
 
-function round_end_ALL(sender_id, word, p_drawer_name, bonus, lines)
+function round_end_ALL(sender_id, word, p_drawer_name, bonus, lines, reason)
     cl_phase = "intermission"
     run_function(UI, "on_round_end", { word, p_drawer_name, bonus, lines })
+    if reason == "all_guessed" and cl_drawer_id == LOCAL_STEAM_ID and type(lines) == "table" and #lines >= 2 then
+        unlock_achievement("DTW_MASTERPIECE")
+    end
 end
 
 function game_over_ALL(sender_id, scoreboard)
     cl_phase = "gameover"
     cl_drawer_id = ""
     run_function(UI, "on_game_over", { scoreboard })
+    local top, second = scoreboard and scoreboard[1], scoreboard and scoreboard[2]
+    if top and second and top.steam_id == LOCAL_STEAM_ID and top.score > second.score then
+        unlock_achievement("DTW_WIN")
+    end
 end
 
 function reset_ALL(sender_id)

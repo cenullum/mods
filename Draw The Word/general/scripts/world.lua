@@ -54,3 +54,6 @@ set_image({
 
 -- Start locked: nobody may draw until dtw_manager begins a round.
 set_painter(BOARD, 0)
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "draw_the_word")

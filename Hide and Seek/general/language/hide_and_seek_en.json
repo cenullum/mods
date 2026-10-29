@@ -19,6 +19,7 @@
     "{hiders}": "Hiders: ",
     "{host_pick_the_map}": "[b]Host: pick the map[/b]",
     "{hunt_begins_in}": "Hunt begins in ",
+    "{match_starts_by_itself}": "No admin is playing: the match starts by itself in 20 seconds.",
     "{more_to_start_the_hunt}": " more to start the hunt.",
     "{more}": " more)",
     "{movement_mode}": "Movement Mode",

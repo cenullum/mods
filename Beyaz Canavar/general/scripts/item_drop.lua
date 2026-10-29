@@ -1,6 +1,13 @@
 network_mode = 1
 freeze = true
 
+-- -gm is a network singleton: on a joining player it arrives a moment after
+-- this script runs, so ask it only once it exists (get_role's own default).
+local function gm_role(id)
+    if not entity_exists("-gm") then return "human" end
+    return run_function("-gm", "get_role", { id })
+end
+
 -- =============================================================================
 -- Beyaz Canavar - a task item lying on the floor (the master key, plan pieces
 -- or the logbook), dropped where its carrier was caught. Spawned by the host
@@ -20,7 +27,7 @@ set_circle({ name = "ring_" .. name, parent_name = name, radius = 7, width = 2,
 
 local shown = false
 local function refresh()
-    local human = run_function("-gm", "get_role", { LOCAL_STEAM_ID }) == "human"
+    local human = gm_role(LOCAL_STEAM_ID) == "human"
     if human ~= shown then
         shown = human
         set_label({ parent_name = name, name = "tag", visible = human })

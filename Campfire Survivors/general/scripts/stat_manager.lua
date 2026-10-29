@@ -22,7 +22,7 @@ local weapon_upgrades = {
 {id = 5, name = "{stat_projectile_penetration}", description ="{bullets_penetrate_through_one_enemy}", value = 1},
 {id = 6, name = "{stat_lifesteal}", description ="{recover_1_of_damage_as_health}", value = 0.01},
 {id = 7, name = "{stat_knockback_power}", description ="{increases_enemy_pushback_by_20}", value = 0.20},
-{id = 8, name = "{stat_damage}", description ="{increases_bullet_damage_by_15}", value = 0.15}
+{id = 8, name = "{stat_damage}", description ="{increases_damage_of_all_weapons_by_15}", value = 0.15}
 }
 
 -- Create lookup tables for faster access by ID
@@ -53,39 +53,88 @@ local local_reroll_right = false -- Client-side tracking of reroll right
 local local_remaining_rights = 0 -- Client-side tracking of remaining rights
 local local_next_upgrade_level = 0 -- Client-side tracking of next upgrade level
 local local_selected_upgrade_ids={}
--- Generate a set of random upgrade IDs (network optimized)
-function generate_random_upgrade_ids()
+-- Card types: 0 = character stat, 1 = gun stat ("weapon" in the panel and the
+-- stats table, from before the arsenal existed), 2 = ARSENAL card - a new
+-- weapon or the next level of one the player carries (weapons.lua).
+local CARD_ARSENAL = 2
+
+-- How a panel is dealt, the way Vampire Survivors-likes do it:
+--   * ONE arsenal card in every panel while there is something to offer;
+--   * weapons the player already carries come first (OWNED_FIRST_CHANCE), so a
+--     build can actually be finished instead of being offered a fifth new toy;
+--   * a new weapon only while a slot is free (weapons.lua ARSENAL_SLOTS);
+--   * the rest of the panel is the old stat cards - 2 character + 1 gun (2 gun
+--     when there is no arsenal card, i.e. the old 2 + 2 panel).
+-- Half of every panel still makes you stronger at killing and half keeps you
+-- alive, as before, so a player who picks at random grows as fast as before.
+local OWNED_FIRST_CHANCE = 0.65
+
+-- `how_many` distinct random indices in 1..count
+local function pick_distinct(count, how_many)
+    local picked = {}
+    while #picked < math.min(how_many, count) do
+        local index = math.random(1, count)
+        if not table_contains(picked, index) then
+            table.insert(picked, index)
+        end
+    end
+    return picked
+end
+
+-- The arsenal card for this player's next panel, or nil when every slot is
+-- taken and every weapon carried is at its last level.
+function pick_arsenal_card(steam_id)
+    local levels = run_function("-wpn", "get_levels", { steam_id }) or {}
+    local max_level = math.floor(get_value("", "-wpn", "MAX_LEVEL") or 5)
+    local slots = math.floor(get_value("", "-wpn", "ARSENAL_SLOTS") or 2)
+    local count = math.floor(get_value("", "-wpn", "WEAPON_COUNT") or 4)
+    local owned = 0
+    local upgradable = {}
+    local fresh = {}
+    for weapon_id = 1, count do
+        local level = math.floor(levels[weapon_id] or 0)
+        if level > 0 then
+            owned = owned + 1
+            if level < max_level then
+                table.insert(upgradable, { id = weapon_id, lv = level + 1 })
+            end
+        else
+            table.insert(fresh, weapon_id)
+        end
+    end
+    if owned >= slots then
+        fresh = {}
+    end
+    if #upgradable == 0 and #fresh == 0 then
+        return nil
+    end
+    if #upgradable > 0 and (#fresh == 0 or math.random() < OWNED_FIRST_CHANCE) then
+        local pick = upgradable[math.random(1, #upgradable)]
+        return { type = CARD_ARSENAL, id = pick.id, lv = pick.lv }
+    end
+    return { type = CARD_ARSENAL, id = fresh[math.random(1, #fresh)], lv = 1 }
+end
+
+-- Generate a set of random upgrade IDs (network optimized: only type + id,
+-- plus the level an arsenal card leads to so the client can describe it)
+function generate_random_upgrade_ids(steam_id)
     local options = {}
 
-    -- Pick 2 random character upgrades
-    local char_indices = {}
-    while #char_indices < 2 do
-        local index = math.random(1, #character_upgrades)
-        if not table_contains(char_indices, index) then
-            table.insert(char_indices, index)
-        end
+    local arsenal = steam_id and pick_arsenal_card(steam_id) or nil
+    if arsenal then
+        table.insert(options, arsenal)
     end
 
-    -- Pick 2 random weapon upgrades
-    local weapon_indices = {}
-    while #weapon_indices < 2 do
-        local index = math.random(1, #weapon_upgrades)
-        if not table_contains(weapon_indices, index) then
-            table.insert(weapon_indices, index)
-        end
-    end
-
-    -- Store only the type (0 for character, 1 for weapon) and ID of each upgrade
-    for _, idx in ipairs(char_indices) do
+    for _, idx in ipairs(pick_distinct(#character_upgrades, 2)) do
         table.insert(options, {
         type = 0, -- 0 = character
         id = character_upgrades[idx].id
         })
     end
 
-    for _, idx in ipairs(weapon_indices) do
+    for _, idx in ipairs(pick_distinct(#weapon_upgrades, arsenal and 1 or 2)) do
         table.insert(options, {
-        type = 1, -- 1 = weapon
+        type = 1, -- 1 = gun
         id = weapon_upgrades[idx].id
         })
     end
@@ -107,6 +156,18 @@ end
 function get_upgrade_from_id(upgrade_id_ref)
     local upgrade_data = nil
     local upgrade_type = "character"
+
+    if upgrade_id_ref.type == CARD_ARSENAL then
+        local info = run_function("-wpn", "card_info", { upgrade_id_ref.id, upgrade_id_ref.lv })
+        if info then
+            upgrade_data = { name = info.name, description = info.desc, icon = info.icon }
+        end
+        return {
+        type = "arsenal",
+        data = upgrade_data,
+        level = math.floor(upgrade_id_ref.lv or 1)
+        }
+    end
 
     if upgrade_id_ref.type == 0 then
         upgrade_data = character_upgrades_by_id[upgrade_id_ref.id]
@@ -267,7 +328,7 @@ function send_upgrade_options_to_player(steam_id)
     players_reroll_rights[steam_id] = true
 
     -- Generate upgrade options
-    local upgrade_ids = generate_random_upgrade_ids()
+    local upgrade_ids = generate_random_upgrade_ids(steam_id)
 
     -- Store these options for validation later
     if not selected_upgrade_ids[steam_id] then
@@ -310,8 +371,10 @@ function send_upgrade_panels()
 function client_show_upgrades_CLIENT(sender_id, upgrade_ids, has_reroll, remaining_rights, next_upgrade_level)
     local_selected_upgrade_ids = upgrade_ids
     local_reroll_right = has_reroll
-    local_remaining_rights = remaining_rights or 0
-    local_next_upgrade_level = next_upgrade_level or 0
+    -- Numbers arrive as floats over the network; floor them or the panel
+    -- title reads "level 0.0 → 1.0" and "2.0 remaining right".
+    local_remaining_rights = math.floor(remaining_rights or 0)
+    local_next_upgrade_level = math.floor(next_upgrade_level or 0)
 
     show_upgrade_panel()
 end
@@ -351,24 +414,38 @@ function show_upgrade_panel()
     -- Add upgrade option buttons (using local data lookup)
     for i, upgrade_id_ref in ipairs(local_selected_upgrade_ids) do
         local upgrade = get_upgrade_from_id(upgrade_id_ref)
-        local type_label = ""
-        local button_color = Color(0, 0, 0, 0)
-
-        if upgrade.type == "character" then
-            type_label ="{character}"
-            button_color = Color(0.2, 0.5, 0.8)
-        else
-            type_label ="{weapon}"
-            button_color = Color(0.8, 0.2, 0.2)
+        if upgrade.data == nil then
+            goto continue
         end
+        local button_text = ""
+        local button_color = Color(0, 0, 0, 0)
+        local icon_path = ""
 
-        -- Get the appropriate icon for this upgrade
-        local is_weapon_upgrade = (upgrade_id_ref.type == 1)
-        local icon_path = get_upgrade_icon_path(upgrade_id_ref.id, is_weapon_upgrade)
+        if upgrade.type == "arsenal" then
+            -- "New weapon: Lightning" / "Lightning - Level 3". The level is a
+            -- number in a translated sentence, so that part is translated here;
+            -- the weapon name stays a token and translates itself.
+            if upgrade.level <= 1 then
+                button_text = "{new_weapon}" .. upgrade.data.name
+                button_color = Color(0.85, 0.55, 0.1)
+            else
+                button_text = upgrade.data.name .. string.format(translate("{weapon_level_suffix}"), upgrade.level)
+                button_color = Color(0.55, 0.3, 0.75)
+            end
+            icon_path = upgrade.data.icon
+        elseif upgrade.type == "character" then
+            button_text = "{character}" .. upgrade.data.name
+            button_color = Color(0.2, 0.5, 0.8)
+            icon_path = get_upgrade_icon_path(upgrade_id_ref.id, false)
+        else
+            button_text = "{weapon}" .. upgrade.data.name
+            button_color = Color(0.8, 0.2, 0.2)
+            icon_path = get_upgrade_icon_path(upgrade_id_ref.id, true)
+        end
 
         -- Create a custom button for the upgrade
         local button_config = {
-        text = type_label .. upgrade.data.name,
+        text = button_text,
         color = button_color,
         entity_name = "-sm",
         function_name = "select_upgrade",
@@ -390,6 +467,7 @@ function show_upgrade_panel()
         }
 
         add_label_to_custom_button(button_path, label_config)
+        ::continue::
     end
 
     -- Add reroll button at the bottom - only if they have a reroll right
@@ -488,7 +566,12 @@ end
 function client_apply_upgrade_ALL(sender_id, selected_id_ref, target_entity, remaining_rights, next_upgrade_level)
     -- Apply the upgrade locally 
     -- Apply the upgrade based on type
-    if selected_id_ref.type == 0 then -- Character upgrade
+    if selected_id_ref.type == CARD_ARSENAL then
+        -- weapons.lua checks the slot and level limits again and tells everyone
+        if IS_HOST then
+            run_function("-wpn", "level_up", { target_entity, selected_id_ref.id })
+        end
+    elseif selected_id_ref.type == 0 then -- Character upgrade
         apply_upgrade(target_entity, selected_id_ref.position, selected_id_ref.id, false)
     else -- Weapon upgrade
         apply_upgrade(target_entity, selected_id_ref.position, selected_id_ref.id, true)
@@ -527,7 +610,7 @@ function host_reroll_upgrades_HOST(sender_id)
     consume_reroll_right(sender_id)
 
     -- Generate new upgrades for this player (network optimized)
-    local new_upgrade_ids = generate_random_upgrade_ids()
+    local new_upgrade_ids = generate_random_upgrade_ids(sender_id)
 
     -- Store the new upgrades for validation
     if not selected_upgrade_ids[sender_id] then

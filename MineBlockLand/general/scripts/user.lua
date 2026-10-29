@@ -1080,6 +1080,7 @@ function interact_HOST(sender_id, aim_x, aim_y)
         end
     end
     if in_reach and run_function("-gm", "host_harvest", { { x = tile_x, y = tile_y } }) then
+        add_achievement_progress("mbl_harvests", 1, name)
         return
     end
     -- Placeable materials (wood/stone): put the held block down on bare

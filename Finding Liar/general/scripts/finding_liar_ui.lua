@@ -122,7 +122,7 @@ function update_user_list_CLIENT(sender_id, game_participants, spectators, local
     end
 
     local header_text = role_info ..
-        "{game}" .. alive_count .. "/" .. game_count .. "{alive_spectators}" .. #spectators .. vote_instruction
+        "{game}" .. math.floor(alive_count or 0) .. "/" .. math.floor(game_count or 0) .. "{alive_spectators}" .. #spectators .. vote_instruction
 
     -- Always recreate the panel to avoid duplicate buttons
     if is_panel_exists(USERS_PANEL_NAME) then
@@ -700,7 +700,9 @@ function show_game_over(winner, reason, liars_names, correct_word)
         math.floor(winner_color.g * 255),
         math.floor(winner_color.b * 255))
 
-    local display_text ="[color=" ..
+    -- The closing [/font_size][/b] and the final [/center] need their openers,
+    -- or RichTextLabel prints them as raw text.
+    local display_text ="[center][b][font_size=24][color=" ..
         hex_color .. "]" .. winner_title .. "[/color][/font_size][/b]\n\n" ..
         "[font_size=18]" .. reason .. "[/font_size]\n\n" ..
         "----------------------------------\n" ..

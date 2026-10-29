@@ -15,3 +15,6 @@ change_view("gameplay")
 set_input_display_name("stick_1","{move}")
 set_input_display_name("stick_2","{aim}") -- must be registered or it is never gathered/sent
 set_input_display_name("key_12","{shoot}")
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "hide_and_seek")

@@ -1,0 +1,9 @@
+Cake Clicker: 2-8 oyuncu ve en fazla beş botla, tek bir yuvarlak masada pasta yeme yarışı.
+
+Masada hep bir pasta var; her koltuğa iki dilim düşüyor ve yalnızca önündeki dilimi yiyebilirsin: sola ya da sağa basınca bir lokma alırsın. Dilimin bitince aynı iki tuş tabağı iter. Bir yöne yeterince itersen pasta bir dilim döner, önüne dolu bir dilim gelir, komşunun önünde de boş tabak kalır. Herkes kendi kendine yavaş yavaş da yer; yediğin her gram para eder.
+
+Bir pasta bitince oyun durur ve market açılır: herkesin alabileceği üç kart (dört kişiden sonra her iki oyuncuya bir kart daha). Bir kart alınınca yerine yenisi gelir: hemen okunabilir ama 5 saniye kilitli kalır; kilitli kart varken marketin 20 saniyelik geri sayımı bekler. Sayım bitince yeni pasta gelir, yemeye devam edilir.
+
+Paranı sert katmanlar için aletlere (ganaj için çekiç, bisküvi için bıçak), daha büyük lokmalara, kendi kendine yemeye, dilimini koruyan bekçi köpeğine ya da cebindeki tek kullanımlık numaralara harca: lidere fırlatılan kaşık, acı biber, dilimine tuz, bir lokma çalan hırsız çatal. Altın kirazlar, eriyen dondurma, kimse yiyemeyince tabağı çeviren garson ve finalde dev bir düğün pastası da var.
+
+Kaç botun oturacağını, ne kadar iyi olduklarını ve oyunun nasıl biteceğini (süre, pasta sayısı ya da taç yarışı) oda sahibi herkesin gördüğü bir panodan seçer. Her şey masanın üstünde olur, herkesin fare imleci görünür; botlar da imleçlerini oyuncular gibi oynatır.

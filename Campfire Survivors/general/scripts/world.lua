@@ -184,3 +184,6 @@ set_vignette({
 
 
 
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "campfire_survivors")

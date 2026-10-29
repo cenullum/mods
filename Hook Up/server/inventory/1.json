@@ -1,0 +1,16 @@
+{
+    "fish_list": [
+        {
+            "weight": 0.5,
+            "image": "fish/fish3",
+            "water_source": "sea",
+            "name": "{fish_mackerel}",
+            "catch_location": {
+                "x": 760.93359375,
+                "y": 21.5700759887695
+            },
+            "rarity": "common",
+            "catch_time": 1791482554.0
+        }
+    ]
+}

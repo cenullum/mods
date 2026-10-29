@@ -32,3 +32,6 @@ set_value("", "DSpQaO3egCMaF8B91738602835", "modulate", Color(0, 0, 0, 0))
 set_value("", "lVVsqT71oBpRoRzU1738604212", "modulate", Color(0, 0, 0, 0))
 
 
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "football")

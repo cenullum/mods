@@ -619,6 +619,7 @@ function update_revive_progress(args)
         
         -- Track revive performed by revivor
         run_function("-stats", "add_player_stat", {args.extra_args.revivor_id, "revives_performed", 1})
+        if IS_HOST then add_achievement_progress("cs_revives", 1, args.extra_args.revivor_id) end
         
         -- Announce revive
         add_to_chat("[color=#117733]"..nickname.."{has_been_revived_by}"..get_value("", args.extra_args.revivor_id, "nickname").."[/color]", true)
@@ -860,7 +861,10 @@ function update_player_state_ALL(sender_id, health, dead_status)
     -- Update health and death status
     current_health = health
     is_dead = dead_status
-    
+    -- The arsenal's ring and hatchets go down with the player (every peer
+    -- draws them, and the host stops simulating them while is_dead).
+    run_function("-wpn", "set_player_dead", { name, is_dead })
+
     -- Update visual appearance based on dead status
     if is_dead then
         set_death_appearance()

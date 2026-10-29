@@ -22,3 +22,6 @@ set_input_display_name("key_8", "{scream}")
 -- The ambience loops forever on the Ambient bus, on every peer. (The horror
 -- sting is the host's call - game_manager.lua - so everybody hears it at once.)
 set_audio({ stream_path = "ambiance", name = "bc_ambiance", bus = "Ambient", is_loop = true })
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "beyaz_canavar")

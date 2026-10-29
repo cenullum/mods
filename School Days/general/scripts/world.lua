@@ -15,6 +15,11 @@ singleton_name = "w"
 -- players only ever vote through the HUD. sd_manager.lua owns the game loop.
 -- =============================================================================
 
+-- Everyone sees everyone else's mouse cursor (engine-side, see set_cursor in
+-- the manual): in a lobby that votes on every choice, you watch your friends
+-- drift to the answer they want. Nickname labels and colours are automatic.
+set_cursor(true)
+
 set_background_color(Color(0.06, 0.06, 0.09, 1))
 change_view("hud")
 
@@ -80,9 +85,12 @@ set_label({ name = "_dialog", text ="{a_branching_school_story_you_play_togeth}"
     "{intro_line4}" })
 set_image({ name = "_char", visible = false })
 
-if IS_HOST then
+if is_admin(LOCAL_STEAM_ID) then
     set_button({ name = "_start", visible = true })
     set_label({ name = "_status", text ="{you_are_the_host}" })
 else
     set_label({ name = "_status", text ="{waiting_for_the_host}" })
 end
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "school_days")

@@ -243,7 +243,7 @@ function on_warning_timeout(args)
     local player_hook_state = get_value("", steam_id, "hook_state")
     if player_hook_state == "WARNING" then
         -- Player missed the warning, show failure bubble and reset to ready
-        show_world_space_result(steam_id, "", "😞 Missed")
+        show_world_space_result(steam_id, "", "😞 {fish_missed}")
         run_network_function(steam_id, "set_hook_state_ALL", {"READY"})
     end
 end
@@ -283,8 +283,9 @@ function handle_warning_catch_HOST(sender_id)
         if catch.is_garbage then
             -- Direct garbage catch - no fishing game needed
             print("Garbage caught by: " .. sender_id)
-            show_world_space_result(sender_id, catch.image, "😞 Garbage")
+            show_world_space_result(sender_id, catch.image, "😞 {fish_garbage}")
             run_network_function(sender_id, "set_hook_state_ALL", {"READY"})
+            unlock_achievement("HU_GARBAGE", sender_id)
         else
             -- Normal fish - start fishing game
             run_network_function(sender_id, "set_hook_state_ALL", {"FISHING"})
@@ -519,6 +520,8 @@ function handle_fish_caught(steam_id)
     
     -- Try to add fish to inventory first
     run_function("-inventory_manager", "add_fish_to_inventory", {steam_id, fish})
+    add_achievement_progress("hu_fish", 1, steam_id)
+    if fish.rarity == "legendary" then unlock_achievement("HU_LEGENDARY", steam_id) end
 
     -- Always show bubble effect with fish info regardless of inventory result
     local rarity_colors = {
@@ -549,7 +552,7 @@ function handle_player_death(steam_id)
     print("Player died: " .. steam_id)
     
     -- Show failure bubble effect
-    show_world_space_result(steam_id, "", "😞 Escaped")
+    show_world_space_result(steam_id, "", "😞 {fish_escaped}")
 
     -- Reset player's hook system to READY state
     run_network_function(steam_id, "set_hook_state_ALL", {"READY"})

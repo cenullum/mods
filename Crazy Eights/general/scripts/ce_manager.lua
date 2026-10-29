@@ -74,7 +74,7 @@ cl_turn = ""
 cl_color = ""
 cl_names = {}
 cl_wins = {}
-cl_colors = {}        -- steam_id -> hex; per-player color shared with user.lua cursors
+cl_colors = {}        -- steam_id -> hex; per-player color shared with the mouse cursors
 cl_pending_wild = ""  -- uid of the 8 we are choosing a color for
 cl_zoom = 0.6         -- local camera zoom; starts fully zoomed out (see world.lua)
 cl_local_rot = 0.0     -- LOCAL counter-rotation (radians); never networked
@@ -414,13 +414,28 @@ function remove_bot(id)
     _on_user_disconnected(id, "")
 end
 
+-- Is an admin (the host, or a dedicated server's owner) among the players?
+function admin_online()
+    for _, id in ipairs(get_entity_names_by_tag("user")) do
+        if is_admin(id) then return true end
+    end
+    return false
+end
+
+-- Bots are an admin's call; with no admin playing (a dedicated server nobody
+-- owns right now) anyone at the table may add or remove them. On a listen host
+-- the host is always there, so this is the old host-only rule.
+function may_manage_bots(steam_id)
+    return is_admin(steam_id) or not admin_online()
+end
+
 function add_bot_HOST(sender_id)
-    if not IS_HOST or sender_id ~= HOST_STEAM_ID then return end -- host-only control
+    if not IS_HOST or not may_manage_bots(sender_id) then return end
     add_bot()
 end
 
 function remove_bot_HOST(sender_id)
-    if not IS_HOST or sender_id ~= HOST_STEAM_ID then return end
+    if not IS_HOST or not may_manage_bots(sender_id) then return end
     remove_bot(bot_order[#bot_order])
 end
 
@@ -626,6 +641,7 @@ function play_card_HOST(sender_id, data)
     if pen_active and tostring(get_card_keyword(card_id, "value") or "") ~= "draw2" then
         return
     end
+    if pen_active then unlock_achievement("CE_STACK", sender_id) end
 
     card_play(uid, Vector2(DISCARD_POS.x + math.random(-10, 10), DISCARD_POS.y + math.random(-8, 8)), true)
     top_uid = uid
@@ -805,7 +821,7 @@ function end_round(winner_id)
         players[winner_id].wins = players[winner_id].wins + 1
     end
     local winner_name = players[winner_id] and players[winner_id].name or "?"
-    run_network_function(name, "round_over_ALL", { winner_name })
+    run_network_function(name, "round_over_ALL", { winner_name, winner_id or "" })
     start_timer({
         timer_id = "ce_next",
         entity_name = name,
@@ -844,10 +860,11 @@ function _on_user_initialized(steam_id, nickname)
     if not list_contains(connected, steam_id) then
         table.insert(connected, steam_id)
     end
-    -- Two bots are already sitting at the table the moment the host arrives, so
-    -- a single player can start a game right away. The host can remove them (or
-    -- add more) at any time with the buttons at the table edge.
-    if not bots_seeded and steam_id == HOST_STEAM_ID then
+    -- Two bots are already sitting at the table the moment the first player
+    -- arrives (on a listen host: the host), so a single player can start a game
+    -- right away. They can be removed (or more added) with the buttons at the
+    -- table edge.
+    if not bots_seeded then
         bots_seeded = true
         add_bot()
         add_bot()
@@ -917,8 +934,14 @@ function sync_ALL(sender_id, state)
     cl_turn = state.turn or ""
     cl_color = state.color or ""
     cl_names = state.names or {}
-    cl_wins = state.wins or {}
+    -- numbers arrive from the network as floats ("0.0 wins"): whole numbers again at the entry point
+    cl_wins = {}
+    for id, w in pairs(state.wins or {}) do cl_wins[id] = math.floor(w) end
     cl_colors = state.colors or {}
+    -- Each player's mouse cursor takes their nickname colour (nil text = nickname).
+    for id, hex in pairs(cl_colors) do
+        set_cursor(true, nil, hex_to_color(hex), nil, id)
+    end
     cl_bots = state.bots or {}
     cl_direction = state.direction or 1
 
@@ -926,6 +949,7 @@ function sync_ALL(sender_id, state)
     -- whenever the accumulated total changes (a fresh window, or a stacked +2).
     cl_pen = state.pen
     if cl_pen then
+        cl_pen.total = math.floor(cl_pen.total or 0)   -- a float off the network ("+2.0 STACKING")
         if cl_pen.total ~= cl_pen_last then
             cl_pen_last = cl_pen.total
             cl_pen_time_left = PENALTY_TIME
@@ -1065,8 +1089,9 @@ function spawn_confetti()
     start_particle({ particle_id = "ce_confetti", position = Vector2(0, -40) })
 end
 
-function round_over_ALL(sender_id, winner_name)
+function round_over_ALL(sender_id, winner_name, winner_id)
     spawn_confetti()
+    if winner_id == LOCAL_STEAM_ID then add_achievement_progress("ce_wins", 1) end
     create_panel({
         title ="{round_over}",
         text = "[center][b]" .. winner_name .. "{wins_the_round}",
@@ -1155,8 +1180,9 @@ end
 -- Only the host ever sees them; add_bot_HOST/remove_bot_HOST re-check that on
 -- arrival anyway.
 function refresh_bot_buttons()
-    set_button({ name = "_bot_add_btn", visible = (IS_HOST == true) })
-    set_button({ name = "_bot_del_btn", visible = (IS_HOST == true) })
+    local can = may_manage_bots(LOCAL_STEAM_ID)
+    set_button({ name = "_bot_add_btn", visible = can })
+    set_button({ name = "_bot_del_btn", visible = can })
 end
 
 function add_bot_click(args)

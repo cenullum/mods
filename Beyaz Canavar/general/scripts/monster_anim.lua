@@ -72,7 +72,7 @@ function shake(duration, intensity)
 end
 
 local function footstep(entity)
-    local me = get_value("", LOCAL_STEAM_ID, "position")
+    local me = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil)
     local mp = get_value("", entity, "position")
     if not me or not mp then return end
     local d = math.sqrt((me.x - mp.x) ^ 2 + (me.y - mp.y) ^ 2)

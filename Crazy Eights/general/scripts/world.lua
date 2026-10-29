@@ -16,13 +16,10 @@ singleton_name = "w"
 
 local TABLE_IMAGE = "ce_table"
 
--- REQUIRED for user.lua's cursor sync: the engine only gathers "stick_2"
--- (world mouse position) into _process()'s inputs table for inputs that have
--- a registered display name (see input_manager.gd::gather_local_inputs -
--- "if not input_name in display_names: continue"). Without this call every
--- peer's stick_2 is nil forever and no one's cursor ever shows up (same
--- requirement Hook Up's world.lua has for its own cursor).
-set_input_display_name("stick_2","{mouse}")
+-- Everyone sees everyone else's mouse cursor (engine-side, see set_cursor in
+-- the manual). The per-player colours are set by ce_manager.sync_ALL, so each
+-- cursor matches its owner's nickname colour in the scoreboard.
+set_cursor(true)
 
 set_background_color(Color(0.09, 0.10, 0.14, 1))
 -- Straight-down fallback for before we're seated/rotated; once seated,
@@ -164,3 +161,6 @@ load_cards_from_data({
 -- All card events (clicks, draws, plays...) go to the manager singleton.
 card_set_listener("-ce_manager")
 card_set_hand_ui({ height = 150, separation = -34 })
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "crazy_eights")

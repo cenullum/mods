@@ -25,7 +25,9 @@ hit_value = 0
 is_ball_interactable = false
 init_pos = get_value("", name, "position")
 
-team = 0 -- 0 spectator 1 red 2 blue
+team = 0 -- 0 spectator 1 orange 2 purple (the ids still say red/blue)
+-- The ring round a player: the team colours of ui_manager.lua TEAM_COLORS (same values).
+TEAM_RING = { [1] = Color(1.0, 0.55, 0.12, 1), [2] = Color(0.62, 0.38, 1.0, 1) }
 is_avatar_loaded = false
 print("team: " .. tostring(team) .. " nickname: " .. nickname)
 function reset_position()
@@ -108,12 +110,7 @@ function change_team_ALL(sender_id, _team)
     set_image_pixel(name, image_name, Vector2(32, 32))                            -- fit to 32 width 32 height pixels
     set_shadow_of_image(name, image_name, true)                                   -- flat ground shadow under the player
 
-    color = Color(1, 1, 1, 1)
-    if team == 1 then --RED
-        color = Color(1, 0, 0, 1)
-    else
-        color = Color(0, 0, 1, 1)                                                                      --BLUE
-    end
+    color = TEAM_RING[team] or TEAM_RING[2]
     set_shader({ parent_name = name, image_name = image_name, shader_name = "circle", outline_color = color }) --default values inner_circle=0.45 outer_circle=0.49 smoothness=0.01
 
     if IS_LOCAL then
@@ -192,12 +189,7 @@ function _on_loaded_avatar(steam_id)
         image_name = set_image(image_config)
         set_image_pixel(name, image_name, Vector2(32, 32))
         set_shadow_of_image(name, image_name, true)
-        color = Color(1, 1, 1, 1)
-        if team == 1 then --RED
-            color = Color(1, 0, 0, 1)
-        else
-            color = Color(0, 0, 1, 1) --BLUE
-        end
+        color = TEAM_RING[team] or TEAM_RING[2]
         set_shader({ parent_name = name, image_name = image_name, shader_name = "circle", outline_color = color })
     end
 end

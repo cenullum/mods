@@ -1,6 +1,13 @@
 singleton_name = "tasks"
 network_mode = 1
 
+-- -gm is a network singleton: on a joining player it arrives a moment after
+-- this script runs, so ask it only once it exists (get_role's own default).
+local function gm_role(id)
+    if not entity_exists("-gm") then return "human" end
+    return run_function("-gm", "get_role", { id })
+end
+
 -- =============================================================================
 -- Beyaz Canavar - the five team tasks.
 --
@@ -261,7 +268,7 @@ local function broadcast(event)
     local found = event and event.step == "found"
     for _, uid in ipairs(get_entity_names_by_tag("user")) do
         if uid ~= HOST_STEAM_ID then
-            if run_function("-gm", "get_role", { uid }) == "human" then
+            if gm_role(uid) == "human" then
                 run_network_function(name, "state_CLIENT", { packed, event or {} }, uid)
             elseif found then
                 run_network_function(name, "found_sound_CLIENT", {}, uid)
@@ -314,7 +321,7 @@ end
 
 function host_complete(steam_id, target_id)
     if not IS_HOST then return end
-    if run_function("-gm", "get_role", { steam_id }) ~= "human" then return end
+    if gm_role(steam_id) ~= "human" then return end
     local phase = get_value("", "-gm", "phase")
     if phase ~= "playing" and phase ~= "escape" then return end
     local pos = get_value("", steam_id, "position")
@@ -410,7 +417,7 @@ end
 function vent_ALL(sender_id, a, b)
     -- The clank at BOTH ends, for everybody (monsters too: they can come and
     -- look), plus a short shake for whoever is close to either.
-    local me = get_value("", LOCAL_STEAM_ID, "position")
+    local me = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil)
     for _, id in ipairs({ a, b }) do
         local o = objects[math.floor(id)]
         if o then
@@ -509,7 +516,7 @@ end
 function host_sync_to(steam_id)
     if not IS_HOST then return end
     if #tiles > 0 then run_network_function(name, "tiles_CLIENT", { tiles }, steam_id) end
-    if run_function("-gm", "get_role", { steam_id }) == "human" then
+    if gm_role(steam_id) == "human" then
         run_network_function(name, "state_CLIENT", { pack(), {} }, steam_id)
     end
 end
@@ -540,7 +547,7 @@ function state_CLIENT(sender_id, packed, event)
 end
 
 function refresh_hud()
-    if run_function("-gm", "get_role", { LOCAL_STEAM_ID }) ~= "human" then return end
+    if gm_role(LOCAL_STEAM_ID) ~= "human" then return end
     local line = string.format(translate("{tasks_progress}"), done_count(), #TASK_ORDER)
     local c = st.carry[LOCAL_STEAM_ID]
     if c then
@@ -558,7 +565,7 @@ function on_state(event)
     if event.step == "found" then
         play_found()
         if event.by ~= LOCAL_STEAM_ID and FOUND_BY[event.task]
-            and run_function("-gm", "get_role", { LOCAL_STEAM_ID }) == "human" then
+            and gm_role(LOCAL_STEAM_ID) == "human" then
             run_function("-hud", "banner", { string.format(translate(FOUND_BY[event.task]), tostring(event.nick or "?")), 4 })
         end
     end
@@ -570,8 +577,11 @@ function on_state(event)
     elseif event.task and event.step == "done" and event.by ~= LOCAL_STEAM_ID then
         run_function("-hud", "banner", { TASK_TITLE[event.task] .. " - {task_completed}", 3 })
     end
+    if event.task and event.step == "done" and event.by == LOCAL_STEAM_ID then
+        add_achievement_progress("bc_tasks", 1)
+    end
     -- A new round starts with every task tracked; the panel can switch them off.
-    if event.step == "reset" and run_function("-gm", "get_role", { LOCAL_STEAM_ID }) == "human" then
+    if event.step == "reset" and gm_role(LOCAL_STEAM_ID) == "human" then
         for _, t in ipairs(TASK_ORDER) do
             if not tracked[t] then tracked[t] = true end
         end
@@ -601,7 +611,7 @@ function toggle_panel()
 end
 
 function open_panel()
-    if run_function("-gm", "get_role", { LOCAL_STEAM_ID }) ~= "human" then return end
+    if gm_role(LOCAL_STEAM_ID) ~= "human" then return end
     if panel ~= "" and is_panel_exists(panel) then close_panel(panel) end
     panel_count = panel_count + 1
     panel = "_bc_tasks_" .. panel_count
@@ -715,7 +725,7 @@ function update_tracking()
     -- Before this peer's school is painted there is nothing to point at yet;
     -- keep the tracked tasks (on_school_ready runs this again).
     if next(objects) == nil then return end
-    local me = get_value("", LOCAL_STEAM_ID, "position")
+    local me = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil)
     if not me then return end
     for _, t in ipairs(TASK_ORDER) do
         if tracked[t] then

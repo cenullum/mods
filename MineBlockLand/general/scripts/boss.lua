@@ -50,8 +50,23 @@ local target = ""
 
 set_value("", name, "speed", SPEED)
 
-set_image({ parent_name = name, name = "body", image_path = "items/15x15_octopus",
+-- The sprite is a 17-frame animation (boss1..boss17 in general/images, the
+-- same frames Campfire Survivors' Guardian uses). Purely cosmetic, so every
+-- peer flips its own frames on a local timer.
+local ANIM_FRAMES = 17
+local ANIM_FPS = 12
+local anim_frame = 1
+
+set_image({ parent_name = name, name = "body", image_path = "boss1",
     scale = Vector2(SIZE, SIZE), z_index = 0 })
+
+function animate_body(args)
+    anim_frame = (anim_frame % ANIM_FRAMES) + 1
+    set_image({ parent_name = name, name = "body", image_path = "boss" .. anim_frame })
+end
+
+start_timer({ timer_id = "banim" .. name, entity_name = name,
+    function_name = "animate_body", wait_time = 1 / ANIM_FPS })
 set_shadow_of_image(name, "body", true)
 set_collision({ parent_name = name, name = "col", shape = "circle", size = SIZE / 2,
     collision_layer = { 3 }, collision_mask = { 1 } })

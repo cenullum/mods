@@ -103,7 +103,11 @@ end
 -- every peer) ask "what is THIS peer's own role" to decide what to show.
 function refresh_visibility()
     if cur_body == "" then return end
-    local viewer_role = get_value("", LOCAL_STEAM_ID, "my_role") or 0
+    -- A peer without a body (a dedicated server) is a neutral viewer (role 0).
+    local viewer_role = 0
+    if entity_exists(LOCAL_STEAM_ID) then
+        viewer_role = get_value("", LOCAL_STEAM_ID, "my_role") or 0
+    end
     local show = true
     if phase_hidden and viewer_role ~= 0 and my_role ~= 0 and viewer_role ~= my_role then
         show = false

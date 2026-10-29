@@ -21,7 +21,6 @@ image_name = "player_image"
 nickname_label_name = "nickname"
 hook_power_bar_name = "_hook_power_bar"
 hook_line_name = "hook_line" .. name
-cursor_name = "player_cursor" .. name
 
 
 
@@ -53,8 +52,7 @@ hook_fishing_cooldown_duration = 0.5 -- Half second cooldown
 -- Warning visual elements
 warning_emoji_name = "warning_emoji_" .. name
 
--- Cursor system variables
-cursor_nickname_name = "cursor_nickname_" .. name
+-- World mouse position (hook aim); the cursor itself is drawn by the engine
 mouse_position = Vector2(0, 0)
 
 
@@ -285,34 +283,9 @@ function create_user(sender_id, player_color, pos)
         outline_color = outline_color
     })
 
-    -- Create cursor with player's outline color (invisible for local player)
-    set_image({
-        name = cursor_name,
-        image_path = "cursor",
-        scale = Vector2(16, 16),
-        modulate = outline_color,
-        position = Vector2(0, 0),
-        z_index = 10,
-        visible = not IS_LOCAL -- Local player doesn't see their own cursor
-    })
-
-    -- Create cursor nickname label (invisible for local player)
-    set_label({
-        parent_name = cursor_name, -- Child of cursor, will move automatically
-        name = cursor_nickname_name,
-        text = nickname,
-        font_size = 96,
-        position = Vector2(-100, 20),      -- Relative to cursor position
-        size = Vector2(1600, 160),
-        scale = Vector2(0.125, 0.125),
-        horizontal_alignment = 1,          -- Center
-        vertical_alignment = 1,            -- Center
-        --modulate = outline_color, --its already set in set_image
-        outline_color = Color(0, 0, 0, 1), -- Black outline
-        outline_size = 64,
-        z_index = 10,
-        --visible = not IS_LOCAL  --its already set in set_image Local player doesn't see their own cursor nickname
-    })
+    -- Everyone else sees this player's mouse cursor in their outline colour,
+    -- labelled with their nickname (engine-side; see set_cursor in world.lua).
+    set_cursor(true, nil, outline_color, nil, name)
 
     -- Create reusable hook projectile
     local hook_data = {
@@ -409,8 +382,6 @@ function _on_user_disconnected(steam_id, nickname)
     if steam_id == name then
         add_to_chat(nickname .. "{disconnected}")
         destroy("", hook_entity_name)
-        destroy("", cursor_name)
-        destroy("", cursor_nickname_name)
         destroy_line(hook_line_name)
     end
 end
@@ -434,7 +405,7 @@ last_x2_input = false -- For key_13
 last_b_input = false
 
 function _process(delta, inputs)
-    -- Update mouse position and cursor
+    -- Update mouse position (hook aim)
     update_cursor(inputs)
 
     if IS_LOCAL then
@@ -480,34 +451,6 @@ end
 
 function update_cursor(inputs)
     mouse_position = inputs["stick_2"] or Vector2(-999999, -999999)
-
-    if IS_LOCAL then
-        set_image({
-            name = cursor_name,
-            --image_path = "cursor", we dont need this already set in set_image in create_user_ALL
-            position = mouse_position,
-        })
-        -- Nickname automatically follows cursor since it's a child
-    end
-
-    -- Sync cursor position to all other players
-    if IS_HOST then
-        run_network_function(name, "update_cursor_position_ALL", { mouse_position })
-    end
-end
-
-function update_cursor_position_ALL(sender_id, cursor_pos)
-    -- If this is the local player, don't update (they control their own cursor)
-    if IS_LOCAL then
-        return
-    end
-
-    -- Update cursor position for non-local players
-    set_image({
-        name = cursor_name,
-        position = cursor_pos,
-    })
-    -- Nickname automatically follows cursor since it's a child
 end
 
 function handle_hook_input(delta, inputs)

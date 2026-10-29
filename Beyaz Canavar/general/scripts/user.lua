@@ -2,6 +2,13 @@ lock_rotation = true
 linear_damp = 4
 friction = 0
 
+-- -gm is a network singleton: on a joining player it arrives a moment after
+-- this script runs, so ask it only once it exists (get_role's own default).
+local function gm_role(id)
+    if not entity_exists("-gm") then return "human" end
+    return run_function("-gm", "get_role", { id })
+end
+
 -- =============================================================================
 -- Beyaz Canavar - player entity (runs on every peer for every player).
 --
@@ -37,7 +44,7 @@ set_collision({ parent_name = name, name = "col", shape = "circle", size = 8,
     collision_layer = { 2 }, collision_mask = { 1 } }) -- walls only: nobody pushes anybody
 
 my_role = "human"
-game_phase = tostring(get_value("", "-gm", "phase") or "lobby")
+game_phase = tostring((entity_exists("-gm") and get_value("", "-gm", "phase")) or "lobby")
 local clock = 0
 local stunned_until = 0
 local busy_until = 0
@@ -340,4 +347,4 @@ end
 
 -- A player who joins mid-round may have missed role_ALL (it can arrive before
 -- this entity exists): take the role the game manager already knows.
-apply_role(tostring(run_function("-gm", "get_role", { name }) or "human"))
+apply_role(tostring(gm_role(name) or "human"))

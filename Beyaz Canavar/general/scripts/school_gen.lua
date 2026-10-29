@@ -1251,7 +1251,11 @@ function on_painted()
             vent_images[#vent_images + 1] = n
         end
     end
-    run_function("-gm", "on_school_ready", { seed })
+    -- A joining player builds the school before -gm has arrived; -gm runs the
+    -- generator again with the round's seed once it does.
+    if entity_exists("-gm") then
+        run_function("-gm", "on_school_ready", { seed })
+    end
 end
 
 -- =============================================================================

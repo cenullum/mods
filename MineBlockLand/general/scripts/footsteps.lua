@@ -142,7 +142,7 @@ function step_tick()
     local me = nil
     for _, user_name in ipairs(users) do
         if user_name == LOCAL_STEAM_ID then
-            me = get_value("", LOCAL_STEAM_ID, "position")
+            me = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil)
             break
         end
     end

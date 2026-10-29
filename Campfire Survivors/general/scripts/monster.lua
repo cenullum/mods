@@ -239,6 +239,34 @@ function take_damage(damage, knockback_amount, angle, player_id)
     end
 end
 
+-- take_damage for the arsenal (weapons.lua, host only). An area weapon hits a
+-- dozen monsters at once, so it must not cost a dozen show_damage_label_ALL
+-- broadcasts: weapons.lua sends ONE batched message for everything it hit in a
+-- step instead, and draws the numbers itself. Everything else - stats, the
+-- shove, the death and its XP crystal - is exactly take_damage's.
+-- Returns { d = damage actually dealt, k = true if it was the killing blow }.
+function take_weapon_damage(amount, knockback_amount, angle, player_id)
+    if not IS_HOST or health <= 0 then
+        return { d = 0, k = false }
+    end
+    local actual_damage = math.min(amount, health)
+    health = health - amount
+    if player_id and actual_damage > 0 then
+        run_function("-stats", "add_player_stat", {player_id, "damage_dealt", actual_damage})
+    end
+    if knockback_amount and knockback_amount > 0 and angle then
+        add_linear_velocity(name, Vector2(math.cos(angle), math.sin(angle)) * knockback_amount)
+    end
+    if health <= 0 then
+        if player_id then
+            run_function("-stats", "add_player_stat", {player_id, "enemies_killed", 1})
+        end
+        destroy_self()
+        return { d = actual_damage, k = true }
+    end
+    return { d = actual_damage, k = false }
+end
+
 function destroy_self()
     run_function("-mg", "monster_count_change", {-1})
     -- Spawn the monster

@@ -10,4 +10,5 @@ Campfire Survivors, giderek zorlaşan düşmanlara karşı savunma yaptığın d
 - Düşmanlar her 7 dalgada bir evrilir; canları ve hasarları artar
 - Haydutlar, dalga seviyesine göre hasar veren mermiler atar
 - Oyuncular düşmanlara mermi ateşleyebilir
+- Seviye atladıkça tabancanın yanına yeni silahlar da çıkar: Şimşek, Kor Halkası, Dönen Baltalar ve Molotof (oyuncu başına iki tane, her biri beş seviyeli)
 - Tüm oyuncular yenildiğinde oyun biter

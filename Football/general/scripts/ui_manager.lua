@@ -8,6 +8,23 @@ SCORE_PANEL_NAME = "football_scoreboard_panel_id"
 
 is_score_table_input_last = false
 
+-- Team colours: team 1 is orange, team 2 purple (they were plain red and blue). The ids keep the
+-- old words - red_goalpost, "{red_team}", red_score - but every team colour on screen comes from
+-- here; user.lua, bot.lua and user_action_panel.lua carry the same values (each script has its
+-- own environment). TEAM_HEX = the darker shade for panel buttons (white text on them).
+TEAM_COLORS = { [1] = Color(1.0, 0.55, 0.12, 1), [2] = Color(0.62, 0.38, 1.0, 1) }
+TEAM_HEX = { [1] = "#E07010", [2] = "#7A3FE0" }
+TEXT_OUTLINE = Color(0.08, 0.06, 0.16, 1)      -- dark ink outline for every big HUD text
+
+-- The goal banner: a big title in the scoring team's colour that pops in, the scorer under it and
+-- the assist under that. Its own three labels; _center_label is left to the match result.
+GOAL_TITLE = "_goal_title"
+GOAL_SCORER = "_goal_scorer"
+GOAL_ASSIST = "_goal_assist"
+GOAL_POP = { 1.9, 1.45, 1.12, 0.94, 1.04, 1.0 } -- the title's scale, one step every GOAL_POP_STEP s
+GOAL_POP_STEP = 0.035
+GOAL_SHOW_SECONDS = 3.0
+
 change_view("gameplay")
 
 set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_8@ {hit_ball}\n@key_11@ {scoreboard}\n@stick_1@ {movement}") -- right bottom  inputs label
@@ -15,6 +32,19 @@ set_value("", "_USQKTEW3zusL1CNU1737417431", "text", "@key_8@ {hit_ball}\n@key_1
 
 blue_score = 0
 red_score = 0
+local my_match_goals = 0 -- this peer's goals in the current match (Steam achievement: hat-trick)
+
+-- Who starts a match. An admin (the host, or a dedicated server's owner) uses the
+-- match settings as always. With no admin among the players - a dedicated server
+-- nobody owns at the moment - the players vote, and a match also starts by
+-- itself once both teams have someone on them. On a listen host the host is
+-- always present, so nothing starts without them, exactly as before.
+match_state = "idle"     -- host: "idle" | "countdown" | "running"
+votes = {}               -- host: steam_id -> true
+DEFAULT_TIME_LIMIT = 5   -- minutes, for voted and automatic matches
+AUTO_START_DELAY = 20.0  -- seconds of warning before an automatic start
+
+add_command(name, "cmd_start", "start", "{cmd_start_desc}", true)
 
 
 function _process(delta, inputs)
@@ -44,13 +74,15 @@ end
 function update_match_score_ALL(sender_id, _red_score, _blue_score)
     label_config = {
         text ="{red_team}" .. math.floor(_red_score),
-        name = "_L1O0Bnkl5f5W4PXI1737915307"
+        name = "_L1O0Bnkl5f5W4PXI1737915307",
+        font_color = TEAM_COLORS[1], outline_color = TEXT_OUTLINE, outline_size = 8
     }
     set_label(label_config)
 
     label_config2 = {
         text ="{blue_team}" .. math.floor(_blue_score),
-        name = "_nht0GjrXZngWZM5b1737915305"
+        name = "_nht0GjrXZngWZM5b1737915305",
+        font_color = TEAM_COLORS[2], outline_color = TEXT_OUTLINE, outline_size = 8
     }
     set_label(label_config2)
 
@@ -65,6 +97,11 @@ end
 function _on_user_disconnected(steam_id, nickname)
     add_to_chat(nickname .. "{disconnected}")
     remove_user_from_scoreboard(steam_id)
+    if IS_HOST then
+        votes[steam_id] = nil
+        run_function("-team_balancer", "on_player_left", { steam_id })
+        check_auto_start()
+    end
 end
 
 function _on_user_connected(steam_id, nickname)
@@ -79,7 +116,19 @@ function _on_user_initialized(steam_id, nickname)
         --  Update this client with current game state
         run_network_function(name, "update_match_score_ALL", { red_score, blue_score }, steam_id)
         add_user_to_scoreboard(steam_id, nickname)
+        run_function("-team_balancer", "on_player_joined", { steam_id })
     end
+end
+
+function get_users_table()
+    return users
+end
+
+-- Bots hold team slots too: when one comes, goes or switches, a player waiting
+-- in the queue may now fit.
+local function bot_slots_changed()
+    run_function("-team_balancer", "serve_queue")
+    check_auto_start()
 end
 
 function update_users_score_ALL(sender_id, users_data)
@@ -137,12 +186,15 @@ function add_bot_to_scoreboard(bot_name, bot_label, team)
         }
         run_network_function(name, "update_users_score_ALL", { users })
     end
+    if IS_HOST then bot_slots_changed() end
 end
 
 -- Remove user from scoreboard
 function remove_user_from_scoreboard(steam_id)
     if IS_HOST then
+        local was_bot = users[steam_id] ~= nil and users[steam_id].is_bot
         users[steam_id] = nil
+        if was_bot then bot_slots_changed() end
         run_network_function(name, "update_users_score_ALL", { users })
     end
 end
@@ -204,28 +256,18 @@ function handle_goal_ui_ALL(sender_id, last_touching_steam_id, previous_touching
 
     local user_team = users[last_touching_steam_id].team
     local is_own_goal = false
-    local display_color = Color(0, 0, 1) --BLUE
-
-    if scoring_team == 1 then
-        display_color = Color(1, 0, 0) --RED
-    end
+    local scorer_nick = users[last_touching_steam_id].nickname
 
     if (user_team == 1 and scoring_team == 2) or
         (user_team == 2 and scoring_team == 1) then
         is_own_goal = true
     end
 
-    local goal_text = ""
-
-    local scoring_team_str = "Red"
-    if scoring_team == 2 then
-        scoring_team_str = "Blue"
-    end
-
     if is_own_goal then
-        goal_text ="{ops}" ..
-            users[last_touching_steam_id].nickname .. "{own_goal}" .. scoring_team_str .. "{team_scored}"
+        show_goal_banner("{own_goal_title}", string.format(translate("{own_goal_by}"), scorer_nick), "",
+            TEAM_COLORS[scoring_team])
         own_goal_scores(last_touching_steam_id)
+        if last_touching_steam_id == LOCAL_STEAM_ID then unlock_achievement("FB_OWN_GOAL") end
     else
         local assist_id = nil
         if previous_touching_steam_id and users[previous_touching_steam_id] and users[last_touching_steam_id] then
@@ -236,32 +278,56 @@ function handle_goal_ui_ALL(sender_id, last_touching_steam_id, previous_touching
             end
         end
 
-        goal_text = users[last_touching_steam_id].nickname .. "{scored_a_goal}" .. scoring_team_str .. "{team_scored}"
-
+        local assist_line = ""
         if assist_id then
-            goal_text = goal_text .. "{assist_by}" .. users[assist_id].nickname
+            assist_line = string.format(translate("{goal_assist}"), users[assist_id].nickname)
         end
+        show_goal_banner("{goal_title}", scorer_nick, assist_line, TEAM_COLORS[scoring_team])
 
         addition_scores(last_touching_steam_id, assist_id)
+        if last_touching_steam_id == LOCAL_STEAM_ID then
+            add_achievement_progress("fb_goals", 1)
+            my_match_goals = my_match_goals + 1
+            if my_match_goals == 3 then unlock_achievement("FB_HAT_TRICK") end
+        end
+        if assist_id == LOCAL_STEAM_ID then add_achievement_progress("fb_assists", 1) end
     end
     -- Update team score
     if IS_HOST then
         update_team_score(scoring_team)
     end
 
-    local label_config = {
-        text = goal_text,
-        visible = true,
-        font_color = display_color,
-        name = "_center_label"
-    }
-    set_label(label_config)
-
-    run_function(name, "hide_goal_message", {}, 3.0) -- with 3 seconds delay
+    run_function(name, "hide_goal_message", {}, GOAL_SHOW_SECONDS)
 end
 
-function hide_goal_message() -- Function to hide the goal message
-    set_value("", "_center_label", "visible", false)
+-- Local on every peer (handle_goal_ui_ALL runs everywhere), so each player's language is used.
+function show_goal_banner(title, scorer_line, assist_line, color)
+    set_label({ name = GOAL_TITLE, text = title, visible = true,
+        anchor_left = 0.05, anchor_right = 0.95, anchor_top = 0.16, anchor_bottom = 0.34,
+        horizontal_alignment = 1, vertical_alignment = 1,
+        font_size = 96, font_color = color, outline_size = 22, outline_color = TEXT_OUTLINE,
+        rotation = -0.05, scale = GOAL_POP[1] })
+    set_label({ name = GOAL_SCORER, text = scorer_line, visible = true,
+        anchor_left = 0.1, anchor_right = 0.9, anchor_top = 0.33, anchor_bottom = 0.41,
+        horizontal_alignment = 1, vertical_alignment = 1,
+        font_size = 40, font_color = Color(1, 1, 1, 1), outline_size = 12, outline_color = TEXT_OUTLINE })
+    set_label({ name = GOAL_ASSIST, text = assist_line, visible = assist_line ~= "",
+        anchor_left = 0.1, anchor_right = 0.9, anchor_top = 0.405, anchor_bottom = 0.455,
+        horizontal_alignment = 1, vertical_alignment = 1,
+        font_size = 24, font_color = Color(0.9, 0.88, 1, 1), outline_size = 8, outline_color = TEXT_OUTLINE })
+    for i = 2, #GOAL_POP do
+        run_function(name, "goal_pop_step", { i }, (i - 1) * GOAL_POP_STEP)
+    end
+end
+
+function goal_pop_step(i)
+    set_label({ name = GOAL_TITLE, scale = GOAL_POP[math.floor(i)] })
+end
+
+function hide_goal_message()
+    for _, label in ipairs({ GOAL_TITLE, GOAL_SCORER, GOAL_ASSIST }) do
+        set_value("", label, "visible", false)
+    end
 end
 
 -- Change user team
@@ -270,6 +336,7 @@ function move_team(steam_id, team)
     if users[steam_id] then
         users[steam_id].team = team
         run_network_function(name, "update_users_score_ALL", { users })
+        if users[steam_id].is_bot then bot_slots_changed() end
     end
 end
 
@@ -292,22 +359,35 @@ function refresh_scoreboard(is_create_if_not_exist)
         SCORE_PANEL_NAME = create_panel(settings)
     end
 
-    if IS_HOST and panel_exists == false then
-        add_button_to_panel(SCORE_PANEL_NAME, {
-            text ="{start_match}",
-            entity_name = name,
-            function_name = "show_match_settings_panel",
-            is_vertical = true,
-            icon_path = "forward",
-            color = Color(0, 1, 0) -- Green color
-        })
-        add_button_to_panel(SCORE_PANEL_NAME, {
-            text ="{bot_management}",
-            entity_name = "-bot_manager",
-            function_name = "show_bot_panel",
-            is_vertical = true,
-            color = Color(0.2, 0.55, 0.9)
-        })
+    if panel_exists == false then
+        if is_admin(LOCAL_STEAM_ID) then
+            add_button_to_panel(SCORE_PANEL_NAME, {
+                text ="{start_match}",
+                entity_name = name,
+                function_name = "show_match_settings_panel",
+                is_vertical = true,
+                icon_path = "forward",
+                color = Color(0, 1, 0) -- Green color
+            })
+        else
+            add_button_to_panel(SCORE_PANEL_NAME, {
+                text ="{vote_start_match}",
+                entity_name = name,
+                function_name = "vote_start",
+                is_vertical = true,
+                icon_path = "forward",
+                color = Color(0, 1, 0)
+            })
+        end
+        if IS_HOST then
+            add_button_to_panel(SCORE_PANEL_NAME, {
+                text ="{bot_management}",
+                entity_name = "-bot_manager",
+                function_name = "show_bot_panel",
+                is_vertical = true,
+                color = Color(0.2, 0.55, 0.9)
+            })
+        end
     end
 
 
@@ -351,14 +431,105 @@ end
 
 function match_countdown(args)
     -- Panel values are keyed by the widget's RAW text, which is the token itself.
-    run_network_function(name, "start_match_countdown_ALL", { args["{time_limit}"] })
+    -- Through the host, so an admin who is not the host (a server owner) can use it.
+    run_network_function(name, "request_match_start_HOST", { args["{time_limit}"] })
     close_panel(args.panel_name)
 end
 
+function request_match_start_HOST(sender_id, time_limit)
+    if not IS_HOST or not is_admin(sender_id) then return end
+    begin_match(time_limit)
+end
+
+function begin_match(time_limit)
+    stop_timer("football_auto_start")
+    votes = {}
+    match_state = "countdown"
+    run_network_function(name, "start_match_countdown_ALL", { time_limit })
+end
+
+-- Players without an admin around: a vote, or a match that starts by itself.
+function vote_start(args)
+    run_network_function(name, "vote_start_HOST", {})
+    if args ~= nil and args.panel_name ~= nil then
+        close_panel(args.panel_name)
+    end
+end
+
+function cmd_start(sender_id)
+    vote_start(nil)
+end
+
+local function admin_present()
+    for id, data in pairs(users) do
+        if not data.is_bot and is_admin(id) then return true end
+    end
+    return false
+end
+
+local function humans_on_teams()
+    local n = 0
+    for _, data in pairs(users) do
+        local t = math.floor(tonumber(data.team) or 0)
+        if not data.is_bot and (t == 1 or t == 2) then n = n + 1 end
+    end
+    return n
+end
+
+function vote_start_HOST(sender_id)
+    if not IS_HOST or match_state ~= "idle" or users[sender_id] == nil then return end
+    if is_admin(sender_id) then
+        begin_match(DEFAULT_TIME_LIMIT)
+        return
+    end
+    votes[sender_id] = true
+    local voters, have = 0, 0
+    for id, data in pairs(users) do
+        if not data.is_bot then
+            voters = voters + 1
+            if votes[id] then have = have + 1 end
+        end
+    end
+    local needed = math.floor(voters / 2) + 1
+    add_to_chat((users[sender_id].nickname or "") .. "{voted_to_start}" .. have .. "/" .. needed, true)
+    if have >= needed then
+        begin_match(DEFAULT_TIME_LIMIT)
+    end
+end
+
+-- Called whenever the teams change or a match ends. Starts (or cancels) the
+-- warning timer; cheap enough to call on every such event.
+function check_auto_start()
+    if not IS_HOST then return end
+    local ready = match_state == "idle" and not admin_present() and humans_on_teams() >= 2
+    local data = get_timer_data("football_auto_start")
+    local running = data ~= nil and data.is_running == true
+    if ready and not running then
+        add_to_chat("{match_auto_start_soon}", true)
+        start_timer({
+            timer_id = "football_auto_start",
+            entity_name = name,
+            function_name = "auto_start_fired",
+            wait_time = AUTO_START_DELAY,
+            duration = AUTO_START_DELAY,
+        })
+    elseif not ready and running then
+        stop_timer("football_auto_start")
+    end
+end
+
+function auto_start_fired(args)
+    if args ~= nil and args.is_last_iteration == false then return end
+    if match_state == "idle" and not admin_present() and humans_on_teams() >= 2 then
+        begin_match(DEFAULT_TIME_LIMIT)
+    end
+end
+
 function start_match_countdown_ALL(sender_id, time_limit)
+    my_match_goals = 0
     set_label({
         name = "_center_label",
-        text = 3,
+        text = "3",
         font_color = Color(1, 1, 1),
         visible = true
     })
@@ -376,7 +547,9 @@ function start_match_countdown_ALL(sender_id, time_limit)
 end
 
 function count_down(args)
-    countdown = 3 - args.iteration_count
+    -- timer args cross from GDScript as floats, and so does any number sent back to a label:
+    -- floor it and send it as text, or the label reads "2.0", "1.0"
+    countdown = math.floor(3 - args.iteration_count)
     if args.is_last_iteration then
         set_label({
             name = "_center_label",
@@ -389,13 +562,14 @@ function count_down(args)
     end
     set_label({
         name = "_center_label",
-        text = countdown,
+        text = tostring(countdown),
         font_color = Color(1, 1, 1),
         visible = true
     })
 end
 
 function start_match(args)
+    match_state = "running"
     blue_score = 0
     red_score = 0
     run_network_function(name, "update_match_score_ALL", { red_score, blue_score })
@@ -428,6 +602,9 @@ function determine_winner()
     end
 
     run_network_function(name, "handle_game_over_ALL", { winner })
+    match_state = "idle"
+    -- The next match, when nobody is around to start it.
+    check_auto_start()
 end
 
 function handle_game_over_ALL(sender_id, winner)
@@ -441,20 +618,25 @@ function handle_game_over_ALL(sender_id, winner)
 
     if winner == 2 then
         message = "{blue_team_won}"
-        color = Color(0, 0, 1)
+        color = TEAM_COLORS[2]
     elseif winner == 1 then
         message = "{red_team_won}"
-        color = Color(1, 0, 0)
+        color = TEAM_COLORS[1]
     else
         message = "{draw_result}"
         color = Color(1, 1, 1)
     end
+    local me = users[LOCAL_STEAM_ID]
+    if winner ~= 0 and me and me.team == winner then add_achievement_progress("fb_wins", 1) end
+    my_match_goals = 0
 
     set_label({
         name = "_center_label",
         text = message,
         visible = true,
-        font_color = color
+        font_color = color,
+        outline_color = TEXT_OUTLINE,
+        outline_size = 16
     })
 end
 
@@ -487,10 +669,8 @@ function create_scoreboard_data()
         local row = i
 
         local color = "#FFFFFF"
-        if data.team == 2 then     --blue
-            color = "#0066CC"
-        elseif data.team == 1 then --red
-            color = "#CC0000"
+        if data.team == 1 or data.team == 2 then
+            color = TEAM_HEX[data.team]
         end
 
         table_data[vector2_to_string(Vector2(0, row))] = {
@@ -500,11 +680,11 @@ function create_scoreboard_data()
             is_bot = data.is_bot == true -- cell metadata: comes back on click
         }
 
-        local team_name = "Spectator"
+        local team_name = "{spectator}"
         if data.team == 1 then
-            team_name = "Red"
+            team_name = "{bot_team_red}"
         elseif data.team == 2 then
-            team_name = "Blue"
+            team_name = "{bot_team_blue}"
         end
 
         table_data[vector2_to_string(Vector2(1, row))] = {

@@ -34,6 +34,10 @@ word_options = {} -- All words from all categories for display
 active_vote = nil -- {target_id="", initiator_id="", votes_yes=0, votes_no=0, voted_players={}}
 vote_threshold = 0
 
+-- This peer's role in the running game ("innocent" / "liar"), nil when not
+-- playing in it. Only for the Steam achievements; the host stays the authority.
+local my_role = nil
+
 -- Game settings
 min_users = 3
 game_time_limit = 300 -- 5 minutes
@@ -203,6 +207,7 @@ function start_game_CLIENT(sender_id, time_limit, user_role, correct_word, word_
 
     game_active = true
     game_timer_remaining = time_limit
+    my_role = user_role
 
     -- Show game UI with role info and counts
     run_function("-finding_liar_ui", "show_game_interface", { user_role, liar_count, innocent_count })
@@ -240,6 +245,7 @@ function liar_select_word_HOST(sender_id, selected_word_guess)
         -- Liar wins - send to all clients
         run_network_function(name, "end_game_ALL",
             { "liar", "{the_liar_guessed_correctly}", liars_names, selected_word })
+        unlock_achievement("FL_LIAR_GUESS", sender_id)
     else
         -- Liar loses - send to all clients
         local reason = "{the_liar_guessed}" ..
@@ -503,6 +509,10 @@ function end_game_ALL(sender_id, winner, reason, liars_names, correct_word)
     end
 
     run_function("-finding_liar_ui", "show_game_over", { winner, reason, liars_names, correct_word })
+    if my_role and my_role == winner then
+        add_achievement_progress(winner == "liar" and "fl_liar_wins" or "fl_innocent_wins", 1)
+    end
+    my_role = nil
 
     -- Close game after a delay
     if IS_HOST then

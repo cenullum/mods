@@ -91,19 +91,35 @@ linear_velocity = Vector2()
 ---@type boolean
 IS_LOCAL = false
 
---- Whether the local machine is the host/server in multiplayer.
+--- Whether the local machine is the host/server in multiplayer. On a dedicated
+--- server this is the server process, which has NO player of its own: do not
+--- assume the host is one of the users (see IS_DEDICATED, is_admin).
 ---@type boolean
 IS_HOST = false
+
+--- True on a dedicated server and on every player connected to one. A dedicated
+--- server is the authority (IS_HOST there) but has no user entity, no screen and
+--- nobody at the keyboard. Prefer rules that work either way - is_admin() for
+--- "host only" buttons, a vote or an automatic start when no admin is playing -
+--- over branching on this.
+---@type boolean
+IS_DEDICATED = false
 
 --- Absolute path to the current mod directory.
 ---@type string
 MOD_PATH = ""
 
---- Local player's Steam ID as a string.
+--- Local player's Steam ID as a string. Players who joined a dedicated or
+--- custom-master server without Steam have a key id here instead (still a
+--- numeric string, never colliding with a Steam ID). On a dedicated server this
+--- is the server's own id, which has no entity: check entity_exists(LOCAL_STEAM_ID)
+--- before using it as an entity name.
 ---@type string
 LOCAL_STEAM_ID = ""
 
---- Host/server's Steam ID as a string.
+--- Host/server's Steam ID as a string. On a dedicated server this is the
+--- server, never a player: `sender_id == HOST_STEAM_ID` is then never true for a
+--- player, so use is_admin(sender_id) for "may this player do host things".
 ---@type string
 HOST_STEAM_ID = ""
 
@@ -1539,6 +1555,24 @@ function _on_vn_choice(story_id, node_id, choice) end
 ---@param node_id string The last node id ("" if it ran off a dangling link).
 function _on_vn_end(story_id, node_id) end
 
+--- Show the OTHER players' mouse cursors in the world. Call it once (world.lua runs
+--- on every peer, so that configures everyone) and the engine does the rest: each
+--- peer sends its own mouse position, the host relays them in one batched message,
+--- and every peer draws them at a constant screen size, upright under any camera
+--- zoom/rotation. Your own cursor is never drawn (the OS cursor is there). No
+--- set_input_display_name("stick_2") and no per-frame network calls are needed.
+--- Call it again at any time to change the look; set_cursor(false) hides them all.
+--- With steam_id the call styles just that player; its nil fields fall back to
+--- the everyone-setting, e.g. per-player colours:
+---   set_cursor(true)                                   -- world.lua: everyone, defaults
+---   set_cursor(true, nil, outline_color, nil, name)    -- user.lua: this player's colour
+---@param enabled boolean Show (true) or hide (false) the cursors.
+---@param text? string Label under the cursor. nil = the player's nickname, "" = no label, otherwise this text ({keyword} tokens are translated per peer).
+---@param color? Color Tint of the icon and label. nil = a distinct automatic colour per player.
+---@param icon? string PNG under general/images/ (".png" optional). nil = the built-in hand cursor.
+---@param steam_id? string Only this player. nil = everyone.
+function set_cursor(enabled, text, color, icon, steam_id) end
+
 --- Set a navigation icon marker on an entity.
 --- This creates an off-screen indicator that points to the target entity when it's outside the viewport.
 --- Config parameters:
@@ -2307,18 +2341,64 @@ function vector2_to_string(vec) end
 function set_input_display_name(input_name, display_name) end
 
 ---------------------------------------------------
+-- ROLES (every peer)
+-- host > owner > moderator > player. The host is the lobby owner of a listen
+-- server, or the dedicated server itself; owners are listed in a dedicated
+-- server's server.json; moderators are appointed by an owner or the host and
+-- remembered by the server.
+---------------------------------------------------
+
+--- Whether this player may do "host only" things: true for the host and for a
+--- dedicated server's owners. On a listen server this is exactly
+--- `steam_id == HOST_STEAM_ID`, so replacing that comparison changes nothing
+--- there and makes the button work on a dedicated server too.
+---@param steam_id string
+---@return boolean
+function is_admin(steam_id) end
+
+--- "host", "owner", "moderator" or "player".
+---@param steam_id string
+---@return string
+function get_role(steam_id) end
+
+--- Whether `actor` may kick/ban `target`: a moderator or above, strictly
+--- outranking the target (moderators cannot act on each other).
+---@param actor_id string
+---@param target_id string
+---@return boolean
+function can_moderate(actor_id, target_id) end
+
+--- HOST ONLY. Appoint a moderator (persisted by the server). Returns false when
+--- nothing changed (already a moderator, or an owner).
+---@param steam_id string
+---@return boolean
+function add_moderator(steam_id) end
+
+--- HOST ONLY. Remove a moderator. Returns false when they were not one.
+---@param steam_id string
+---@return boolean
+function remove_moderator(steam_id) end
+
+--- The current moderators' ids.
+---@return string[]
+function get_moderators() end
+
+---------------------------------------------------
 -- MODERATION (HOST ONLY)
 ---------------------------------------------------
 
 --- Kick a user from the lobby.
 ---@param steam_id string Target user's Steam ID.
-function kick_user(steam_id) end
+---@param reason? string Reason shown to them. Default: "".
+---@param actor_id? string Who asked for it. When given, the kick only happens if can_moderate(actor_id, steam_id); a moderation mod relaying a request from another player should pass that player's sender_id here.
+function kick_user(steam_id, reason, actor_id) end
 
 --- Ban a user from the room for a specified duration.
 ---@param steam_id string Steam ID of the user to ban.
 ---@param duration integer Duration in seconds.
 ---@param reason? string Reason for the ban. Default: "".
-function ban_user(steam_id, duration, reason) end
+---@param actor_id? string Same as kick_user's actor_id.
+function ban_user(steam_id, duration, reason, actor_id) end
 
 --- Unban a user.
 ---@param steam_id string Target user's Steam ID.

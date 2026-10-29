@@ -9,23 +9,35 @@ add_command("-cmd", "handle_testboss", "testboss", "{cmd_testboss_desc}", true)
 
 
 
--- Function to handle restart command
+-- Function to handle restart command. It runs on the machine of whoever typed
+-- it, so it asks the host, which checks for admin rights: the host itself, or a
+-- dedicated server's owner.
 function handle_restart(sender_id)
-    if not IS_HOST then
-        -- If not host, show error message
-        local message_config = {
-            title ="{error}",
-            text ="{only_the_host_can_restart_the_game}",
-            resizable = false,
-        }
-        create_panel(message_config)
+    run_network_function("-cmd", "request_restart_HOST", {})
+end
+
+function request_restart_HOST(sender_id)
+    if not is_admin(sender_id) then
+        run_network_function("-cmd", "restart_refused_CLIENT", {}, sender_id)
         return
     end
+    do_restart()
+end
 
+function restart_refused_CLIENT(sender_id)
+    create_panel({
+        title ="{error}",
+        text ="{only_the_host_can_restart_the_game}",
+        resizable = false,
+    })
+end
+
+function do_restart()
     -- Reset game state
     run_function("-stats", "stop_tracking")
     run_function("-stats", "start_tracking")
     run_function("-sm", "reset_player_upgrade_rights")
+    run_function("-wpn", "reset_all")
 
     -- Reset wave system
     run_function("-wm", "reset_wave_system")
@@ -113,11 +125,19 @@ end
 -- Testing shortcut: spawn the boss immediately instead of waiting BOSS_TIME
 -- out. Host only, same as restart/kill validation.
 function handle_testboss(sender_id)
-    if not IS_HOST then
-        add_to_chat("{only_the_host_can_test_the_boss}", false)
+    run_network_function("-cmd", "request_testboss_HOST", {})
+end
+
+function request_testboss_HOST(sender_id)
+    if not is_admin(sender_id) then
+        run_network_function("-cmd", "testboss_refused_CLIENT", {}, sender_id)
         return
     end
     run_function("-bm", "force_spawn_boss")
+end
+
+function testboss_refused_CLIENT(sender_id)
+    add_to_chat("{only_the_host_can_test_the_boss}", false)
 end
 
 function _on_chat_message_received(sender_id, nickname, message)

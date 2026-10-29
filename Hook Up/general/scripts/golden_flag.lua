@@ -61,6 +61,7 @@ function on_area_body_entered(body_name)
     end-- if it is not empty, then the timer is running
     winner_name = get_value("", body_name, "nickname") or body_name
     run_network_function(name, "show_golden_flag_win_ALL", {winner_name})
+    add_achievement_progress("hu_flags", 1, body_name)
     start_reset_timer()
     handle_minigame_interrupts()
 end

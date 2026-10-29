@@ -109,22 +109,39 @@ is_interact_campfire_input_last = false
 interaction_value = 0
 is_campfire_interactable = false
 
+-- Who may light the fire: an admin (the host, or a dedicated server's owner),
+-- as always; with no admin playing (a dedicated server nobody owns right now)
+-- any player standing at the fire. On a listen host that is the host only.
+local START_RANGE = 96 -- pixels from the fire, checked on the host
+function admin_online()
+    for _, id in ipairs(get_entity_names_by_tag("user")) do
+        if is_admin(id) then return true end
+    end
+    return false
+end
+
+function may_light(steam_id)
+    return is_admin(steam_id) or not admin_online()
+end
+
 function _process(delta, inputs)
     local is_interact_campfire_input_new = inputs["key_6"]
+    local can_light = entity_exists(LOCAL_STEAM_ID) and may_light(LOCAL_STEAM_ID)
 
-    -- Only host can interact with campfire and fill the progress bar
-    if IS_HOST and is_interact_campfire_input_new and is_campfire_interactable and wave_state~="active" then
+    -- The player who may light the fire holds the key to fill the progress bar
+    if can_light and is_interact_campfire_input_new and is_campfire_interactable and wave_state~="active" then
         interaction_value = math.min(interaction_value + 100 * delta, 100)
 
         set_progress_bar({parent_name=name, name="interaction_progress_bar", value=interaction_value, position=Vector2(-32, 32), size=Vector2(64, 8),visible=true})
 
         if interaction_value == 100 then
-            start_game()
+            interaction_value = 0
+            run_network_function(name, "light_HOST", {})
         end
     end
 
     -- Check if button was released after being pressed
-    if IS_HOST and is_interact_campfire_input_last == true and is_interact_campfire_input_new == false then
+    if can_light and is_interact_campfire_input_last == true and is_interact_campfire_input_new == false then
         set_progress_bar({parent_name=name, name="interaction_progress_bar",visible=false})
         interaction_value = 0
     end
@@ -132,6 +149,17 @@ function _process(delta, inputs)
     is_interact_campfire_input_last = is_interact_campfire_input_new
 
     return inputs
+end
+
+-- The host checks the request: allowed, not already burning, and the player
+-- really stands at the fire.
+function light_HOST(sender_id)
+    if not IS_HOST or wave_state == "active" or not may_light(sender_id) then return end
+    local pos = entity_exists(sender_id) and get_value("", sender_id, "position") or nil
+    local fire = get_value("", name, "position")
+    if pos == nil or fire == nil then return end
+    if (pos.x - fire.x) ^ 2 + (pos.y - fire.y) ^ 2 > START_RANGE * START_RANGE then return end
+    start_game()
 end
 
 function start_game()
@@ -174,7 +202,8 @@ function set_campfire_interactable(state)
         is_campfire_interactable=false
     end
 
-    if IS_HOST then
+    -- The hint is for whoever may light the fire (see may_light).
+    if entity_exists(LOCAL_STEAM_ID) and may_light(LOCAL_STEAM_ID) then
         set_label({
         parent_name = "",
         name = "_center_information",

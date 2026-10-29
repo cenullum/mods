@@ -605,7 +605,7 @@ function gen_scan()
             if pos then enqueue_around(pos) end
         end
     else
-        local pos = get_value("", LOCAL_STEAM_ID, "position")
+        local pos = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil)
         if pos then enqueue_around(pos) end
     end
 end

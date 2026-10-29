@@ -147,8 +147,25 @@ function render_buttons()
         end
     end
     set_button({ name = "_continue", visible = (cl_phase == "narration") })
-    set_button({ name = "_restart", visible = (cl_phase == "ended" and IS_HOST) })
-    set_button({ name = "_start", visible = (cl_phase == "idle" and IS_HOST) })
+    local can_start = may_start_locally()
+    set_button({ name = "_restart", visible = (cl_phase == "ended" and can_start) })
+    set_button({ name = "_start", visible = (cl_phase == "idle" and can_start) })
+end
+
+-- Is an admin (the host, or a dedicated server's owner) among the players?
+function admin_online()
+    for _, id in ipairs(get_entity_names_by_tag("user")) do
+        if is_admin(id) then return true end
+    end
+    return false
+end
+
+-- An admin starts the story as always. With no admin playing (a dedicated
+-- server nobody owns right now), everyone gets the button and a majority of
+-- presses starts it - on a listen host the host is always there, so nothing
+-- changes.
+function may_start_locally()
+    return is_admin(LOCAL_STEAM_ID) or not admin_online()
 end
 
 function render_status()
@@ -164,13 +181,25 @@ function render_status()
     set_label({ name = "_status", text = text })
 end
 
+-- Numbers cross the network as floats, so an unfloored tally printed "(2.0)",
+-- "Vote 3.0/4.0" and "39.0s". Everything a status carries is floored on arrival.
+local function whole(n)
+    return math.floor((tonumber(n) or 0) + 0.5)
+end
+
+local function whole_counts(counts)
+    local out = {}
+    for id, n in pairs(counts or {}) do out[id] = whole(n) end
+    return out
+end
+
 -- Host pushes the live vote tally + clock + phase to everyone (incl. itself).
 function status_ALL(sender_id, data)
     cl_phase = data.phase
-    cl_counts = data.counts or {}
-    cl_secs = data.secs
-    cl_voted = data.voted or 0
-    cl_total = data.total or 0
+    cl_counts = whole_counts(data.counts)
+    cl_secs = data.secs and whole(data.secs) or -1
+    cl_voted = whole(data.voted)
+    cl_total = whole(data.total)
     render_status()
     render_buttons()
 end
@@ -182,6 +211,9 @@ function _on_vn_node(story_id, node)
     if story_id ~= story then return end
     render_node(node)
     if IS_HOST then host_setup_node(node) end
+    if type(node) == "table" and node.id and list_contains(node.tags or {}, "ending") then
+        add_unique_achievement_progress("sd_endings", node.id)
+    end
 end
 
 function _on_vn_end(story_id, node_id)
@@ -269,7 +301,11 @@ function begin_story()
     if not IS_HOST or started then return end
     if story == "" then return end
     started = true
-    voters[LOCAL_STEAM_ID] = true -- the host votes too
+    start_votes = {}
+    -- The host votes too - when it is a player (a dedicated server is not).
+    if entity_exists(LOCAL_STEAM_ID) then
+        voters[LOCAL_STEAM_ID] = true
+    end
     run_network_function(name, "apply_start_ALL", { {} })
     stop_timer("sd_tick")
     start_timer({ timer_id = "sd_tick", entity_name = name,
@@ -361,11 +397,26 @@ function start_click(args)
     run_network_function(name, "start_HOST", { {} })
 end
 
+start_votes = {} -- host: steam_id -> true, while nobody with admin rights plays
+
 function start_HOST(sender_id, data)
-    -- Only the host may start; guard even though only the host sees the button.
-    if not IS_HOST then return end
-    if sender_id ~= HOST_STEAM_ID and tostring(sender_id) ~= HOST_STEAM_ID then return end
-    begin_story()
+    if not IS_HOST or started then return end
+    if is_admin(sender_id) then
+        begin_story()
+        return
+    end
+    if admin_online() then return end
+    start_votes[sender_id] = true
+    local have, total = 0, 0
+    for _, id in ipairs(get_entity_names_by_tag("user")) do
+        total = total + 1
+        if start_votes[id] then have = have + 1 end
+    end
+    local needed = math.floor(total / 2) + 1
+    add_to_chat(tostring(get_value("", sender_id, "nickname") or "") .. "{voted_to_start}" .. have .. "/" .. needed, true)
+    if have >= needed then
+        begin_story()
+    end
 end
 
 function choice_click(slot)
@@ -382,9 +433,15 @@ function continue_click(args)
 end
 
 function restart_click(args)
-    if not IS_HOST then return end
+    run_network_function(name, "restart_HOST", { {} })
+end
+
+-- Same rules as starting: an admin restarts at once, otherwise a majority vote
+-- when no admin is playing.
+function restart_HOST(sender_id, data)
+    if not IS_HOST or phase ~= "ended" then return end
     started = false
-    begin_story()
+    start_HOST(sender_id, data)
 end
 
 -- =============================================================================
@@ -434,10 +491,10 @@ function sync_state_ALL(sender_id, data)
     vn_goto(story, data.node, false)
     render_node(vn_current(story))
     cl_phase = data.phase
-    cl_counts = data.counts or {}
-    cl_secs = data.secs
-    cl_voted = data.voted or 0
-    cl_total = data.total or 0
+    cl_counts = whole_counts(data.counts)
+    cl_secs = data.secs and whole(data.secs) or -1
+    cl_voted = whole(data.voted)
+    cl_total = whole(data.total)
     render_status()
     render_buttons()
 end

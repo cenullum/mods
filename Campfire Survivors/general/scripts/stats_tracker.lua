@@ -80,11 +80,28 @@ function stop_tracking()
     end
 end
 
+-- Kills already handed to each player's Steam achievement counter. Kills are
+-- sent in one batch per wave (flush_achievement_kills), not one message per kill.
+local kills_sent = {}
+
+function flush_achievement_kills()
+    if not IS_HOST then return end
+    for player_id, stats in pairs(player_stats) do
+        local kills = math.floor(stats.enemies_killed or 0)
+        local delta = kills - (kills_sent[player_id] or 0)
+        if delta > 0 then
+            add_achievement_progress("cs_kills", delta, player_id)
+            kills_sent[player_id] = kills
+        end
+    end
+end
+
 -- Reset all player stats for a new game
 function reset_all_player_stats()
     if not IS_HOST then return end
 
     player_stats = {}
+    kills_sent = {}
 
     -- Initialize stats for all connected players
     local player_entities = get_entity_names_by_tag("user")
@@ -210,6 +227,19 @@ function track_upgrade_level(player_id, upgrade_id, is_weapon_upgrade)
 
     -- Update the level
     player_stats[player_id].upgrade_levels[upgrade_key] = current_level
+end
+
+-- Track the level of an arsenal weapon (weapons.lua calls this on the host
+-- whenever a player picks one up or levels it)
+function track_arsenal_level(player_id, weapon_id, level)
+    if not IS_HOST then return end
+    if not player_stats[player_id] then
+        initialize_player_stats(player_id)
+    end
+    if not player_stats[player_id].upgrade_levels then
+        player_stats[player_id].upgrade_levels = {}
+    end
+    player_stats[player_id].upgrade_levels["arsenal_" .. math.floor(tonumber(weapon_id))] = math.floor(tonumber(level))
 end
 
 -- Get all game stats to display to players
@@ -400,6 +430,21 @@ function create_player_stats_table(panel_name, all_stats)
 
                 if level > 0 then
                     upgrade_text = upgrade_text .. name .. " Lv" .. level .. ", "
+                end
+            end
+
+            -- Arsenal weapons, by name and level
+            local arsenal_names = {
+                [1] = "{wpn_lightning}",
+                [2] = "{wpn_aura}",
+                [3] = "{wpn_orbit}",
+                [4] = "{wpn_molotov}"
+            }
+            for id = 1, 4 do
+                local level = math.floor(stats.upgrade_levels["arsenal_" .. id] or 0)
+                if level > 0 then
+                    upgrade_text = upgrade_text .. arsenal_names[id]
+                        .. string.format(translate("{weapon_level_suffix}"), level) .. ", "
                 end
             end
 

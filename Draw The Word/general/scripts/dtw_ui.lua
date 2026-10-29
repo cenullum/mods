@@ -28,6 +28,12 @@ local LBL_TIME        = "_T0ymDUIzwocvC7FK1782862419"
 
 -- Local view of the current round
 local hud_phase = "idle"
+
+-- Points cross the Lua/GDScript boundary and come back as floats, so a bare
+-- `.. p.score` printed "59.0". Every number shown as points goes through this.
+local function whole(n)
+    return tostring(math.floor((tonumber(n) or 0) + 0.5))
+end
 local am_drawer = false
 local drawer_name = ""
 local my_word = ""       -- only set for the drawer
@@ -149,7 +155,7 @@ function on_report_update(report_count, threshold)
     if is_panel_exists(REPORT) then
         update_panel_settings(REPORT, {
             text = string.format(translate("{reports_x_of_y}"),
-                "[color=#ff8866]" .. report_count .. "[/color]", threshold),
+                "[color=#ff8866]" .. whole(report_count) .. "[/color]", whole(threshold)),
         })
     end
 end
@@ -299,10 +305,10 @@ end
 function on_correct_guess(guesser_id, guesser_name, pts)
     if guesser_id == LOCAL_STEAM_ID then
         add_to_chat("[color=#66ff99][b]" ..
-            string.format(translate("{you_guessed_it}"), pts) .. "[/b][/color]", false)
+            string.format(translate("{you_guessed_it}"), whole(pts)) .. "[/b][/color]", false)
     else
         add_to_chat("[color=#66ff99]" .. string.format(
-            translate("{x_guessed_correctly}"), "[b]" .. guesser_name .. "[/b]", pts) .. "[/color]", false)
+            translate("{x_guessed_correctly}"), "[b]" .. guesser_name .. "[/b]", whole(pts)) .. "[/color]", false)
     end
 end
 
@@ -334,10 +340,10 @@ function on_round_end(word, p_drawer_name, bonus, lines)
         summary = summary .. "\n[color=#ff8888]{nobody_guessed}[/color]"
     else
         for _, l in ipairs(lines) do
-            summary = summary .. "\n[color=#66ff99]" .. l.name .. "[/color] +" .. l.points
+            summary = summary .. "\n[color=#66ff99]" .. l.name .. "[/color] +" .. whole(l.points)
         end
         summary = summary .. "\n[color=#88ccff]" .. string.format(
-            translate("{x_drawer_bonus}"), p_drawer_name, bonus) .. "[/color]"
+            translate("{x_drawer_bonus}"), p_drawer_name, whole(bonus)) .. "[/color]"
     end
     add_to_chat(summary, false)
     am_drawer = false
@@ -361,10 +367,13 @@ function on_scoreboard(scoreboard)
         offset_ratio = Vector2(2, 0.8),
     })
     for _, p in ipairs(scoreboard) do
-        local label = p.name .. " - " .. p.score
+        local label = p.name .. " - " .. whole(p.score)
         local col = Color(0.45, 0.5, 0.55, 1)
+        -- The drawer is marked with a pencil icon (images/pencil.png); a "[pencil]"
+        -- text prefix used to show up literally in the list.
+        local icon = ""
         if p.is_drawer then
-            label = "[pencil] " .. label
+            icon = "pencil"
             col = Color(0.3, 0.55, 0.8, 1)
         end
         if p.steam_id == LOCAL_STEAM_ID then
@@ -375,6 +384,7 @@ function on_scoreboard(scoreboard)
             text = label,
             color = col,
             is_vertical = true,
+            icon_path = icon,
         })
     end
 end
@@ -411,7 +421,7 @@ function on_game_over(scoreboard)
         local p = scoreboard[i]
         add_button_to_panel(PODIUM, {
             text = medals[i] .. "  " .. p.name .. "  -  " ..
-                string.format(translate("{x_pts}"), p.score),
+                string.format(translate("{x_pts}"), whole(p.score)),
             entity_name = "-dtw_ui",
             function_name = "open_player_profile",
             extra_args = { steam_id = p.steam_id },
@@ -424,7 +434,7 @@ function on_game_over(scoreboard)
     for i = 4, #scoreboard do
         local p = scoreboard[i]
         add_button_to_panel(PODIUM, {
-            text = i .. ". " .. p.name .. "  -  " .. p.score .. "{pts}",
+            text = i .. ". " .. p.name .. "  -  " .. whole(p.score) .. "{pts}",
             color = Color(0.4, 0.45, 0.5, 1),
             is_vertical = true,
         })

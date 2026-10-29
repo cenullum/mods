@@ -13,6 +13,9 @@ set_input_display_name("key_6","{inventory}")
 set_input_display_name("key_7","{hook}")
 set_input_display_name("key_12","{hook}")
 
+-- Show every other player's mouse cursor (colour per player: user.lua)
+set_cursor(true)
+
 function refresh_status_label(state, charging, cooldown)
     local header = "{hook_hint_header}"
     local status = ""
@@ -112,3 +115,6 @@ change_view("gameplay")
 
 -- Set initial inputs label
 update_inputs_label()
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "hook_up")

@@ -274,9 +274,10 @@ function host_boot()
     set_minimap(true) -- allow every peer to render its own island map (G key)
     local data = load_json(SAVE_PATH)
     if data and data.seed then
+        -- JSON numbers come back as floats ("day 2.0" in the welcome line): floor them here.
         seed_value = math.floor(data.seed)
-        day = data.day or 1
-        t = data.t or 0
+        day = math.floor(data.day or 1)
+        t = math.floor(data.t or 0)
         is_night = data.is_night or false
         friendly_fire = data.friendly_fire or false
         boss_defeated = data.boss_defeated or false
@@ -462,9 +463,9 @@ function _on_user_initialized(steam_id, nickname)
 end
 
 function state_ALL(sender_id, new_seed, new_day, new_t, night, ff, bossed)
-    seed_value = new_seed
-    day = new_day
-    t = new_t
+    seed_value = math.floor(new_seed)
+    day = math.floor(new_day)
+    t = math.floor(new_t)
     is_night = night
     friendly_fire = ff
     boss_defeated = bossed
@@ -549,8 +550,8 @@ function begin_day()
 end
 
 function phase_ALL(sender_id, new_day, new_t, night)
-    day = new_day
-    t = new_t
+    day = math.floor(new_day)
+    t = math.floor(new_t)
     is_night = night
     -- phase_ALL only ever fires for a LIVE dusk/dawn transition (both
     -- directions), so it always fades - "true", not "night" (a state restore
@@ -742,10 +743,15 @@ local function stat_entry(steam_id)
     return stats[steam_id]
 end
 
+-- Stats that also feed a Steam achievement counter of the same player.
+local ACHIEVEMENT_COUNTERS = { trees = "mbl_trees", stones = "mbl_stones", kills = "mbl_kills", crafts = "mbl_crafts" }
+
 function add_stat(steam_id, stat_key, amount)
     if not IS_HOST then return end
     local entry = stat_entry(steam_id)
     entry[stat_key] = (entry[stat_key] or 0) + amount
+    local counter = ACHIEVEMENT_COUNTERS[stat_key]
+    if counter then add_achievement_progress(counter, amount, steam_id) end
 end
 
 -- =============================================================================
@@ -975,7 +981,7 @@ function boom_fx_ALL(sender_id, x, y)
     start_particle({ particle_id = "mbl_boom", position = at })
     set_audio({ stream_path = "bomb", is_2d = true, position = at,
         max_distance = BOOM_SHAKE_RANGE * 2, volume = 1, random_pitch = 0.06 })
-    local me = get_value("", LOCAL_STEAM_ID, "position")
+    local me = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil)
     if not me then return end
     local dist = distance_to(me, at)
     if dist >= BOOM_SHAKE_RANGE then return end
@@ -1148,6 +1154,7 @@ function host_place_portal(args)
     spawn_portal(pid)
     sync_portals()
     save_world()
+    unlock_achievement("MBL_PORTAL", steam_id)
     local left = PORTALS_PER_PLAYER - portal_count(steam_id)
     run_network_function(steam_id, "toast_ALL",
         { "{portal_planted}" .. left .. "{placement}" .. (left == 1 and "" or "s")
@@ -1427,6 +1434,7 @@ function on_boss_defeated(args)
 end
 
 function victory_ALL(sender_id, payload)
+    unlock_achievement("MBL_BOSS")
     if nav_icon_name ~= "" then
         destroy("", nav_icon_name)
         nav_icon_name = ""
@@ -1438,7 +1446,7 @@ function victory_ALL(sender_id, payload)
             max_distance = NPC_DEATH_SFX_DISTANCE, volume = -2, random_pitch = 0.06 })
     end
     -- Confetti around the local player.
-    local pos = get_value("", LOCAL_STEAM_ID, "position") or Vector2(0, 0)
+    local pos = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil) or Vector2(0, 0)
     create_particle({ particle_id = "mbl_confetti", texture_path = "white",
         lifetime = 1.8, amount = 160, explosiveness = 1.0, one_shot = true,
         spread = 180, initial_velocity_min = 90, initial_velocity_max = 260,

@@ -1,0 +1,129 @@
+{
+  "_about": "Cake Clicker's numbers and lists in one place, read by the scripts with load_json. No words here: every name a player reads comes from general/language/cake_clicker_<code>.json, except the bots' names, which are the same in every language on purpose.",
+
+  "timing": {
+    "step": 0.05,
+    "snapshot": 0.1,
+    "start_countdown": 3,
+    "card_lock": 5,
+    "market_countdown": 20,
+    "buyer_note": 1.6,
+    "presses_per_second": 16
+  },
+  "limits": { "max_seats": 8, "max_bots": 5, "pocket_size": 3 },
+  "_layout": "world units; the camera shows x -576..576, y -324..324. Shared by the views and by the bots, who move their cursors to the same places.",
+  "table_layout": { "center_x": 0, "center_y": 45, "table": 200, "plate": 136, "cake": 118, "seats": 184, "avatar": 21 },
+  "market_layout": { "card_width": 168, "card_height": 236, "gap": 18, "y": 50 },
+
+  "layers": {
+    "cream":    { "color": "#fbf0df", "softness": 1.3 },
+    "sponge":   { "color": "#f1c46c", "softness": 1.0 },
+    "ganache":  { "color": "#4e2a1a", "softness": 0.6 },
+    "fruit":    { "color": "#e04461", "softness": 1.0 },
+    "biscuit":  { "color": "#b27238", "softness": 0.5 },
+    "icecream": { "color": "#bfe6ef", "softness": 1.2 },
+    "phyllo":   { "color": "#efc464", "softness": 0.7 },
+    "caramel":  { "color": "#c06a1c", "softness": 0.4 },
+    "honey":    { "color": "#f2b330", "softness": 1.3 }
+  },
+  "tools": {
+    "fork":   ["sponge", "fruit"],
+    "ladle":  ["cream", "icecream"],
+    "knife":  ["biscuit", "phyllo"],
+    "hammer": ["ganache", "caramel"]
+  },
+
+  "cakes": [
+    { "id": "vanilla", "icon": "birthday", "coin": 1.0, "size": 1.0,
+      "layers": [["cream", 30], ["sponge", 50], ["biscuit", 20]] },
+    { "id": "chocolate", "icon": "choco", "coin": 1.25, "size": 1.05,
+      "layers": [["ganache", 30], ["sponge", 40, "#7b4529"], ["cream", 15, "#a5694a"], ["biscuit", 15]] },
+    { "id": "strawberry", "icon": "strawberry", "coin": 1.1, "size": 1.0,
+      "layers": [["cream", 25], ["fruit", 30], ["sponge", 45]] },
+    { "id": "cheesecake", "icon": "cheesecake", "coin": 1.2, "size": 1.0,
+      "layers": [["fruit", 15, "#c2264f"], ["cream", 55, "#fff4cf"], ["biscuit", 30]] },
+    { "id": "icecream", "icon": "icecream", "coin": 1.35, "size": 1.0, "melts": true,
+      "layers": [["icecream", 45], ["ganache", 20], ["biscuit", 35]] },
+    { "id": "baklava", "icon": "baklava", "coin": 1.5, "size": 1.1,
+      "layers": [["phyllo", 22], ["caramel", 12, "#7fae3e"], ["phyllo", 22], ["caramel", 12, "#7fae3e"], ["phyllo", 32]] },
+    { "id": "trilece", "icon": "flan", "coin": 1.2, "size": 1.0,
+      "layers": [["caramel", 22], ["cream", 28], ["sponge", 50, "#f5d79a"]] },
+    { "id": "tiramisu", "icon": "coffee", "coin": 1.2, "size": 1.0,
+      "layers": [["cream", 30, "#f6ead0"], ["sponge", 35, "#8a5a3a"], ["cream", 35, "#f6ead0"]] }
+  ],
+  "final_cake": { "id": "wedding", "icon": "ring", "coin": 1.5, "size": 2.2, "final": true,
+    "layers": [["cream", 20, "#fdf3fa"], ["fruit", 15, "#6b2a5c"], ["sponge", 25], ["ganache", 15], ["sponge", 25]] },
+
+  "_items": "kind: tool / power (permanent) / auto (permanent, works by itself) / use (one shot, goes to the pocket). price is in cake units, growth multiplies it per level owned, max caps the level.",
+  "items": [
+    { "id": "fork",          "kind": "tool",  "icon": "fork",       "rarity": 0, "price": 1.1, "growth": 1.45 },
+    { "id": "ladle",         "kind": "tool",  "icon": "ladle",      "rarity": 0, "price": 1.0, "growth": 1.45 },
+    { "id": "knife",         "kind": "tool",  "icon": "knife",      "rarity": 0, "price": 1.2, "growth": 1.45 },
+    { "id": "hammer",        "kind": "tool",  "icon": "hammer",     "rarity": 1, "price": 1.3, "growth": 1.45 },
+    { "id": "gold_spoon",    "kind": "tool",  "icon": "gold_spoon", "rarity": 2, "price": 2.6, "growth": 1.6 },
+    { "id": "big_spoon",     "kind": "power", "icon": "spoon",      "rarity": 0, "price": 1.2, "growth": 1.4 },
+    { "id": "master_hand",   "kind": "power", "icon": "sparkle",    "rarity": 1, "price": 1.0, "growth": 1.4, "max": 6 },
+    { "id": "strong_arm",    "kind": "power", "icon": "rollpin",    "rarity": 0, "price": 0.8, "growth": 1.4 },
+    { "id": "stamina",       "kind": "power", "icon": "weight",     "rarity": 0, "price": 0.8, "growth": 1.4 },
+    { "id": "big_belly",     "kind": "power", "icon": "pig",        "rarity": 0, "price": 0.9, "growth": 1.35 },
+    { "id": "fast_digest",   "kind": "power", "icon": "tea",        "rarity": 0, "price": 0.9, "growth": 1.35 },
+    { "id": "tip_jar",       "kind": "power", "icon": "moneybag",   "rarity": 1, "price": 1.3, "growth": 1.5 },
+    { "id": "cherry_magnet", "kind": "power", "icon": "magnet",     "rarity": 1, "price": 1.0, "growth": 1.6, "max": 3 },
+    { "id": "apprentice",    "kind": "auto",  "icon": "chef",       "rarity": 0, "price": 1.3, "growth": 1.45 },
+    { "id": "robo_jaw",      "kind": "auto",  "icon": "teeth",      "rarity": 1, "price": 1.5, "growth": 1.5 },
+    { "id": "conveyor",      "kind": "auto",  "icon": "conveyor",   "rarity": 2, "price": 3.0, "growth": 1.7 },
+    { "id": "motor",         "kind": "auto",  "icon": "gear",       "rarity": 1, "price": 1.3, "growth": 1.5 },
+    { "id": "guard_dog",     "kind": "auto",  "icon": "cloche",     "rarity": 1, "price": 1.4, "growth": 1.5 },
+    { "id": "smart_jaw",     "kind": "auto",  "icon": "brain",      "rarity": 1, "price": 1.2, "max": 1 },
+    { "id": "bakery",        "kind": "auto",  "icon": "cupcake",    "rarity": 1, "price": 2.0, "growth": 1.6 },
+    { "id": "butler",        "kind": "auto",  "icon": "receipt",    "rarity": 2, "price": 2.2, "max": 1 },
+    { "id": "coffee",        "kind": "use",   "icon": "coffee",     "rarity": 0, "price": 0.6 },
+    { "id": "ayran",         "kind": "use",   "icon": "milk",       "rarity": 0, "price": 0.5 },
+    { "id": "turnip_juice",  "kind": "use",   "icon": "salgam",     "rarity": 0, "price": 0.5 },
+    { "id": "honey_sauce",   "kind": "use",   "icon": "honey",      "rarity": 1, "price": 0.9 },
+    { "id": "quick_spin",    "kind": "use",   "icon": "tornado",    "rarity": 1, "price": 0.8 },
+    { "id": "spoon_throw",   "kind": "use",   "icon": "boom",       "rarity": 1, "price": 0.8 },
+    { "id": "hot_pepper",    "kind": "use",   "icon": "pepper",     "rarity": 1, "price": 0.8 },
+    { "id": "table_lock",    "kind": "use",   "icon": "lock",       "rarity": 1, "price": 0.7 },
+    { "id": "salt_shaker",   "kind": "use",   "icon": "salt",       "rarity": 1, "price": 0.7 },
+    { "id": "raccoon_fork",  "kind": "use",   "icon": "raccoon",    "rarity": 2, "price": 1.0 }
+  ],
+  "upgrade_order": ["apprentice", "robo_jaw", "conveyor", "motor", "guard_dog", "smart_jaw", "bakery", "butler",
+    "big_spoon", "master_hand", "fork", "ladle", "knife", "hammer", "gold_spoon", "strong_arm", "stamina",
+    "big_belly", "fast_digest", "tip_jar", "cherry_magnet"],
+  "rarity_weights": [6, 3, 1],
+
+  "_bots": "name/short are proper names: the same in every language.",
+  "bots": [
+    { "key": "bear",  "name": "Obur Osman",    "short": "Osman", "icon": "bear",  "color": "#3a7bd5", "persona": "glutton" },
+    { "key": "fox",   "name": "Sinsi Sinan",   "short": "Sinan", "icon": "fox",   "color": "#ef8a17", "persona": "sneaky" },
+    { "key": "owl",   "name": "Hesapçı Hülya", "short": "Hülya", "icon": "owl",   "color": "#1f9d8b", "persona": "trader" },
+    { "key": "frog",  "name": "Kaşıkçı Kemal", "short": "Kemal", "icon": "frog",  "color": "#8e5bd8", "persona": "toolsmith" },
+    { "key": "bunny", "name": "Tatlı Tülin",   "short": "Tülin", "icon": "bunny", "color": "#5d9b2e", "persona": "balanced" }
+  ],
+  "_personas": "defend/steal: how readily a bot pushes back or grabs a neighbour's slice; likes: extra weight per item when shopping.",
+  "personas": {
+    "glutton":   { "defend": 0.55, "steal": 0.25, "likes": { "big_spoon": 1.6, "big_belly": 1.8, "fast_digest": 1.4, "ayran": 1.5, "coffee": 1.4, "honey_sauce": 1.5 } },
+    "sneaky":    { "defend": 0.3,  "steal": 1.0,  "likes": { "spoon_throw": 2.2, "salt_shaker": 2.0, "raccoon_fork": 2.2, "hot_pepper": 2.0, "quick_spin": 1.8, "strong_arm": 1.8, "stamina": 1.5, "motor": 1.8, "guard_dog": 1.5 } },
+    "trader":    { "defend": 0.45, "steal": 0.4,  "likes": { "apprentice": 2.2, "robo_jaw": 2.0, "conveyor": 2.0, "bakery": 2.2, "tip_jar": 2.2, "cherry_magnet": 1.6, "motor": 1.3 } },
+    "toolsmith": { "defend": 0.45, "steal": 0.45, "tool_love": 1.6, "likes": { "master_hand": 2.0, "big_spoon": 1.4 } },
+    "balanced":  { "defend": 0.4,  "steal": 0.5,  "likes": {} }
+  },
+  "_bot_levels": "clicks: presses per second at the start of a game; buys: cards per market; reaction: seconds before a bot buys a card that just unlocked; shopping_gap: seconds between two looks at the cards.",
+  "bot_levels": {
+    "easy":   { "clicks": 3.2, "buys": 1, "reaction": 2.5, "shopping_gap": 1.8 },
+    "normal": { "clicks": 5.0, "buys": 2, "reaction": 1.6, "shopping_gap": 1.0 },
+    "hard":   { "clicks": 7.0, "buys": 2, "reaction": 0.9, "shopping_gap": 1.0 }
+  },
+  "remark_counts": { "steal": 4, "robbed": 4, "stuffed": 3, "hit": 3, "buy": 3, "crown": 2, "plot": 3, "cherry": 2, "tired": 2, "spicy": 2 },
+  "human_colors": ["#e23d6d", "#c0392b", "#34495e", "#b8860b", "#8d5524", "#0e7c86", "#b03a8a", "#6c7a89"],
+
+  "difficulties": ["easy", "normal", "hard"],
+  "end_modes": ["time", "cakes", "crowns"],
+  "_end_values": "time in minutes; pace = how much faster money flows and how much smaller the cakes are in a short game.",
+  "end_values": {
+    "time":   { "options": [3, 5, 10, 30], "default": 5,  "pace": { "3": 3, "5": 2.2, "10": 1.5, "30": 1 } },
+    "cakes":  { "options": [5, 10, 20],    "default": 10, "pace": { "5": 2.2, "10": 1.5, "20": 1 } },
+    "crowns": { "options": [3, 5, 8],      "default": 5,  "pace": { "3": 2.2, "5": 1.5, "8": 1.1 } }
+  }
+}

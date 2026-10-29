@@ -111,7 +111,9 @@ function _on_user_initialized(steam_id, nickname)
         if steam_id == name then
             local player_color = generate_random_color()
             run_network_function(name, "create_user_ALL", { player_color })
-        else
+        elseif outline_color ~= nil then
+            -- Not yet picked when this player has not finished joining
+            -- itself; its own create_user_ALL reaches the newcomer then.
             run_network_function(name, "create_user_CLIENT", { outline_color }, steam_id)
         end
     end

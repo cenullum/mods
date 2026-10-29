@@ -1,0 +1,9 @@
+Cake Clicker - a cake-eating race around one round table for 2-8 players, with up to five bots.
+
+There is always a cake on the table, cut into two slices per seat, and you can only eat the slice in front of you: press left or right to take a bite. When your slice is gone, the same two buttons push the plate instead. Push one way often enough and the cake turns a slice, bringing a full one to you and leaving your neighbour with an empty plate. Everyone also eats by themselves, slowly, and every gram you eat is money.
+
+When a cake is finished the game freezes and the market opens: three cards (one more for every two players past four) that anyone can buy. Buy a card and a new one takes its place: you can read it at once, but it stays locked for 5 seconds, and while a card is locked the market's 20-second countdown waits. When it runs out the next cake arrives and the eating goes on.
+
+Spend your money on tools for the hard layers (a hammer for ganache, a knife for biscuit), bigger bites, eating on autopilot, a guard dog for your slice, or one-shot tricks for your pocket: a spoon thrown at the leader, a hot pepper, salt on their slice, a fork that steals a bite. Golden cherries, melting ice cream, a waiter who turns the plate when nobody can eat, and a giant wedding cake in the final.
+
+The host picks how many bots sit down, how good they are and how the game ends (time, number of cakes, or a crown race) on a board everyone can see. Everything happens on the table itself, everyone's mouse cursor is visible, and the bots move theirs like players do.

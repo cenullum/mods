@@ -17,12 +17,13 @@ bubble_text_name = ""
 
 function create_bubble_effect()
     -- Calculate size based on fish weight (linear scale between min and max)
-    local bubble_size = 0.2
+    local bubble_size = 1.0
     if fish_weight then
-        -- Linear scale: 0.2 for lightest fish (0.01kg), 3.0 for heaviest fish (100kg)
+        -- Linear scale: the lightest fish (0.01kg) shows at its image's own size,
+        -- the heaviest (100kg) at 3x - a catch is never drawn smaller than it is.
         local min_fish_weight = 0.01  -- Minimum weight (seahorse)
         local max_fish_weight = 100.0 -- Maximum weight (large shark)
-        local min_bubble_size = 0.2
+        local min_bubble_size = 1.0
         local max_bubble_size = 3.0
         
         -- Linear interpolation between min and max sizes
@@ -46,7 +47,8 @@ function create_bubble_effect()
     if text and text ~= "" then
         local text_position = Vector2(-250, 0) -- Center position
         if bubble_image_name ~= "" then
-            text_position = Vector2(-250, 64) -- Below image if image exists
+            -- Below the image: fish images are 64 px tall, scaled by bubble_size.
+            text_position = Vector2(-250, 32 * bubble_size + 8)
         end
         
         bubble_text_name = set_label({

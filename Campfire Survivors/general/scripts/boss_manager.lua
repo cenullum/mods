@@ -248,6 +248,7 @@ end
 function victory_ALL(sender_id, killer_id)
     boss_active = false
     clear_nav_icon()
+    unlock_achievement("CS_BOSS")
 
     add_to_chat("[color=#63c74d]" .. translate("{the_guardian_has_fallen}") .. "[/color]", false)
 
@@ -257,7 +258,7 @@ function victory_ALL(sender_id, killer_id)
         spread = 180, initial_velocity_min = 90, initial_velocity_max = 260,
         gravity = { x = 0, y = 160 }, scale_amount_min = 0.15, scale_amount_max = 0.3,
         color_random = true })
-    local pos = get_value("", LOCAL_STEAM_ID, "position") or Vector2(0, 0)
+    local pos = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil) or Vector2(0, 0)
     start_particle({ particle_id = "cs_confetti", position = Vector2(pos.x, pos.y - 40) })
 
     create_panel({ name = "boss_victory_panel", title = "{congratulations}",

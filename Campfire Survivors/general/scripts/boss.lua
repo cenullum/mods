@@ -72,7 +72,7 @@ local PHASE_PATTERNS = {
     { "shotgun", "ring", "volley" },
     { "shotgun", "ring", "spiral", "volley" },
 }
--- Amber -> orange -> red, so you can read the phase off the outline alone.
+-- Amber -> orange -> red, so you can read the phase off the health bar.
 local PHASE_COLOR = {
     Color(0.99, 0.76, 0.31, 1),
     Color(0.93, 0.49, 0.19, 1),
@@ -108,11 +108,24 @@ local spiral_left = 0
 local target = ""
 local phase_locked = false          -- true during the between-phase pause
 
-image_name = set_image({ parent_name = name, name = "body", image_path = "boss",
+-- The sprite is a 17-frame animation (boss1..boss17 in general/images; the old
+-- single boss.png is gone, and a missing image falls back to the default logo).
+-- Purely cosmetic, so every peer flips its own frames on a local timer.
+local ANIM_FRAMES = 17
+local ANIM_FPS = 12
+local anim_frame = 1
+
+image_name = set_image({ parent_name = name, name = "body", image_path = "boss1",
     scale = Vector2(SIZE, SIZE), z_index = 2 })
+
+function animate_body(args)
+    anim_frame = (anim_frame % ANIM_FRAMES) + 1
+    set_image({ parent_name = name, name = image_name, image_path = "boss" .. anim_frame })
+end
+
+start_timer({ timer_id = "banim" .. name, entity_name = name,
+    function_name = "animate_body", wait_time = 1 / ANIM_FPS })
 set_shadow_of_image(name, image_name, true)
-set_shader({ parent_name = name, image_name = image_name, shader_name = "circle",
-    outline_color = PHASE_COLOR[1] })
 
 set_collision({ parent_name = name, name = "col", shape = "circle", size = SIZE / 2,
     collision_layer = { 3 },   -- monster layer: player bullets and damage areas see it
@@ -330,15 +343,13 @@ function end_phase_break()
     retarget()
 end
 
--- Every peer: new bar size, new outline colour, banner + growl.
+-- Every peer: new bar size, new bar colour, banner + growl.
 function phase_ALL(sender_id, new_phase, new_max)
     phase = math.floor(new_phase)
     max_health = new_max
     health = new_max
     set_progress_bar({ parent_name = name, name = "hpbar",
         max_value = new_max, value = new_max, modulate = PHASE_COLOR[phase] })
-    set_shader({ parent_name = name, image_name = image_name, shader_name = "circle",
-        outline_color = PHASE_COLOR[phase] })
     set_label({ parent_name = name, name = "levellabel",
         text = string.format(translate("{boss_level_label}"), phase) })
 
@@ -413,7 +424,7 @@ end
 function show_damage_label_ALL(sender_id, damage_amount, died, hit_dir)
     -- Same flash + squash every monster gets, but half as far: a boss this big
     -- reads as jelly at the default squash (see hit_fx.lua).
-    run_function("-hfx", "play_hit", { name, image_name, "circle", hit_dir, 0.5 })
+    run_function("-hfx", "play_hit", { name, image_name, "", hit_dir, 0.5 })
 
     -- Same hit/death pair every monster plays, just louder - this is the boss.
     set_audio({

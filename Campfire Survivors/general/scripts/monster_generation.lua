@@ -322,9 +322,17 @@ function schedule_next_spawn()
 end
 
 monster_count = 0
+
+-- "Monsters: 12". The count arrives as a float (every number that crosses into
+-- Lua does), so it is floored - the label used to read "Monsters: 7.0".
+local function show_monster_count()
+    set_value("", "_monster_count", "text",
+        string.format(translate("{monster_count_label}"), math.floor(monster_count)))
+end
+
 function monster_count_reset()
     monster_count = 0
-    set_value("", "_monster_count", "text", "Monsters: 0")
+    show_monster_count()
     
     -- If host, notify all clients about the monster count reset
     if IS_HOST then
@@ -334,7 +342,7 @@ end
 
 function monster_count_change(addition)
     monster_count = monster_count + addition
-    set_value("", "_monster_count", "text", "Monsters: "..monster_count)
+    show_monster_count()
     
     -- If host, notify all clients about the monster count change
     if IS_HOST then
@@ -345,7 +353,7 @@ end
 -- Network function to update monster count on clients
 function update_monster_count_CLIENT(sender_id, count)
     monster_count = count
-    set_value("", "_monster_count", "text", "Monsters: "..monster_count)
+    show_monster_count()
 end
 
 function get_info()

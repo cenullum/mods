@@ -19,3 +19,6 @@ set_value("", input_label_id, "text", input_text)
 function _on_gamepad_connection_changed(has_gamepad)
     set_value("", input_label_id, "text", input_text)
 end
+
+-- Steam achievement: counts this mod once for the local player.
+add_unique_achievement_progress("gen_mods", "finding_liar")

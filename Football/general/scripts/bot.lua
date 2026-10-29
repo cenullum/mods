@@ -143,9 +143,10 @@ if team == nil then team = 0 end
 if label == nil then label = "{bot}" end
 if btype == nil then btype = 0 end
 
+-- The team colours of ui_manager.lua TEAM_COLORS (same values): 1 orange, 2 purple.
 function team_color()
-	if team == 1 then return Color(1, 0, 0, 1) end
-	if team == 2 then return Color(0, 0, 1, 1) end
+	if team == 1 then return Color(1.0, 0.55, 0.12, 1) end
+	if team == 2 then return Color(0.62, 0.38, 1.0, 1) end
 	return Color(1, 1, 1, 1)
 end
 

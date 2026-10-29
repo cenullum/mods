@@ -233,7 +233,7 @@ function held_ALL(sender_id, steam_id, item_id, quiet)
         my_held = item_id
         if is_panel_exists(INV_PANEL) then rebuild_inventory_panel() end
     end
-    if get_value("", steam_id, "name") ~= nil then -- entity may not exist yet on a joining peer
+    if entity_exists(steam_id) then -- entity may not exist yet on a joining peer
         run_function(steam_id, "set_held_visual", { item_id })
         equip_sound(steam_id, item_id, quiet)
     end
@@ -267,7 +267,7 @@ function worn_ALL(sender_id, steam_id, item_id, quiet)
         my_worn = item_id
         if is_panel_exists(INV_PANEL) then rebuild_inventory_panel() end
     end
-    if get_value("", steam_id, "name") ~= nil then -- entity may not exist yet on a joining peer
+    if entity_exists(steam_id) then -- entity may not exist yet on a joining peer
         run_function(steam_id, "set_worn_visual", { item_id })
         equip_sound(steam_id, item_id, quiet)
     end

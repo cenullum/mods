@@ -569,6 +569,7 @@
     "{sd_zeynep_trade}": "Sırıtışı keskinleşiyor. \"İşte şimdi benim dilimden konuşuyorsun.\" Yaklaşıyor. \"Halil Bey ağustosta emekli oldu. Yerine kimse gelmedi. Yani sınav odası haziran ayından beri kilitli değil.\" Şaka gibi söylüyor. Dokuz ay sonra bunu ilk onun söylediğini, hem de sana söylediğini hatırlayacaksın.",
     "{start_the_story}": "Hikâyeyi Başlat",
     "{the_end}": "Son",
+    "{voted_to_start}": " hikâyenin başlamasını istiyor: ",
     "{vote}": "Oy Ver  ",
     "{waiting_for_the_host}": "Sunucu bekleniyor...",
     "{you_are_the_host}": "Sunucu sensin"

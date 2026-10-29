@@ -89,7 +89,7 @@ cl_alive = {}
 cl_turn = ""
 cl_owed = 1
 cl_names = {}
-cl_colors = {}       -- steam_id -> hex; per-player color shared with user.lua cursors
+cl_colors = {}       -- steam_id -> hex; per-player color shared with the mouse cursors
 cl_wins = {}
 cl_pending = nil     -- { kind, by, jams }
 cl_favor = nil       -- { giver, receiver }
@@ -579,13 +579,28 @@ function remove_bot(id)
     _on_user_disconnected(id, "")
 end
 
+-- Is an admin (the host, or a dedicated server's owner) among the players?
+function admin_online()
+    for _, id in ipairs(get_entity_names_by_tag("user")) do
+        if is_admin(id) then return true end
+    end
+    return false
+end
+
+-- Bots are an admin's call; with no admin playing (a dedicated server nobody
+-- owns right now) anyone at the table may add or remove them. On a listen host
+-- the host is always there, so this is the old host-only rule.
+function may_manage_bots(steam_id)
+    return is_admin(steam_id) or not admin_online()
+end
+
 function add_bot_HOST(sender_id)
-    if not IS_HOST or sender_id ~= HOST_STEAM_ID then return end -- host-only control
+    if not IS_HOST or not may_manage_bots(sender_id) then return end
     add_bot()
 end
 
 function remove_bot_HOST(sender_id)
-    if not IS_HOST or sender_id ~= HOST_STEAM_ID then return end
+    if not IS_HOST or not may_manage_bots(sender_id) then return end
     remove_bot(bot_order[#bot_order])
 end
 
@@ -886,6 +901,8 @@ function jam_HOST(sender_id, data)
     card_play(uid, Vector2(PLAYED_POS.x, PLAYED_POS.y - 40 - pending.jams * 16), true)
     play_sound("card_flip")
     table.insert(pending.uids, uid)
+    -- An odd count means the action is jammed right now: this jam un-jams it.
+    if pending.jams % 2 == 1 then unlock_achievement("OD_JAM_JAMMER", sender_id) end
     pending.jams = pending.jams + 1
     local jammer = players[sender_id] and players[sender_id].name or "?"
     announce(jammer .. "{played_a_signal_jammer}" ..
@@ -1063,12 +1080,14 @@ function resolve_bomb(index)
     bot_recon = {} -- the bomb went back into the deck; any earlier peek is stale
     announce((players[holder] and players[holder].name or "?") ..
         "{defused_the_bomb}")
+    add_achievement_progress("od_defuses", 1, holder)
     finish_turn_step()
     broadcast_state()
 end
 
 function explode(victim, bomb_uid)
     alive[victim] = nil
+    unlock_achievement("OD_BOOM", victim)
     stop_timer("od_turn")
     announce("*** " .. (players[victim] and players[victim].name or "?") ..
         "{had_no_disarm_kit_boom}")
@@ -1105,7 +1124,7 @@ function end_round(winner_id)
         players[winner_id].wins = players[winner_id].wins + 1
     end
     run_network_function(name, "round_over_ALL",
-        { players[winner_id] and players[winner_id].name or "{nobody}" })
+        { players[winner_id] and players[winner_id].name or "{nobody}", winner_id or "" })
     start_timer({
         timer_id = "od_next",
         entity_name = name,
@@ -1143,10 +1162,11 @@ function _on_user_initialized(steam_id, nickname)
     if not list_contains(connected, steam_id) then
         table.insert(connected, steam_id)
     end
-    -- Two bots are already sitting at the table the moment the host arrives, so
-    -- a single player can start a mission right away. The host can remove them
-    -- (or add more) at any time with the buttons at the table edge.
-    if not bots_seeded and steam_id == HOST_STEAM_ID then
+    -- Two bots are already sitting at the table the moment the first player
+    -- arrives (on a listen host: the host), so a single player can start a
+    -- mission right away. They can be removed (or more added) with the buttons
+    -- at the table edge.
+    if not bots_seeded then
         bots_seeded = true
         add_bot()
         add_bot()
@@ -1218,6 +1238,10 @@ function sync_ALL(sender_id, state)
     cl_names = state.names or {}
     cl_wins = state.wins or {}
     cl_colors = state.colors or {}
+    -- Each player's mouse cursor takes their nickname colour (nil text = nickname).
+    for id, hex in pairs(cl_colors) do
+        set_cursor(true, nil, hex_to_color(hex), nil, id)
+    end
     cl_bots = state.bots or {}
     cl_pending = state.pending
     cl_favor = state.favor
@@ -1360,7 +1384,8 @@ function spawn_confetti()
     start_particle({ particle_id = "od_confetti", position = Vector2(0, -40) })
 end
 
-function round_over_ALL(sender_id, winner_name)
+function round_over_ALL(sender_id, winner_name, winner_id)
+    if winner_id == LOCAL_STEAM_ID then add_achievement_progress("od_wins", 1) end
     spawn_confetti()
     create_panel({
         title ="{mission_complete}",
@@ -1457,8 +1482,9 @@ end
 -- Only the host ever sees them; add_bot_HOST/remove_bot_HOST re-check that on
 -- arrival anyway.
 function refresh_bot_buttons()
-    set_button({ name = "_bot_add_btn", visible = (IS_HOST == true) })
-    set_button({ name = "_bot_del_btn", visible = (IS_HOST == true) })
+    local can = may_manage_bots(LOCAL_STEAM_ID)
+    set_button({ name = "_bot_add_btn", visible = can })
+    set_button({ name = "_bot_del_btn", visible = can })
 end
 
 function add_bot_click(args) run_network_function(name, "add_bot_HOST", {}) end
@@ -1483,10 +1509,11 @@ function refresh_scoreboard()
     local lines = ""
     for i, id in ipairs(cl_seated) do
         local marker = (id == cl_turn and cl_phase == "playing") and "> " or "   "
-        local status = cl_alive[id] and (tostring(counts[id] or 0) .. "{cards}") or "EXPLODED"
+        -- counts and wins cross the Lua<->GDScript boundary as floats ("0.0 wins"): floor them here
+        local status = cl_alive[id] and (tostring(math.floor(counts[id] or 0)) .. "{cards}") or "{exploded}"
         local hex = cl_colors[id] or "#ffffff"
         lines = lines .. marker .. "[color=" .. hex .. "]" .. (cl_names[id] or id) .. "[/color]" ..
-            "  -  " .. status .. ", " .. tostring(cl_wins[id] or 0) .. "{wins}"
+            "  -  " .. status .. ", " .. tostring(math.floor(cl_wins[id] or 0)) .. "{wins}"
     end
     if lines == "" then lines = "{nobody_is_seated_yet}" end
     if is_panel_exists(SCORE) then

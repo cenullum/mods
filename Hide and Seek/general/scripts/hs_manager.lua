@@ -395,6 +395,7 @@ function end_round(reason)
         local p = players[id]
         if p and p.in_game and p.role == 2 and p.alive then
             p.score = p.score + SURVIVE_MAX + SURVIVE_BONUS
+            add_achievement_progress("hs_survivals", 1, id)
         end
     end
     broadcast_stats()
@@ -439,8 +440,20 @@ local function random_seed()
     return rng_int()
 end
 
--- (Re)show the host-only seed panel. Same panel at first start and after a match;
--- post-match it also carries the map vote tally so the host can honour it.
+-- Admins (the host, or a dedicated server's owner) who are playing right now.
+local function online_admins()
+    local list = {}
+    for _, id in ipairs(connected) do
+        if is_admin(id) then table.insert(list, id) end
+    end
+    return list
+end
+
+-- (Re)show the seed panel. Same panel at first start and after a match;
+-- post-match it also carries the map vote tally so it can be honoured. It goes
+-- to whoever is an admin - on a listen host that is the host, as always. With
+-- no admin around (a dedicated server nobody owns at the moment) the match
+-- starts by itself instead, see schedule_auto_begin.
 function refresh_host_setup()
     if not IS_HOST then return end
     if phase ~= "lobby" and phase ~= "gameover" and phase ~= "preview" then return end
@@ -448,7 +461,61 @@ function refresh_host_setup()
     for _, v in pairs(votes) do
         if v == "same" then same = same + 1 elseif v == "new" then new = new + 1 end
     end
-    run_function(UI, "show_host_setup", { seed, phase, #connected, MIN_PLAYERS, same, new })
+    local args = { seed, phase, #connected, MIN_PLAYERS, same, new }
+    local admins = online_admins()
+    for _, id in ipairs(admins) do
+        if id == LOCAL_STEAM_ID then
+            run_function(UI, "show_host_setup", args)
+        else
+            run_network_function(name, "show_host_setup_CLIENT", args, id)
+        end
+    end
+    schedule_auto_begin()
+end
+
+function show_host_setup_CLIENT(sender_id, s, ph, n, minp, same, new)
+    run_function(UI, "show_host_setup", { s, ph, n, minp, same, new })
+end
+
+function close_host_setup_CLIENT(sender_id)
+    run_function(UI, "close_host_setup", {})
+end
+
+-- Without an admin online, a match starts AUTO_BEGIN_DELAY seconds after there
+-- are enough players (lobby) or after a match ends (the map vote decides the
+-- seed). Called on joins, leaves, votes and match ends - never per frame.
+AUTO_BEGIN_DELAY = 20.0
+function schedule_auto_begin()
+    if not IS_HOST then return end
+    local waiting = (phase == "lobby" or phase == "gameover") and #online_admins() == 0
+        and #connected >= MIN_PLAYERS
+    local t = get_timer_data("hs_auto_begin")
+    local running = t ~= nil and t.is_running == true
+    if waiting and not running then
+        run_network_function(name, "banner_ALL", { "{match_starts_by_itself}", 5 })
+        start_timer({ timer_id = "hs_auto_begin", entity_name = name, function_name = "auto_begin",
+            wait_time = AUTO_BEGIN_DELAY, duration = AUTO_BEGIN_DELAY })
+    elseif not waiting and running then
+        stop_timer("hs_auto_begin")
+    end
+end
+
+function auto_begin(args)
+    if not IS_HOST then return end
+    if (phase ~= "lobby" and phase ~= "gameover") or #online_admins() > 0 or #connected < MIN_PLAYERS then
+        return
+    end
+    local same, new = 0, 0
+    for _, v in pairs(votes) do
+        if v == "same" then same = same + 1 elseif v == "new" then new = new + 1 end
+    end
+    host_begin((seed > 0 and same > new) and seed or 0)
+end
+
+-- An admin's seed panel, from whichever machine they are on.
+function host_begin_HOST(sender_id, seed_arg)
+    if not IS_HOST or not is_admin(sender_id) then return end
+    host_begin(seed_arg)
 end
 
 -- This manager is a STATIC network singleton, so it comes online AFTER the host's
@@ -479,6 +546,7 @@ function host_begin(seed_arg)
     -- round-trip) the instant the host acts - it must never linger on screen
     -- once a seed/round has actually been chosen.
     run_function(UI, "close_host_setup", {})
+    run_network_function(name, "close_host_setup_CLIENT", {})
     stop_all_timers()
     local s = math.floor(tonumber(seed_arg) or 0)
     if s <= 0 then s = random_seed() end
@@ -528,6 +596,11 @@ function cast_vote_HOST(sender_id, choice)
     end
     run_network_function(name, "vote_update_ALL", { same, new })
     refresh_host_setup()
+    -- Everyone has voted: no need to wait out the timer.
+    if #online_admins() == 0 and same + new >= #connected then
+        stop_timer("hs_auto_begin")
+        auto_begin(nil)
+    end
 end
 
 function vote_update_ALL(sender_id, same, new)
@@ -549,12 +622,18 @@ function reseal_room_CLIENT(sender_id)
     run_function(GEN, "seal_room", {})
 end
 
+-- Only a peer with a body of its own has a view to lock (a dedicated server
+-- has none).
 function lock_seekers_ALL(sender_id)
-    run_function(LOCAL_STEAM_ID, "on_lock_view", {})
+    if entity_exists(LOCAL_STEAM_ID) then
+        run_function(LOCAL_STEAM_ID, "on_lock_view", {})
+    end
 end
 
 function release_seekers_ALL(sender_id)
-    run_function(LOCAL_STEAM_ID, "on_release_view", {})
+    if entity_exists(LOCAL_STEAM_ID) then
+        run_function(LOCAL_STEAM_ID, "on_release_view", {})
+    end
 end
 
 -- Cross-team invisibility during the roam/hide phase. roster is the full
@@ -586,6 +665,7 @@ end
 function caught_ALL(sender_id, hider_id, seeker_id, seeker_name, hider_name)
     run_function(hider_id, "on_caught", {})
     run_function(UI, "on_caught", { hider_name, seeker_name, hider_id == LOCAL_STEAM_ID })
+    if seeker_id == LOCAL_STEAM_ID then add_achievement_progress("hs_catches", 1) end
 end
 
 function shot_ALL(sender_id, from_pos, to_pos)
@@ -609,8 +689,13 @@ end
 function game_over_ALL(sender_id, board, match_seed)
     cl_phase = "gameover"
     run_function(UI, "on_game_over", { board, match_seed })
-    -- Non-host players get the map vote; the host uses its seed panel instead.
-    if not IS_HOST then
+    local top, second = board and board[1], board and board[2]
+    if top and second and top.steam_id == LOCAL_STEAM_ID and top.score > second.score then
+        unlock_achievement("HS_WIN")
+    end
+    -- Players get the map vote; admins (the host on a listen server) use the
+    -- seed panel instead.
+    if not is_admin(LOCAL_STEAM_ID) then
         run_function(UI, "show_vote", { match_seed })
     end
 end
@@ -670,7 +755,8 @@ function _on_user_initialized(steam_id, nickname)
     broadcast_stats()
     -- No panel refresh here on purpose: the host's setup panel is only shown/
     -- updated by deliberate actions (bootstrap, pressing a button, voting), not
-    -- by passive join/leave events.
+    -- by passive join/leave events. Only the no-admin auto start listens.
+    schedule_auto_begin()
 end
 
 function _on_user_disconnected(steam_id, nickname)
@@ -696,6 +782,7 @@ function _on_user_disconnected(steam_id, nickname)
         end
     end
     broadcast_stats()
+    schedule_auto_begin()
 end
 
 -- Runs once when this singleton comes online (on every peer). The host registers

@@ -21,8 +21,25 @@ local BANNED_USERS_PANEL_NAME = "moderation_banned_users_panel_id"
 -- Search input storage
 local history_search_steam_id = ""
 
--- Print initial message when mod loads (only for host)
-if IS_HOST then
+-- Who may use the panel: the host, a dedicated server's owners and its
+-- moderators (see get_role). Every action is carried out on the host, which
+-- checks the rank again: a moderator can never act on another moderator, an
+-- owner or the host (the engine enforces that in kick_user/ban_user too).
+local function is_staff(steam_id)
+    local role = get_role(steam_id)
+    return role == "host" or role == "owner" or role == "moderator"
+end
+
+local function role_suffix(steam_id)
+    local role = get_role(steam_id)
+    if role == "host" then return "{host}" end
+    if role == "owner" then return "{owner_role}" end
+    if role == "moderator" then return "{moderator_role}" end
+    return ""
+end
+
+-- Print initial message when mod loads (for whoever may use the panel)
+if is_staff(LOCAL_STEAM_ID) then
     add_to_chat("{you_can_type_moderation_to_open_moderati}", false)
 end
 
@@ -75,7 +92,7 @@ function _on_user_banned(steam_id, nickname, duration, reason)
 end
 
 function show_moderation_panel()
-    if not IS_HOST then
+    if not is_staff(LOCAL_STEAM_ID) then
         add_to_chat("{only_the_host_can_access_moderation_pane}", false)
         return
     end
@@ -110,7 +127,7 @@ function show_moderation_panel()
 end
 
 function show_banned_users_panel()
-    if not IS_HOST then return end
+    if not is_staff(LOCAL_STEAM_ID) then return end
 
     -- Close main panel if open
     if is_panel_exists(MAIN_PANEL_NAME) then
@@ -134,7 +151,7 @@ function show_banned_users_panel()
     BANNED_USERS_PANEL_NAME = create_panel(settings)
 
     -- Create banned users table first (so it's at the top of the scroll)
-    create_banned_users_table(BANNED_USERS_PANEL_NAME)
+    request_banned_users()
 
     -- Add search section for history (under the table)
     add_input_to_panel(BANNED_USERS_PANEL_NAME, {
@@ -178,7 +195,7 @@ function refresh_main_panel()
 
     -- Refresh banned users table if banned users panel exists
     if is_panel_exists(BANNED_USERS_PANEL_NAME) then
-        create_banned_users_table(BANNED_USERS_PANEL_NAME)
+        request_banned_users()
     end
 end
 
@@ -205,11 +222,12 @@ function create_connected_users_table()
         local steam_id = user.steam_id
         local nickname = user.nickname
 
-        -- Highlight host in green
+        -- Highlight the host / owners / moderators
         local color = "#FFFFFF"
-        if steam_id == HOST_STEAM_ID then
-            color = "#00FF00"
-            nickname = nickname .. "{host}"
+        local suffix = role_suffix(steam_id)
+        if suffix ~= "" then
+            color = (suffix == "{moderator_role}") and "#7FD4FF" or "#00FF00"
+            nickname = nickname .. suffix
         end
 
         table_data[vector2_to_string(Vector2(0, row))] = {
@@ -234,8 +252,27 @@ function create_connected_users_table()
     })
 end
 
-function create_banned_users_table(panel_name)
-    local banned_users = get_banned_users_list()
+-- The ban list lives on the host; another machine asks for it.
+function request_banned_users()
+    if IS_HOST then
+        create_banned_users_table(BANNED_USERS_PANEL_NAME, get_banned_users_list())
+    else
+        run_network_function(name, "banned_users_HOST", {})
+    end
+end
+
+function banned_users_HOST(sender_id)
+    if not IS_HOST or not is_staff(sender_id) then return end
+    run_network_function(name, "banned_users_CLIENT", { get_banned_users_list() }, sender_id)
+end
+
+function banned_users_CLIENT(sender_id, banned_users)
+    if is_panel_exists(BANNED_USERS_PANEL_NAME) then
+        create_banned_users_table(BANNED_USERS_PANEL_NAME, banned_users)
+    end
+end
+
+function create_banned_users_table(panel_name, banned_users)
     local table_data = {}
 
     -- Header row
@@ -259,7 +296,8 @@ function create_banned_users_table(panel_name)
             text = nickname,
             color = "#FF8888",
             steam_id = steam_id,
-            nickname = nickname
+            nickname = nickname,
+            reason = reason
         }
 
         table_data[vector2_to_string(Vector2(1, row))] = {
@@ -306,9 +344,8 @@ function on_banned_user_clicked(args)
 
     local steam_id = cell_data.steam_id
     local nickname = cell_data.nickname or "{unknown_user}"
-    local ban_info = get_ban_info(steam_id)
-
-    show_unban_panel(steam_id, ban_info, nickname)
+    -- The row already carries what the panel shows (works off the host too).
+    show_unban_panel(steam_id, { reason = cell_data.reason }, nickname)
 end
 
 function show_user_action_panel(steam_id, nickname)
@@ -332,8 +369,21 @@ function show_user_action_panel(steam_id, nickname)
         extra_args = { steam_id = steam_id }
     })
 
-    -- Only show kick/ban for non-host users
-    if steam_id ~= HOST_STEAM_ID then
+    -- An owner (or the host) appoints moderators.
+    if is_admin(LOCAL_STEAM_ID) and (get_role(steam_id) == "player" or get_role(steam_id) == "moderator") then
+        local is_mod = get_role(steam_id) == "moderator"
+        add_button_to_panel(panel_name, {
+            text = is_mod and "{remove_moderator}" or "{make_moderator}",
+            is_vertical = true,
+            color = "#7FD4FF",
+            entity_name = name,
+            function_name = "toggle_moderator",
+            extra_args = { steam_id = steam_id, make = not is_mod }
+        })
+    end
+
+    -- Kick/ban only for players ranked below the one looking at the panel
+    if can_moderate(LOCAL_STEAM_ID, steam_id) then
         -- Kick button
         add_button_to_panel(panel_name, {
             text ="{kick_user}",
@@ -353,6 +403,21 @@ function show_user_action_panel(steam_id, nickname)
             function_name = "show_ban_panel",
             extra_args = { steam_id = steam_id, nickname = nickname }
         })
+    end
+end
+
+function toggle_moderator(args)
+    run_network_function(name, "set_moderator_HOST", { args.extra_args.steam_id, args.extra_args.make == true })
+    close_panel(args.panel_name)
+end
+
+function set_moderator_HOST(sender_id, target_id, make)
+    if not IS_HOST or not is_admin(sender_id) then return end
+    local changed
+    if make then changed = add_moderator(target_id) else changed = remove_moderator(target_id) end
+    if changed then
+        local nickname = connected_users[target_id] and connected_users[target_id].nickname or target_id
+        add_to_chat(nickname .. (make and "{is_now_a_moderator}" or "{is_no_longer_a_moderator}"), true)
     end
 end
 
@@ -428,7 +493,7 @@ end
 function confirm_kick(args)
     for steam_id, data in pairs(temp_data) do
         if data.pending_action and data.pending_action.type == "kick" then
-            kick_user(steam_id, data.pending_action.reason)
+            run_network_function(name, "kick_HOST", { steam_id, data.pending_action.reason })
             temp_data[steam_id] = nil
             break
         end
@@ -529,7 +594,7 @@ function confirm_ban(args)
             local duration = data.pending_action.duration or get_duration_seconds("1 Hour")
             local reason = data.pending_action.reason or "{no_reason_provided}"
 
-            ban_user(steam_id, duration, reason)
+            run_network_function(name, "ban_HOST", { steam_id, duration, reason })
             temp_data[steam_id] = nil
             break
         end
@@ -577,10 +642,34 @@ function execute_unban(args)
     local steam_id = args.extra_args.steam_id
     local nickname = args.extra_args.nickname
 
-    unban_user(steam_id)
-    add_to_chat("[color=#00FF00]" .. nickname .. "{has_been_unbanned}", false)
+    run_network_function(name, "unban_HOST", { steam_id, nickname })
 
     close_panel(args.panel_name)
+end
+
+-- The actions themselves, on the host. The sender is passed to kick_user /
+-- ban_user as the actor, so the engine refuses a moderator acting on someone of
+-- equal or higher rank even if a modified client asks.
+function kick_HOST(sender_id, target_id, reason)
+    if not IS_HOST or not is_staff(sender_id) then return end
+    kick_user(target_id, reason, sender_id)
+end
+
+function ban_HOST(sender_id, target_id, duration, reason)
+    if not IS_HOST or not is_staff(sender_id) then return end
+    ban_user(target_id, math.floor(tonumber(duration) or 3600), reason, sender_id)
+end
+
+function unban_HOST(sender_id, target_id, nickname)
+    if not IS_HOST or not is_staff(sender_id) then return end
+    unban_user(target_id)
+    -- Targeted at the sender; on a listen host that is the host itself, and a
+    -- targeted call to the host runs locally.
+    run_network_function(name, "unbanned_CLIENT", { nickname }, sender_id)
+end
+
+function unbanned_CLIENT(sender_id, nickname)
+    add_to_chat("[color=#00FF00]" .. nickname .. "{has_been_unbanned}", false)
     refresh_main_panel()
 end
 
@@ -678,12 +767,27 @@ function search_user_history(args)
         return
     end
 
-    local history = get_user_history(history_search_steam_id)
-
-    if #history == 0 then
-        show_no_history_panel(history_search_steam_id)
+    if IS_HOST then
+        show_history(history_search_steam_id, get_user_history(history_search_steam_id))
     else
-        show_history_panel(history_search_steam_id, history)
+        run_network_function(name, "history_HOST", { history_search_steam_id })
+    end
+end
+
+function history_HOST(sender_id, steam_id)
+    if not IS_HOST or not is_staff(sender_id) then return end
+    run_network_function(name, "history_CLIENT", { steam_id, get_user_history(steam_id) }, sender_id)
+end
+
+function history_CLIENT(sender_id, steam_id, history)
+    show_history(steam_id, history)
+end
+
+function show_history(steam_id, history)
+    if #history == 0 then
+        show_no_history_panel(steam_id)
+    else
+        show_history_panel(steam_id, history)
     end
 end
 

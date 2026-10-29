@@ -1,6 +1,13 @@
 singleton_name = "hud"
 network_mode = 0
 
+-- -gm is a network singleton: on a joining player it arrives a moment after
+-- this script runs, so ask it only once it exists (get_role's own default).
+local function gm_role(id)
+    if not entity_exists("-gm") then return "human" end
+    return run_function("-gm", "get_role", { id })
+end
+
 -- =============================================================================
 -- Beyaz Canavar - local HUD (general/views/hud.json): bottom-right key hints
 -- that follow the player's role, the current room's name, a centre banner,
@@ -101,7 +108,7 @@ end
 
 -- Distance from this player to the closest monster (NPC or player).
 local function nearest_monster()
-    local me = get_value("", LOCAL_STEAM_ID, "position")
+    local me = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil)
     if not me then return math.huge end
     local best = math.huge
     local function consider(id)
@@ -113,7 +120,7 @@ local function nearest_monster()
     end
     for _, id in ipairs(get_entity_names_by_tag("monster")) do consider(id) end
     for _, id in ipairs(get_entity_names_by_tag("user")) do
-        if id ~= LOCAL_STEAM_ID and run_function("-gm", "get_role", { id }) == "monster" then consider(id) end
+        if id ~= LOCAL_STEAM_ID and gm_role(id) == "monster" then consider(id) end
     end
     return best
 end

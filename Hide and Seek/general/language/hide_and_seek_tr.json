@@ -19,6 +19,7 @@
     "{hiders}": "Saklananlar: ",
     "{host_pick_the_map}": "[b]Sunucu: haritayı seç[/b]",
     "{hunt_begins_in}": "Av şu kadar sonra başlıyor: ",
+    "{match_starts_by_itself}": "Oyunda yönetici yok: maç 20 saniye sonra kendiliğinden başlayacak.",
     "{more_to_start_the_hunt}": " kişi daha gerekiyor.",
     "{more}": " kişi daha)",
     "{movement_mode}": "Hareket Modu",

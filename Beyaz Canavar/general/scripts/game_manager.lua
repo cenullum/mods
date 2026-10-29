@@ -165,8 +165,37 @@ end
 -- Host menu (seed + start + vote switch)
 -- =============================================================================
 
+-- Admins (the host, or a dedicated server's owner) who are playing right now.
+local function online_admins()
+    local list = {}
+    for _, id in ipairs(users()) do
+        if is_admin(id) then table.insert(list, id) end
+    end
+    return list
+end
+
+-- The menu goes to every admin who is playing: on a listen host that is the
+-- host itself, exactly as before; on a dedicated server, its owner(s). With no
+-- admin around, /start votes are how a round begins.
 function show_host_panel()
     if not IS_HOST or phase ~= LOBBY then return end
+    for _, id in ipairs(online_admins()) do
+        if id == LOCAL_STEAM_ID then
+            build_host_panel()
+        else
+            run_network_function(name, "host_panel_CLIENT", { typed_seed, votes_allowed }, id)
+        end
+    end
+end
+
+function host_panel_CLIENT(sender_id, seed_text, allow_votes)
+    typed_seed = tostring(seed_text)
+    votes_allowed = allow_votes == true
+    build_host_panel()
+end
+
+function build_host_panel()
+    if phase ~= LOBBY then return end
     close_host_panel()
     panel_count = panel_count + 1
     panel_name = "_bc_host_menu_" .. panel_count
@@ -180,6 +209,10 @@ function show_host_panel()
         text = "{random_seed}", color = Color(0.35, 0.45, 0.6) })
     add_button_to_panel(panel_name, { entity_name = name, function_name = "on_start_pressed",
         text = "{start_game}", color = Color(0.55, 0.2, 0.2) })
+end
+
+function close_host_panel_CLIENT(sender_id)
+    close_host_panel()
 end
 
 function close_host_panel()
@@ -199,7 +232,7 @@ end
 function on_random_seed(args)
     if args and args["{allow_start_votes}"] ~= nil then votes_allowed = args["{allow_start_votes}"] == true end
     typed_seed = tostring(get_os_time_unix() % 1000000007)
-    show_host_panel()
+    build_host_panel()
 end
 
 function on_start_pressed(args)
@@ -207,6 +240,19 @@ function on_start_pressed(args)
         if args["{seed}"] ~= nil then typed_seed = tostring(args["{seed}"]) end
         if args["{allow_start_votes}"] ~= nil then votes_allowed = args["{allow_start_votes}"] == true end
     end
+    if IS_HOST then
+        start_round()
+    else
+        -- An admin on their own machine (a dedicated server's owner).
+        close_host_panel()
+        run_network_function(name, "admin_start_HOST", { typed_seed, votes_allowed })
+    end
+end
+
+function admin_start_HOST(sender_id, seed_text, allow_votes)
+    if not IS_HOST or phase ~= LOBBY or not is_admin(sender_id) then return end
+    typed_seed = tostring(seed_text)
+    votes_allowed = allow_votes == true
     start_round()
 end
 
@@ -238,8 +284,10 @@ end
 function request_start_HOST(sender_id)
     if not IS_HOST then return end
     if phase ~= LOBBY then tell(sender_id, "{game_already_running}") return end
-    if sender_id == HOST_STEAM_ID then start_round() return end
-    if not votes_allowed then tell(sender_id, "{start_votes_disabled}") return end
+    if is_admin(sender_id) then start_round() return end
+    -- The "allow votes" switch is an admin's choice; with no admin playing, a
+    -- vote is the only way to begin, so it is always allowed then.
+    if not votes_allowed and #online_admins() > 0 then tell(sender_id, "{start_votes_disabled}") return end
     if vote then tell(sender_id, "{vote_already_running}") return end
     vote = { yes = { [sender_id] = true }, no = {} }
     run_network_function(name, "vote_ALL", { nick_of(sender_id), VOTE_SECONDS, sender_id })
@@ -323,6 +371,7 @@ end
 function start_round()
     if not IS_HOST or phase ~= LOBBY then return end
     close_host_panel()
+    run_network_function(name, "close_host_panel_CLIENT", {})
     if vote then
         vote = nil
         stop_timer("bc_vote")
@@ -567,6 +616,7 @@ function caught_ALL(sender_id, victim, m, seconds)
         flash_vignette({ color = Color(0.8, 0.0, 0.0, 1), duration = 1.2 })
         run_function("-tasks", "clear_local", {})
     end
+    if m == LOCAL_STEAM_ID then add_achievement_progress("bc_catches", 1) end
 end
 
 function convert_victim(args)
@@ -644,6 +694,7 @@ function escaped_ALL(sender_id, id, nick)
     if id == LOCAL_STEAM_ID then
         run_function("-hud", "banner", { "{you_escaped}", 5 })
         clear_exits_local()
+        add_achievement_progress("bc_escapes", 1)
     end
 end
 
@@ -728,7 +779,7 @@ end
 
 function request_testboss_HOST(sender_id)
     if not IS_HOST then return end
-    if sender_id ~= HOST_STEAM_ID then tell(sender_id, "{testboss_host_only}") return end
+    if not is_admin(sender_id) then tell(sender_id, "{testboss_host_only}") return end
     if test_boss ~= "" and (phase == PLAYING or phase == ESCAPE) then
         tell(sender_id, "{testboss_off}")
         back_to_lobby()
@@ -776,16 +827,19 @@ function scream_hit(args)
     local mp = get_value("", m, "position")
     if not mp then return end
     local nearest, nearest_d = nil, math.huge
+    local stunned = 0
     for _, h in ipairs(get_humans()) do
         local hp = get_value("", h, "position")
         if hp then
             local d = dist(mp, hp)
             if d <= SCREAM_RADIUS then
                 run_network_function(name, "stun_ALL", { h, STUN_SECONDS })
+                stunned = stunned + 1
             end
             if d < nearest_d then nearest, nearest_d = hp, d end
         end
     end
+    if stunned >= 3 and has_tag(m, "user") then unlock_achievement("BC_SCREAM_3", m) end
     -- A screaming PLAYER monster hears where the closest human is (2 seconds).
     if nearest and has_tag(m, "user") then
         if m == HOST_STEAM_ID then
@@ -834,7 +888,7 @@ end
 -- stun range are skipped: they get the stronger stun_ALL shake, and this one
 -- would replace it if it arrived second.
 function scream_feel(m)
-    local me = get_value("", LOCAL_STEAM_ID, "position")
+    local me = (entity_exists(LOCAL_STEAM_ID) and get_value("", LOCAL_STEAM_ID, "position") or nil)
     local mp = entity_exists(m) and get_value("", m, "position") or nil
     if not me or not mp then return end
     local d = dist(me, mp)
